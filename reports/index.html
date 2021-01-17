@@ -1,0 +1,666 @@
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+        <link rel="stylesheet" href="/css/main.css">
+        <link rel="stylesheet" href="style.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+        <script type="text/javascript" src="script.js"></script>
+        <title>Абстрактный подвал</title>
+    </head>
+<body>
+    <div id="header" class="mb-2">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+          <div class="container">
+            <a class="navbar-brand" href="/"><b>Абстрактный подвал</b></a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+              <ul class="navbar-nav mr-auto">
+                <li class="nav-item"><a class="nav-link" href="/links/">Скрипты</a></li>
+                <li class="nav-item"><a class="nav-link" href="/pathfind/">Поиск пути</a></li>
+                <li class="nav-item"><a class="nav-link" href="/swimaway/">Расчёт ПУ</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/reports/">Составление отчётов</a></li>
+              </ul>
+			<div class="form-inline my-2 my-lg-0">
+              <span style="color: white">Мой ID: &nbsp;</span><input class="form-control mr-sm-2" type="text" id="remember_id" placeholder="Мой ID">
+      		  <button class="btn btn-secondary my-2 my-sm-0" id="remember" data-id="remember">Запомнить</button>
+			</div>
+            </div> 
+          </div>
+        </nav>
+    </div>
+    <div class="container">
+      
+<div class="accordion-menu accordion">
+	<div>
+		<div class="dropdownlink" tribe=0> [ОВ] Речное племя
+			<i class="fa fa-chevron-down" aria-hidden="true"></i>
+		</div>
+		<div class="submenuItems">
+		    <h3>Патрули</h3>
+		    <div class=wrapper>
+		        <div id=patr_type>Вид патруля:</div>
+		        <table class="table-types type-3"><tr><td>
+		            <input type=radio class=type name=patr_type id=pogr value=0><label class="type-lbl patr-type_0" for=pogr>Пограничный</label>
+		        </td><td>
+		            <input type=radio class=type name=patr_type id=herb value=1><label class="type-lbl patr-type_0" for=herb>Травяной</label>
+		        </td><td>
+		            <input type=radio class=type name=patr_type id=hunt value=2><label class="type-lbl patr-type_0" for=hunt>Охотничий</label>
+		        </td></tr></table>
+		    </div>
+		    <div class=patr_sett id=data_pogr>
+		        <div class=data_pogr>Дата:&nbsp;<input id=pogr_date class="hid-cross" type=date></div>
+		        <div class=data_pogr>Время:&nbsp;<input id=pogr_time class=hid-cross type=time step=10800></div>
+		        <div class=data_pogr>
+		            Маршрут:
+    		        <input type=radio class="type small-num" name=marsh_num id=m_1 value=1><label for=m_1>1</label>
+    		        <input type=radio class="type small-num" name=marsh_num id=m_2 value=2><label for=m_2>2</label>
+		        </div>
+	        </div>
+		    <div class="patr_sett" id=data_herb>
+		        <div class=data_pogr>
+		            <span class=herb-inp-wrap>Количество трав:&nbsp;<input type=number value=0 id=herb_amt class="hid-scroll herb-inp" min=0>,&nbsp;</span>
+		            <span class=herb-inp-wrap>обычного мха:&nbsp;<input type=number value=0 id=moss_amt class="hid-scroll herb-inp" min=0>,&nbsp;</span>
+		            <span class=herb-inp-wrap>водяного мха:&nbsp;<input type=number value=0 id=wmoss_amt class="hid-scroll herb-inp" min=0>.</span>
+		        </div>
+		        <div class=data_pogr>Особые происшествия:&nbsp;<input type=text id=herb_situ value="-"></div>
+		    </div>
+		    <div class=patr_sett id=data_hunt>
+		        <div class=wrapper>
+		        <table class="table-types type-2"><tr><td>
+		            <input type=radio class=type name=hunt_type id=morn value=0><label class="type-lbl" for=morn>Утренняя</label>
+		        </td><td>
+		            <input type=radio class=type name=hunt_type id=even value=1><label class="type-lbl" for=even>Вечерняя</label>
+		        </td></tr></table>
+		        </div>
+		    </div>
+		    <div class="patr_id data_pogr" style="display:none;"><div class=data_pogr>ID ведущего:&nbsp;
+		    <input type=text id=patr_lead_id class="text-short my-id" placeholder="123456"></div></div>
+		    <div class="patr_id"><div class=data_pogr_area>ID участников <small><i>(оставьте поле пустым, если их не было)</i></small>:
+		    <textarea id=patr_id placeholder="123456 420020 222222 333333"></textarea></div></div>
+		    <div class="patr_id_hunt"><div class=data_pogr_area>ID таскающих <small><i>(оставьте поле пустым, если их не было)</i></small>:
+		    <textarea id=patr_extra_id rows=1 placeholder="123456 420020 222222 333333"></textarea></div></div>
+		    <button id=create_patr class="btn btn-primary" disabled>Составить отчёт</button>
+		    <div id=create_patr_txt></div>
+		    <button class="copy_btn btn btn-primary" id=create_patr_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_patr_copy_yes" style="display:none;">✔</span>
+		    <hr>
+		    <h3>Дозоры</h3>
+		    <div class=data_doz>Дата:&nbsp;<input id=doz_date class="hid-cross" type=date></div>
+		    <div class=data_doz>Время начала:&nbsp;<input id=doz_time class="my-time-00 hid-cross" type=time step=3600></div>
+		    <div class=data_doz>ID участников<small><i> (через пробел)</i></small>:&nbsp;<input id=doz_id class="my-id" type=text></div>
+		    <div class=data_doz>Вид дозора:&nbsp;<select id="doz_type">
+                <option>Пассивный (Камышовые заросли)</option>
+                <option>Пассивный (Туннель)</option>
+                <option>Пассивный (Травянистый берег)</option>
+                <option>Пассивный (Редколесье)</option>
+                <option>Пассивный (Разрушенная ограда)</option>
+                <option>Пассивный (Расколотое дерево)</option>
+                <option>Пассивный (Лесной ручеёк)</option>
+                <option>Активный (1 маршрут)</option>
+                <option>Активный (2 маршрут)</option>
+                <option>Активный (3 маршрут)</option>
+            </select></div>
+            <button id=create_doz class="btn btn-primary">Составить отчёт</button>
+		    <div id=create_doz_txt></div>
+		    <button class="copy_btn btn btn-primary" id=create_doz_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_doz_copy_yes" style="display:none;">✔</span>
+	</div>
+
+	<!--<div>
+		<div class="dropdownlink" tribe=2> [ОВ] Племя Ветра
+		<i class="fa fa-chevron-down" aria-hidden="true"></i>
+		</div>
+		<div class="submenuItems">Отчёты племени Ветра <small><i>(не добавлено)</i></small></div>
+	</div>-->
+
+	<!-- <div>
+		<div class="dropdownlink" tribe=3> [ОВ] Племя Теней
+		<i class="fa fa-chevron-down" aria-hidden="true"></i>
+		</div>
+		<div class="submenuItems">
+		    <h3>Пограничные патрули</h3>
+		    <div class=wrapper>
+		        <div id=patr_type>Вид патруля:</div>
+		        <table class="table-types type-3"><tr><td>
+		            <input type=radio class=type name=patr_type_3 id=pogr_morn_3 value="Утренний"><label class="type-lbl" for=pogr_morn_3>Утренний</label>
+		        </td><td>
+		            <input type=radio class=type name=patr_type_3 id=pogr_noon_3 value="Дневной"><label class="type-lbl" for=pogr_noon_3>Дневной</label>
+		        </td><td>
+		            <input type=radio class=type name=patr_type_3 id=pogr_aftr_3 value="Вечерний"><label class="type-lbl" for=pogr_aftr_3>Вечерний</label>
+		        </td></tr></table>
+	        </div>
+	        <div class=data_pogr>Дата:&nbsp;<input id=pogr_date_3 class=hid-cross type=date value=<?php echo date("Y-m-d");?>></div>
+	        <div class=data_pogr>
+		            Маршрут:&nbsp;
+    		        <input type=radio class="type small-num" name=marsh_num_3 id=m_3_1 value=I><label for=m_3_1>I</label>
+    		        <input type=radio class="type small-num" name=marsh_num_3 id=m_3_2 value=II><label for=m_3_2>II</label>
+    		        <input type=radio class="type small-num" name=marsh_num_3 id=m_3_3 value=III><label for=m_3_3>III</label>
+    		        <input type=radio class="type small-num" name=marsh_num_3 id=m_3_4 value=IV><label for=m_3_4>IV</label>&nbsp;часть
+		    </div>
+		    <div class=data_pogr>ID ведущ
+		    <input type=radio class="check-hidden gend-enable" name=gend_0_3 id=gend_0_0_3 value=0><label for=gend_0_0_3>-его</label>
+		    /<input type=radio class="check-hidden gend-enable" name=gend_0_3 id=gend_0_1_3 value=1><label for=gend_0_1_3>-ей</label>:&nbsp;
+		    <input type=text id=patr_lead_id_3 class=text-short placeholder="123456"<?php if (isset($_COOKIE['uid'])) {echo " value=".$_COOKIE['uid'];} ?>></div>
+		    <div class=data_pogr_area>ID участников <small><i>(оставьте поле пустым, если их не было)</i></small>:
+		        <textarea id=patr_id_3 placeholder="123456 222222 333333"></textarea>
+		    </div>
+		    <div class="patr_sett patr_sett_pogr_3" data-bind="Утренний">
+		        <div style="display: flex;">
+    	            <span class=herb-inp-wrap>Количество крепких веток:&nbsp;<input type=number value=0 id=branch_amt_3 class="hid-scroll herb-inp" min=0>.</span>
+	            </div>
+		    </div>
+		    <div class="patr_sett patr_sett_pogr_3" data-bind="Дневной">
+		        <div style="display: flex;">
+    	            <span class=herb-inp-wrap>Количество трав:&nbsp;<input type=number value=0 id=herb_amt_3 class="hid-scroll herb-inp" min=0>,&nbsp;</span>
+    	            <span class=herb-inp-wrap>вьюнков:&nbsp;<input type=number value=0 id=bindweed_amt_3 class="hid-scroll herb-inp" min=0>,&nbsp;</span>
+    	            <span class=herb-inp-wrap>паутины:&nbsp;<input type=number value=0 id=web_amt_3 class="hid-scroll herb-inp" min=0>.</span>
+	            </div>
+	            <span id="pogr_3_flower" style="display:none;"><i>(+ цветок)</i></span>
+		    </div>
+	        <button id=create_patr_3>Составить отчёт</button>
+		    <div id=create_patr_3_txt></div>
+		    <button class=copy_btn id=create_patr_3_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_patr_3_copy_yes" style="display:none;">✔</span>
+		    
+		    <hr><h3>Сбор мха</h3>
+		    <div class=data_pogr>Дата:&nbsp;<input id=moss_date_3 class=hid-cross type=date value=<?php echo date("Y-m-d");?>></div>
+		    <div class=data_pogr>
+		            Маршрут:&nbsp;
+    		        <input type=radio class="type small-num" name=moss_num_3 id=moss_3_1 value=I><label for=moss_3_1 id=label_moss_3_1>I</label>
+    		        <input type=radio class="type small-num" name=moss_num_3 id=moss_3_2 value=II><label for=moss_3_2 id=label_moss_3_2>II</label>
+    		        <input type=radio class="type small-num" name=moss_num_3 id=moss_3_3 value=III><label for=moss_3_3 id=label_moss_3_3>III</label>&nbsp;часть
+		    </div>
+		    <div class=data_pogr>ID ведущ
+		    <input type=radio class="check-hidden gend-enable" name=gend_1_3 id=gend_1_0_3 value=0><label for=gend_1_0_3>-его</label>
+		    /<input type=radio class="check-hidden gend-enable" name=gend_1_3 id=gend_1_1_3 value=1><label for=gend_1_1_3>-ей</label>:&nbsp;
+		    <input type=text id=moss_lead_id_3 class=text-short placeholder="123456"<?php if (isset($_COOKIE['uid'])) {echo " value=".$_COOKIE['uid'];} ?>></div>
+		    <div class=data_pogr_area>ID участников <small><i>(оставьте поле пустым, если их не было)</i></small>:
+		        <textarea id=moss_id_3 placeholder="123456 222222 333333"></textarea>
+		    </div>
+		    <div class=data_pogr>
+	            <span class=herb-inp-wrap>Обычного мха:&nbsp;<input type=number value=0 id=moss_amt_3 class="hid-scroll herb-inp" min=0>,&nbsp;</span>
+	            <span class=herb-inp-wrap>водяного мха:&nbsp;<input type=number value=0 id=wmoss_amt_3 class="hid-scroll herb-inp" min=0>.</span>
+		    </div>
+		    <button id=create_moss_3>Составить отчёт</button>
+		    <div id=create_moss_3_txt></div>
+		    <button class=copy_btn id=create_moss_3_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_moss_3_copy_yes" style="display:none;">✔</span>
+		    
+		    <hr><h3>Охотничьи патрули</h3>
+		    <div class=wrapper>
+		        <div id=patr_type>Вид патруля:</div>
+		        <table class="table-types type-2"><tr><td>
+		            <input type=radio class=type name=hunt_type_3 id=hunt_noon_3 value="Дневной"><label class="type-lbl" for=hunt_noon_3>Дневной</label>
+		        </td><td>
+		            <input type=radio class=type name=hunt_type_3 id=hunt_nigt_3 value="Ночной"><label class="type-lbl" for=hunt_nigt_3>Ночной</label>
+		        </td></tr></table>
+	        </div>
+	        <div class=data_pogr>Дата:&nbsp;<input id=hunt_date_3 class=hid-cross type=date value=<?php echo date("Y-m-d");?>></div>
+	        <div class=data_pogr>ID руководящ
+		    <input type=radio class="check-hidden gend-enable" name=gend_2_3 id=gend_2_0_3 value=0><label for=gend_2_0_3>-его</label>
+		    /<input type=radio class="check-hidden gend-enable" name=gend_2_3 id=gend_2_1_3 value=1><label for=gend_2_1_3>-ей</label>:&nbsp;
+		    <input type=text id=hunt_lead_id_3 class=text-short placeholder="123456"<?php if (isset($_COOKIE['uid'])) {echo " value=".$_COOKIE['uid'];} ?>>, дичи: <input type=number id=lead_prey_3 value=5 class="hid-scroll num-only herb-inp" min=0></div>
+		    <div class=data_pogr>Участники (<i>ID [кол-во дичи]</i>):</div>
+		    <div id=hunt_list_3 class="member_list" max-children=5>
+		        <div class=template>
+		            <div class=hunt_list_3_el>
+        		        <input type=text class=text-short placeholder="123456"> 
+        		        [<input type=number value=5 class="hid-scroll num-only herb-inp prey" min=0>]
+    		        </div>
+		        </div>
+		    </div>
+		    <button class=add_list data-target=hunt_list_3>Добавить участника</button><button class=del_list data-target=hunt_list_3>Удалить последнего</button>
+		    <div class=data_pogr_area>ID помощников <small><i>(оставьте поле пустым, если их не было)</i></small>:
+		        <textarea id="hunt_extra_id_3" rows="1" placeholder="123456 789012"></textarea>
+		    </div>
+		    <div class=data_pogr>Локация:&nbsp;<select id="hunt_place_3">
+                <option>Великие хвои</option>
+                <option>Мышиный овраг</option>
+                <option>Тенистые дебри</option>
+                <option>Летний лагерь Двуногих</option>
+                <option>Шумный приток</option>
+                <option>Заросли осоки</option>
+                <option class=hunt-nigt-only-3>Туманный Перелесок</option>
+                <option class=hunt-nigt-only-3>Чаща Леса</option>
+            </select></div>
+		    <button id=create_hunt_3>Составить отчёт</button>
+		    <div id=create_hunt_3_txt></div>
+		    <button class=copy_btn id=create_hunt_3_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_hunt_3_copy_yes" style="display:none;">✔</span>
+		    
+		    <hr><h3>Дозоры</h3>
+		    <div class=data_pogr>Дата:&nbsp;<input id=doz_date_3 class=hid-cross type=date value=<?php echo date("Y-m-d");?>></div>
+		    <div class=data_pogr>Место:&nbsp;<select id="doz_place_3">
+                <option>Вблизи Лагеря I</option>
+                <option>Вблизи Лагеря II</option>
+                <option>Вблизи Лагеря III</option>
+                <option>Граница с Рекой</option>
+                <option>Граница с Грозой</option>
+                <option>Общие границы</option>
+                <option>Дальняя Застава</option>
+            </select></div>
+		    <div class=data_pogr>ID дозорн
+		    <input type=radio class="check-hidden gend-enable" name=gend_3_3 id=gend_3_0_3 value=0><label for=gend_3_0_3>-ого</label>
+		    /<input type=radio class="check-hidden gend-enable" name=gend_3_3 id=gend_3_1_3 value=1><label for=gend_3_1_3>-ой</label>:&nbsp;
+		    <input type=text id=doz_id_3 class=text-short placeholder="123456"<?php if (isset($_COOKIE['uid'])) {echo " value=".$_COOKIE['uid'];} ?>></div>
+		    <div class=data_pogr>Время начала:&nbsp;<input id=doz_time_3 class=hid-cross type=time value=<?php echo "\"".date("H").":00\"";?>></div>
+		    <button id=create_doz_3>Составить отчёт</button>
+		    <div id=create_doz_3_txt></div>
+		    <button class=copy_btn id=create_doz_3_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_doz_3_copy_yes" style="display:none;">✔</span>
+		    
+		    <hr><h3>Рейды туннелеров</h3>
+		    <div class=wrapper>
+		        <div id=patr_type>Вид патруля:</div>
+		        <table class="table-types type-3"><tr><td>
+		            <input type=radio class=type name=t_raid_type_3 id=t_raid_morn_3 value="Утренний"><label class="type-lbl" for=t_raid_morn_3>Утренний</label>
+		        </td><td>
+		            <input type=radio class=type name=t_raid_type_3 id=t_raid_noon_3 value="Дневной"><label class="type-lbl" for=t_raid_noon_3>Дневной</label>
+		        </td><td>
+		            <input type=radio class=type name=t_raid_type_3 id=t_raid_aftr_3 value="Вечерний"><label class="type-lbl" for=t_raid_aftr_3>Вечерний</label>
+		        </td></tr></table>
+	        </div>
+	        <div class=data_pogr>Дата:&nbsp;<input id=t_raid_date_3 class=hid-cross type=date value=<?php echo date("Y-m-d");?>></div>
+	        <div class=data_pogr_area>ID участников <small><i>(через пробел)</i></small>:
+		        <textarea id=t_raid_id_3 placeholder="123456 222222 333333"><?php if (isset($_COOKIE['uid'])) {echo $_COOKIE['uid'];} ?></textarea>
+		    </div>
+		    <div class=data_pogr>Всего ресурсов:&nbsp;<input type=number value=0 id=res_amt_3 class="hid-scroll herb-inp" min=0></div>
+	        <div class=data_pogr>Нарушения (<i>ID – нарушение</i>):</div>
+		    <div id=t_raid_nar_list_3 class="member_list" max-children=15>
+		        <div class=template>
+		            <div class=t_raid_nar_list_3_el>
+        		        <input type=text class="text-short nar_id" placeholder="123456"> – <input type=text style="text-align: left;" class=nar_txt>
+    		        </div>
+		        </div>
+		    </div>
+		    <div><button class=add_list data-target=t_raid_nar_list_3>Добавить нарушителя</button><button class=del_list data-target=t_raid_nar_list_3>Удалить последнего</button></div>
+		    <button id=create_t_raid_3>Составить отчёт</button>
+		    <div id=create_t_raid_3_txt></div>
+		    <button class=copy_btn id=create_t_raid_3_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_t_raid_3_copy_yes" style="display:none;">✔</span>
+		    
+		    <hr><h3>Рейды пловцов</h3>
+		    <div class="data_pogr">ID тренер
+		    <input type=radio class="check-hidden gend-enable no-cash" name=gend_4_3 id=gend_4_0_3 checked value=""><label for=gend_4_0_3>-а</label>
+		    /<input type=radio class="check-hidden gend-enable no-cash" name=gend_4_3 id=gend_4_1_3 value="ша"><label for=gend_4_1_3>-ши</label>:&nbsp;
+		    <input type=text id=s_raid_train_id_3 class=text-short placeholder="123456"><button class=copy-my-id orig-id=s_raid_watch_id_3 data-id=s_raid_train_id_3>Мой ID</button></div>
+		    <div class=data_pogr>ID караульн
+		    <input type=radio class="check-hidden gend-enable" name=gend_5_3 id=gend_5_0_3 value=0><label for=gend_5_0_3>-ого</label>
+		    /<input type=radio class="check-hidden gend-enable" name=gend_5_3 id=gend_5_1_3 value=1><label for=gend_5_1_3>-ой</label>:&nbsp;
+		    <input type=text id=s_raid_watch_id_3 class=text-short placeholder="123456"<?php if (isset($_COOKIE['uid'])) {echo " value=".$_COOKIE['uid'];} ?>></div>
+		    
+		    <div class=data_pogr_area>ID участников:
+		        <textarea id=s_raid_id_3 placeholder="123456 222222 333333"></textarea>
+		    </div>
+            <div class=data_pogr>Нарушения (<i>ID – нарушение</i>):</div>
+		    <div id=s_raid_nar_list_3 class="member_list" max-children=15>
+		        <div class=template>
+		            <div class=s_raid_nar_list_3_el>
+        		        <input type=text class="text-short nar_id" placeholder="123456"> – <input type=text style="text-align: left;" class=nar_txt>
+    		        </div>
+		        </div>
+		    </div>
+		    <div><button class=add_list data-target=s_raid_nar_list_3>Добавить нарушителя</button><button class=del_list data-target=s_raid_nar_list_3>Удалить последнего</button></div>
+		    <button id=create_s_raid_3>Составить отчёт</button>
+		    <div id=create_s_raid_3_txt></div>
+		    <button class=copy_btn id=create_s_raid_3_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_s_raid_3_copy_yes" style="display:none;">✔</span>
+		    
+		    <hr><h3>Лекции пловцов</h3>
+		    <div class=data_pogr>ID лектор
+		    <input type=radio class="check-hidden gend-enable" name=gend_6_3 id=gend_6_0_3 value=0><label for=gend_6_0_3>-а</label>
+		    /<input type=radio class="check-hidden gend-enable" name=gend_6_3 id=gend_6_1_3 value=1><label for=gend_6_1_3>-ши</label>:&nbsp;
+		    <input type=text id=s_lect_lead_id_3 class=text-short placeholder="123456"<?php if (isset($_COOKIE['uid'])) {echo " value=".$_COOKIE['uid'];} ?>></div>
+		    <div class=data_pogr_area>ID участников:
+		        <textarea id=s_lect_id_3 placeholder="123456 222222 333333"></textarea>
+		    </div>
+		    <div class=data_pogr>Тема:&nbsp;<select id="s_lect_theme_3">
+                <option>Пожары и потопы</option>
+                <option>Болезни</option>
+                <option>Рейды</option>
+                <option>Караул</option>
+                <option>Воды</option>
+            </select></div>
+            <div class=data_pogr>Нарушения (<i>ID – нарушение</i>):</div>
+		    <div id=s_lect_nar_list_3 class="member_list" max-children=5>
+		        <div class=template>
+		            <div class=s_lect_nar_list_3_el>
+        		        <input type=text class="text-short nar_id" placeholder="123456"> – <input type=text style="text-align: left;" class=nar_txt>
+    		        </div>
+		        </div>
+		    </div>
+		    <div><button class=add_list data-target=s_lect_nar_list_3>Добавить нарушителя</button><button class=del_list data-target=s_lect_nar_list_3>Удалить последнего</button></div>
+            <button id=create_s_lect_3>Составить отчёт</button>
+		    <div id=create_s_lect_3_txt></div>
+		    <button class=copy_btn id=create_s_lect_3_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_s_lect_3_copy_yes" style="display:none;">✔</span>
+            
+		    <hr><h3>Патрули хранителей порядка</h3>
+		    <div class=data_pogr>Дата:&nbsp;<input id=hran_date_3 class=hid-cross type=date value=<?php echo date("Y-m-d");?>></div>
+		    
+		    <div class=data_pogr>ID собирающ
+		    <input type=radio class="check-hidden gend-enable" name=gend_7_3 id=gend_7_0_3 value=0><label for=gend_7_0_3>-его</label>
+		    /<input type=radio class="check-hidden gend-enable" name=gend_7_3 id=gend_7_1_3 value=1><label for=gend_7_1_3>-ей</label>:&nbsp;
+		    <input type=text id=hran_gath_id_3 class=text-short placeholder="123456"<?php if (isset($_COOKIE['uid'])) {echo " value=".$_COOKIE['uid'];} ?>></div>
+		    
+		    <div class=data_pogr>ID ведущ
+    		    <input type=radio class="check-hidden gend-enable no-cash" name=gend_8_3 id=gend_8_0_3 value=0><label for=gend_8_0_3>-его</label>
+    		    /<input type=radio class="check-hidden gend-enable no-cash" name=gend_8_3 id=gend_8_1_3 value=1><label for=gend_8_1_3>-ей</label>&nbsp;1 части:&nbsp;
+    		    <input type=text id=hran_lead1_id_3 class=text-short placeholder="123456">&nbsp;<button class=copy-my-id orig-id=hran_gath_id_3 data-id=hran_lead1_id_3>Мой ID</button>
+    		    &nbsp;
+    		    <input type=radio class="check-hidden gend-enable no-cash" checked name=hran_dol1_3 id=hran_dol1_0_3 value="с"><label for=hran_dol1_0_3>[С]</label>
+    		    /<input type=radio class="check-hidden gend-enable no-cash" name=hran_dol1_3 id=hran_dol1_1_3 value="д"><label for=hran_dol1_1_3>[Д]</label>
+		    </div>
+
+		    <div class=data_pogr>ID ведущ
+    		    <input type=radio class="check-hidden gend-enable no-cash" name=gend_9_3 id=gend_9_0_3 value=0><label for=gend_9_0_3>-его</label>
+    		    /<input type=radio class="check-hidden gend-enable no-cash" name=gend_9_3 id=gend_9_1_3 value=1><label for=gend_9_1_3>-ей</label>&nbsp;2 части:&nbsp;
+    		    <input type=text id=hran_lead2_id_3 class=text-short placeholder="123456">&nbsp;<button class=copy-my-id orig-id=hran_gath_id_3 data-id=hran_lead2_id_3>Мой ID</button>
+    		    &nbsp;
+    		    <input type=radio class="check-hidden gend-enable no-cash" checked name=hran_dol2_3 id=hran_dol2_0_3 value="с"><label for=hran_dol2_0_3>[С]</label>
+    		    /<input type=radio class="check-hidden gend-enable no-cash" name=hran_dol2_3 id=hran_dol2_1_3 value="д"><label for=hran_dol2_1_3>[Д]</label>
+		    </div>
+		    <div class=data_pogr>Участники (<i>ID – должность</i>):</div>
+		    <div id=hran_list_3 class="member_list" max-children=15>
+		        <div class=template>
+		            <div class=hran_list_3_el>
+        		        <input type=text class="text-short hran-id" placeholder="123456"> – 
+        		        <select class=dol_type>
+        		            <option value="с">[С]траж</option>
+        		            <option value="д">[Д]обытчик</option>
+        		            <option value="к">[К]озлёнок</option>
+        		            </select>
+    		        </div>
+		        </div>
+		    </div>
+		    <div><button class=add_list data-target=hran_list_3>Добавить участника</button><button class=del_list data-target=hran_list_3>Удалить последнего</button></div>
+		    
+		    <div class=data_pogr>Нарушения (<i>ID – нарушение</i>):</div>
+		    <div id=hran_nar_list_3 class="member_list" max-children=5>
+		        <div class=template>
+		            <div class=hran_nar_list_3_el>
+        		        <input type=text class="text-short nar_id" placeholder="123456"> – <input type=text style="text-align: left;" class=nar_txt>
+    		        </div>
+		        </div>
+		    </div>
+		    <div><button class=add_list data-target=hran_nar_list_3>Добавить нарушителя</button><button class=del_list data-target=hran_nar_list_3>Удалить последнего</button></div>
+		    <button id=create_hran_3>Составить отчёт</button>
+		    <div id=create_hran_3_txt></div>
+		    <button class=copy_btn id=create_hran_3_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_hran_3_copy_yes" style="display:none;">✔</span>
+		    
+		</div>
+	</div> -->
+	
+
+	<!-- <div>
+		<div class="dropdownlink" tribe=10> [МВ] Племя Луны
+		<i class="fa fa-chevron-down" aria-hidden="true"></i>
+		</div>
+		<div class="submenuItems">
+		    <h3>Пограничные патрули</h3>
+	        <div class=data_pogr>Дата:&nbsp;<input id=pogr_date_10 class=hid-cross type=date value=<?php echo date("Y-m-d");?>></div>
+	        <div class=data_pogr>Время:&nbsp;<input id=pogr_time_10 class=hid-cross type=time value=<?php echo "\"".date("H").":00\"";?> step=3600></div>
+	        <div class=data_pogr>ID ведущего:&nbsp;
+		    <input type=text id=patr_lead_id_10 class="text-short" placeholder="123456"<?php if (isset($_COOKIE['uid'])) {echo " value=".$_COOKIE['uid'];} ?>></div>
+            <div class=data_pogr_area>
+                ID участников:
+		        <textarea id=patr_id_10 placeholder="123456 222222 333333"></textarea>
+		    </div>
+		    <div class=data_pogr_area>
+		        Нарушители <small><i>(оставьте поле пустым, если их не было)</i></small>:
+		        <textarea id=patr_extra_10 placeholder="Имя [локация]"></textarea>
+		    </div>
+		    <button id=create_patr_10>Составить отчёт</button>
+		    <div id=create_patr_10_txt></div>
+		    <button class=copy_btn id=create_patr_10_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_patr_10_copy_yes" style="display:none;">✔</span>
+	        <hr>
+	        <h3>Дозоры</h3>
+	        <div id=patr_type>Вид дозора:</div>
+	        <table class=table-types><tr><td>
+	            <input type=radio class=type name=doz_type_10 id=wal_10 value="ходячий"><label class="type-lbl" for=wal_10>Ходячий</label>
+    	        </td><td>
+	            <input type=radio class=type name=doz_type_10 id=sit_10 value="сидячий"><label class="type-lbl" for=sit_10>Сидячий</label>
+	        </td></tr></table>
+	        <div id=sit_10_extra class=patr_sett>
+	            <div class=data_pogr><input type=checkbox id=doz_extra_10><label for=doz_extra_10>Проводился на Небесной тропе</label></div>
+	        </div>
+	        <div class=data_pogr>Дата:&nbsp;<input id=doz_date_10 class=hid-cross type=date value=<?php echo date("Y-m-d");?>></div>
+		    <div class=data_pogr>Время начала:&nbsp;<input id=doz_time_10 class=hid-cross type=time value=<?php echo "\"".date("H").":00\"";?> step=3600></div>
+		    <div class=data_pogr>ID участников&nbsp;<small><i> (через пробел)</i></small>:</div>
+		    <div class=data_pogr>
+		        <table class=table-pick>
+		            <tr><td><i>Часовой дозор:</i>&nbsp;</td><td><input id=doz_id_10 class="inp-text-left" type=text placeholder="123456 789012"></td></tr>
+		            <tr><td><i>Получасовой дозор:</i>&nbsp;</td><td><input id=doz_half_id_10 class="inp-text-left" type=text placeholder="123456 789012"></td></tr>
+		        </table>
+		    </div>
+		    <button id=create_doz_10>Составить отчёт</button>
+		    <div id=create_doz_10_txt></div>
+		    <button class=copy_btn id=create_doz_10_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_doz_10_copy_yes" style="display:none;">✔</span>
+		</div>
+	</div> -->
+
+	<!-- <div>
+		<div class="dropdownlink" tribe=20> [ВТ] Эльфийские Земли
+		<i class="fa fa-chevron-down" aria-hidden="true"></i>
+		</div>
+		<div class="submenuItems">
+		    <h3>Патрули Защитников</h3>
+		    <div id=patr_type>Вид патруля:</div>
+	        <table class=table-types><tr><td>
+	            <input type=radio class=type name=patr_type_20 id=inner_20 value="Лагерный"><label class="type-lbl" for=inner_20>Лагерный</label>
+    	        </td><td>
+	            <input type=radio class=type name=patr_type_20 id=outer_20 value="Внелагерный"><label class="type-lbl" for=outer_20>Внелагерный</label>
+	        </td></tr></table>
+	        <div class=data_pogr>Дата:&nbsp;<input id=pogr_date_20 class=hid-cross type=date value=<?php echo date("Y-m-d");?>></div>
+	        <div class=data_pogr>Время:&nbsp;<input id=pogr_time_b_20 class=hid-cross type=time value=<?php echo "\"".date("H").":20\"";?> step=600>&nbsp;—&nbsp;<input id=pogr_time_e_20 class=hid-cross type=time value=<?php echo "\"".date("H").":30\"";?> step=600></div>
+	        <div class=data_pogr>ID ведущего:&nbsp;
+		    <input type=text id=patr_lead_id_20 class="text-short" placeholder="123456"<?php if (isset($_COOKIE['uid'])) {echo " value=".$_COOKIE['uid'];} ?>></div>
+            <div class=data_pogr_area>
+                ID участников:
+		        <textarea id=patr_id_20 placeholder="123456 222222 333333"></textarea>
+		    </div>
+		    <div class=data_pogr_area>
+		        Нарушители <small><i>(оставьте поле пустым, если их не было)</i></small>:
+		        <textarea id=patr_extra_20 placeholder="777777 - вид нарушения, 888888 - вид нарушения"></textarea>
+		    </div>
+		    <button id=create_patr_20>Составить отчёт</button>
+		    <div id=create_patr_20_txt></div>
+		    <button class=copy_btn id=create_patr_20_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_patr_20_copy_yes" style="display:none;">✔</span>
+		</div>
+	</div> -->
+
+    <!-- <div>
+        <div class="dropdownlink" tribe=21> [ВТ] Чернолесье
+		<i class="fa fa-chevron-down" aria-hidden="true"></i>
+		</div>
+		<div class="submenuItems">
+		    <h3>Патрули</h3>
+		    <div class=data_pogr>ID собиравш
+		    <input type=radio class="check-hidden gend-enable" name=gend_1_21 id=gend_1_0_21 value=0><label for=gend_1_0_21>-его</label>
+		    /<input type=radio class="check-hidden gend-enable" name=gend_1_21 id=gend_1_1_21 value=1><label for=gend_1_1_21>-ей</label>:&nbsp;
+		    <input type=text id=patr_gath_id_21 class=text-short placeholder="123456"<?php if (isset($_COOKIE['uid'])) {echo " value=".$_COOKIE['uid'];} ?>></div>
+		    <div class=data_pogr>ID ведущих:&nbsp;<input type=text id=patr_lead_id_21 placeholder="123456 789012"></div>
+		    <div class=data_pogr><div class=data_pogr_area>ID участников:
+		    <textarea id=patr_id_21 placeholder="123456 420020 222222 333333"></textarea></div></div>
+		    <div class=data_pogr><div class=data_pogr_area>ID нарушителей <small><i>(оставьте поле пустым, если их не было)</i></small>:
+		    <textarea id=patr_extra_id_21 rows=1 placeholder="123456 420020 222222 333333"></textarea></div></div>
+		    <div class=data_pogr>Количество трав:&nbsp;<input type=number pattern= “^[0–9]$” value=0 id=herb_amt_21 class="hid-scroll herb-inp" min=0></div>
+		    <button id=create_patr_21>Составить отчёт</button>
+		    <div id=create_patr_21_txt></div>
+		    <button class=copy_btn id=create_patr_21_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_patr_21_copy_yes" style="display:none;">✔</span>
+		    <hr><h3>Дозоры</h3>
+		    <div class=data_pogr>Дата начала:&nbsp;<input id=doz_date_21 class="hid-cross" type=date value=<?php echo $date;?>></div>
+		    <div class=data_pogr>Время начала:&nbsp;<input id=doz_time_b_21 class=hid-cross type=time step=60></div>
+		    <div class=data_pogr>Время окончания:&nbsp;<input id=doz_time_e_21 class=hid-cross type=time step=60></div>
+		    <div class=data_pogr>ID участвовавш
+		    <input type=radio class="check-hidden gend-enable" name=gend_2_21 id=gend_2_0_21 value=0><label for=gend_2_0_21>-его</label>
+		    /<input type=radio class="check-hidden gend-enable" name=gend_2_21 id=gend_2_1_21 value=1><label for=gend_2_1_21>-ей</label>:&nbsp;
+		    <input type=text id=doz_id_21 class=text-short placeholder="123456"<?php if (isset($_COOKIE['uid'])) {echo " value=".$_COOKIE['uid'];} ?>></div>
+		    <div class=data_pogr>
+		            Маршрут:
+    		        <input type=radio class="type small-num" name=marsh_num_21 id=m_21_1 value=1><label for=m_21_1>1</label>
+    		        <input type=radio class="type small-num" name=marsh_num_21 id=m_21_2 value=2><label for=m_21_2>2</label>
+    		        <input type=radio class="type small-num" name=marsh_num_21 id=m_21_3 value=3><label for=m_21_3>3</label>
+    		        <input type=radio class="type small-num" name=marsh_num_21 id=m_21_4 value=4><label for=m_21_4>4</label>
+		    </div>
+		    <div class=data_pogr><div class=data_pogr_area>ID нарушителей <small><i>(оставьте поле пустым, если их не было)</i></small>:
+		    <textarea id=doz_extra_id_21 rows=1 placeholder="123456 420020 222222 333333"></textarea></div></div>    
+		    <button id=create_doz_21>Составить отчёт</button>
+		    <div id=create_doz_21_txt></div>
+		    <button class=copy_btn id=create_doz_21_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_doz_21_copy_yes" style="display:none;">✔</span>
+		    <hr><h3>Одиночная охота</h3>
+		    <div class=data_pogr>Дата:&nbsp;<input id=solo_hunt_date_21 class="hid-cross" type=date value=<?php echo $date;?>></div>
+		    <div class=data_pogr>ID охотника:&nbsp;
+		        <input type=text id=solo_hunt_id_21 class=text-short placeholder="123456"<?php if (isset($_COOKIE['uid'])) {echo " value=".$_COOKIE['uid'];} ?>>
+		    </div>
+		    <div class=data_pogr>
+		            <span class=herb-inp-wrap>Обычной дичи:&nbsp;<input type=number value=0 id=hunt_norm_21 class="hid-scroll num-only herb-inp" min=0>,&nbsp;</span>
+		            <span class=herb-inp-wrap>упитанной:&nbsp;<input type=number value=0 id=hunt_best_21 class="hid-scroll num-only herb-inp" min=0>.</span>
+		    </div>
+		    <button id=create_solo_hunt_21>Составить отчёт</button>
+		    <div id=create_solo_hunt_21_txt></div>
+		    <button class=copy_btn id=create_solo_hunt_21_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_solo_hunt_21_copy_yes" style="display:none;">✔</span>
+		    <hr><h3>Охотничий патруль</h3>
+		    <div class=data_pogr>ID собиравш
+		    <input type=radio class="check-hidden gend-enable" name=gend_3_21 id=gend_3_0_21 value=0><label for=gend_3_0_21>-его</label>
+		    /<input type=radio class="check-hidden gend-enable" name=gend_3_21 id=gend_3_1_21 value=1><label for=gend_3_1_21>-ей</label>:&nbsp;
+		    <input type=text id=hunt_gath_id_21 class=text-short placeholder="123456"<?php if (isset($_COOKIE['uid'])) {echo " value=".$_COOKIE['uid'];} ?>></div>
+		    <div class=data_pogr>ID ведущих:&nbsp;<input type=text id=hunt_lead_id_21 placeholder="123456 789012"></div>
+		    <div class=data_pogr>ID участников (количество хилой / обычной / упитанной дичи)</div>
+		    <div id=hunt_list_21 class="member_list" max-children=15>
+		        <div class=template>
+		            <div class=hunt_list_21_el>
+        		        <input type=text class=text-short placeholder="123456"> 
+        		        (<input type=number value=0 class="hid-scroll num-only herb-inp smol" min=0>
+        		        /<input type=number value=0 class="hid-scroll num-only herb-inp medi" min=0>
+        		        /<input type=number value=0 class="hid-scroll num-only herb-inp succ" min=0>)
+    		        </div>
+		        </div>
+    		    <div class=hunt_list_21_el>
+    		        <input type=text class=text-short placeholder="123456"> 
+    		        (<input type=number value=0 class="hid-scroll num-only herb-inp smol" min=0>
+    		        /<input type=number value=0 class="hid-scroll num-only herb-inp medi" min=0>
+    		        /<input type=number value=0 class="hid-scroll num-only herb-inp succ" min=0>)
+		        </div>
+		    </div>
+		    <button class=add_list data-target=hunt_list_21>Добавить</button><button class=del_list data-target=hunt_list_21>Удалить последнего</button>
+		    <div class=data_pogr><div class=data_pogr_area>ID носильщиков <small><i>(оставьте поле пустым, если их не было)</i></small>:
+		    <textarea id=hunt_extra_id_21 rows=1 placeholder="123456 420020 222222 333333"></textarea></div></div>
+		    <button id=create_mass_hunt_21>Составить отчёт</button>
+		    <div id=create_mass_hunt_21_txt></div>
+		    <button class=copy_btn id=create_mass_hunt_21_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_mass_hunt_21_copy_yes" style="display:none;">✔</span>
+		    <hr><h3>Игры</h3>
+		    <div class=data_pogr>Дата:&nbsp;<input id="game_date_21" type="date" value="<?php echo date("Y-m-d");?>"></div>
+		    <div class=data_pogr>Время:&nbsp;<input id="game_time_21" type="time" value="<?php echo date("H").":00";?>"></div>
+		    <div class=data_pogr>ID собиравш
+		    <input type=radio class="check-hidden gend-enable" name=gend_4_21 id=gend_4_0_21 value=0><label for=gend_4_0_21>-его</label>
+		    /<input type=radio class="check-hidden gend-enable" name=gend_4_21 id=gend_4_1_21 value=1><label for=gend_4_1_21>-ей</label>:&nbsp;
+		    <input type=text id=games_gath_id_21 class=text-short placeholder="123456"<?php if (isset($_COOKIE['uid'])) {echo " value=".$_COOKIE['uid'];} ?>></div>
+		    <div class=data_pogr><div class=data_pogr_area>ID участников:
+		    <textarea id=games_id_21 placeholder="123456 420020 222222 333333"></textarea></div></div>
+		    <div class=data_pogr><div class=data_pogr_area>Проведённые игры:
+		    <textarea id=games_data_21 rows=1 placeholder="Гаихё (4), Норка (3)"></textarea></div></div>
+		    <button id=create_games_21>Составить отчёт</button>
+		    <div id=create_games_21_txt></div>
+		    <button class=copy_btn id=create_games_21_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_games_21_copy_yes" style="display:none;">✔</span>
+		    <hr><h3>Массовые тренировки</h3>
+		    <div class=data_pogr>ID собиравш
+		    <input type=radio class="check-hidden gend-enable" name=gend_5_21 id=gend_5_0_21 value=0><label for=gend_5_0_21>-его</label>
+		    /<input type=radio class="check-hidden gend-enable" name=gend_5_21 id=gend_5_1_21 value=1><label for=gend_5_1_21>-ей</label>:&nbsp;
+		    <input type=text id=train_gath_id_21 class=text-short placeholder="123456"<?php if (isset($_COOKIE['uid'])) {echo " value=".$_COOKIE['uid'];} ?>></div>
+		    <div class=data_pogr><div class=data_pogr_area>ID участников:
+		    <textarea id=train_id_21 placeholder="123456 420020 222222 333333"></textarea></div></div>
+		    <button id=create_train_21>Составить отчёт</button>
+		    <div id=create_train_21_txt></div>
+		    <button class=copy_btn id=create_train_21_copy style="display:none;">Копировать</button>
+		    <span class="copy_success" id="create_train_21_copy_yes" style="display:none;">✔</span>
+		</div>
+    </div> -->
+
+    <div>
+        <div class="dropdownlink"> ...
+		<i class="fa fa-chevron-down" aria-hidden="true"></i>
+		</div>
+		<div class="submenuItems">
+		    <p>Новые отчёты временно не принимаются.</p></div>
+    </div>
+</div>
+
+
+
+    </div>
+    <div id="footer"></div>
+    <script type="text/javascript">
+    	function getCookie(name) {
+	        let matches = document.cookie.match(new RegExp("(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"));
+	        return matches ? decodeURIComponent(matches[1]) : undefined;
+	    }
+	    function addLeadZero(num) {return num < 10 ? '0' + num : num;}
+	    function dateToStr(date) {return date.getFullYear() + '-' + addLeadZero(date.getMonth()+1) + '-' + addLeadZero(date.getDate());}
+    	$(document).ready(function(){
+    		if (getCookie("uid") !== undefined) {
+    			$("#remember_id").val(getCookie("uid")).attr("readonly", true);
+    			$("#remember").html("Забыть").data("id", "forget");
+    		}
+    		$('#remember').on("click", function(){
+    			if ($(this).data("id") == "remember") { // try to remember
+    				console.log($("#remember_id").val())
+    				let t_id = $("#remember_id").val().trim(),
+			            u_id = parseInt(t_id),
+			            maxage = 60*60*24*365;
+			         if (u_id==t_id) {
+		                document.cookie = "uid="+u_id+"; max-age="+maxage;
+		                $("#remember").html("Забыть").data("id", "forget");
+		                $("#remember_id").attr("readonly", true);
+		            }
+    			} else { // try to forget
+			        document.cookie = "uid=0; max-age=0";
+			        document.cookie = "name=0; max-age=0";
+			        $("#remember_id").attr("readonly", false).val("");
+			        $("#remember").html("Запомнить").data("id", "remember");
+    			}
+    		});
+    		if (getCookie("uid")) {
+    			$(".my-id").val(getCookie("uid"));
+    		}
+    		var time, date, hour;
+    		time = 21;
+    		date = new Date();
+    		hour = date.getHours();
+    		$(".my-time-00").val(addLeadZero(hour) + ":00");
+
+    		// Река
+    		if (hour < 12) { date.setDate(date.getDate() - 1); } // yesterday
+    		var hunt_0 = (hour >= 13 && hour < 19) ? "morn" : "even";
+    		if (hour >= 12) {time = 12;}
+    		if (hour >= 15) {time = 15;}
+    		if (hour >= 18) {time = 18;}
+    		if (hour >= 21) {time = 21;}
+
+    		$("#pogr_date").val(dateToStr(date));
+    		$("#pogr_time").val(addLeadZero(hour) + ":00");
+    		$("#" + hunt_0).attr("checked", true);
+
+    		date = new Date();
+    		if (!hour) { date.setDate(date.getDate() - 1); } // yesterday
+    		$("#doz_date").val(dateToStr(date));
+    		/*<div class=data_doz>Дата:&nbsp;<input id=doz_date class="hid-cross" type=date value=<?php echo (date("H")!=0) ? date("Y-m-d") : date("Y-m-d",strtotime("-1 days"));?>></div>*/
+    	});
+    </script>
+</body>
+</html>
