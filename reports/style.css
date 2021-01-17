@@ -51,3 +51,167 @@
   padding: .8em 1em;
   background: #f6e9e0;
 }
+
+.type:checked + label { 
+    background-color: #fdbc8f;
+}
+.type-lbl {
+    padding: 3px 0;
+    display: inline-block;
+    text-align: center;
+    margin: 4px 0;
+	min-width: 100px;
+	width: 97%;
+    border: 2px solid #ae8366;
+    border-radius: 15px;
+}
+.table-types {
+    width: 100%;
+    text-align:center;
+}
+@media(max-width:810px){
+	.type-3 td {
+		display: block !important;
+	}
+}
+
+.mobile .type-3 td {
+	display: block !important;
+}
+
+.small-num + label { 
+    padding: 1px 5px;
+    display:inline-block;
+    text-align:center;
+    margin: 4px 2px;
+    border: 2px solid #ae8366;
+    border-radius: 15px;
+}
+.accordion-menu input[type="radio"] {
+    display:none;
+}
+textarea {
+    background:#f8f8f8;
+    width: 100%;
+    font-family: Verdana;
+    font-size: inherit;
+    resize: none;
+}
+textarea:focus {
+    border-color: #957766;
+	outline: none;
+	-moz-appearance: none;
+    background:#fff;
+}
+.accordion-menu .wrapper {
+	text-align: center;
+}
+#patr_type {
+    padding: 3px 0;
+    text-align: center;
+    margin: 4px 0;
+    width: 100%;
+    border: 2px solid #d7cac1;
+}
+#patr_type, label {
+	user-select: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+}
+.data_pogr_area {
+    padding: 5px 0;
+    width: 100%;
+}
+.data_pogr {
+	min-height:30px;
+	display:flex;
+	align-items: center;
+}
+
+.text-short {
+	width: 80px;
+}
+.copy_success {
+    text-align: center;
+    display: inline-block;
+    width: 1.5em;
+    font-size: 1.5em;
+}
+.data-visible {
+	border: 1px solid #3333334c;
+	padding: 10px;
+	border-radius: 5px;
+}
+.hid-cross::-webkit-clear-button {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    margin: 0;
+}
+.patr_sett, .patr_id, .patr_id_hunt {
+	display: none;
+}
+.data_doz {
+    min-height: 30px;
+}
+#herb_situ {
+    text-align: left;
+    padding: 0 5px;
+}
+.herb-inp {
+	width: 40px;
+}
+.mobile .herb-inp-wrap {
+	display: block;
+	margin: .4em 0;
+}
+.mobile .data_pogr {
+	display: block;
+	margin-top: .4em;
+}
+.mobile #patr_id {
+    height: 4em;
+}
+.error-message {
+	display:block;
+}
+@media(max-width:820px){
+	.herb-inp-wrap {
+		display: block;
+		margin: .4em 0;
+	}
+	.data_pogr {
+		min-height: inherit;
+		display: block;
+		margin-top: .4em;
+	}
+}
+.table-pick td {
+	height: 25px;
+}
+.inp-text-left {
+	text-align:left !important;
+	padding:0 5px;
+}
+.check-hidden {
+    display:none;
+}
+.gend-enable + label {
+    padding: 1px 5px;
+    text-align: center;
+    border: 1px solid #94aab7; 
+    border-radius: 15px;
+    color: rgb(17,17,17,0.4);
+}
+.gend-enable:checked + label {
+    background-color: rgb(255, 255, 255);
+    border: 1px solid #fff; 
+	color: rgb(17,17,17);
+}
+.hunt_list_21_el {
+	height: 25px;
+}
+.member_list > .template {display:none;}
+.accordion .btn {
+	margin: .25em 0;
+}
