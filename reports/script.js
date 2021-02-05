@@ -1,4 +1,12 @@
 $(document).ready(function(){
+    //test
+    var testdt = new Date();
+    console.log('test dt: ' + testdt);
+    console.log('timezone offset: ' + testdt.getTimezoneOffset());
+    testdt.setTime( testdt.getTime() + testdt.getTimezoneOffset()*60*1000 );
+    console.log('after it\'s fixed: ' + testdt);
+    //test
+    
     $("form").submit(function(e){e.preventDefault();});
     function getCookie(name) {
         let matches = document.cookie.match(new RegExp("(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"));
