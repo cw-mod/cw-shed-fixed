@@ -641,6 +641,7 @@
     		var time, date, hour;
     		time = 21;
     		date = new Date();
+		date.setTime( date.getTime() + (date.getTimezoneOffset() - 180)*60*1000);
     		hour = date.getHours();
     		$(".my-time-00").val(addLeadZero(hour) + ":00");
 
@@ -657,6 +658,7 @@
     		$("#" + hunt_0).attr("checked", true);
 
     		date = new Date();
+		date.setTime( date.getTime() + (date.getTimezoneOffset() - 180)*60*1000);
     		if (!hour) { date.setDate(date.getDate() - 1); } // yesterday
     		$("#doz_date").val(dateToStr(date));
     		/*<div class=data_doz>Дата:&nbsp;<input id=doz_date class="hid-cross" type=date value=<?php echo (date("H")!=0) ? date("Y-m-d") : date("Y-m-d",strtotime("-1 days"));?>></div>*/
