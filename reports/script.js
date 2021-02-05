@@ -1,10 +1,7 @@
 $(document).ready(function(){
     //test
-    var testdt = new Date();
-    console.log('test dt: ' + testdt);
-    console.log('timezone offset: ' + testdt.getTimezoneOffset());
-    testdt.setTime( testdt.getTime() + testdt.getTimezoneOffset()*60*1000 );
-    console.log('after it\'s fixed: ' + testdt);
+    //var testdt = new Date();
+    //testdt.setTime( testdt.getTime() + (testdt.getTimezoneOffset() - 180)*60*1000);
     //test
     
     $("form").submit(function(e){e.preventDefault();});
