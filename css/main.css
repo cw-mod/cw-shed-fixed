@@ -222,3 +222,60 @@ input.hid-scroll::-webkit-inner-spin-button {
   z-index: 1;
   opacity: 1;
 }
+.accordion-button:not(.collapsed) {
+    color: #614b3e;
+    background-color: #ffffff;
+}
+.accordion-button:not(.collapsed)::after {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23614b3e'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+.accordion-button.collapsed {
+    color: #000;
+    background-color: #e8dbd2;
+}
+
+.accordion-button:focus {
+  border-color: #ccaf8e;
+  box-shadow: 0 0 0 0.25rem #bf8b6880;
+}
+
+.btn-check:active+.btn-secondary, .btn-check:checked+.btn-secondary, .btn-secondary.active, .btn-secondary:active, .show>.btn-secondary.dropdown-toggle {
+    background-color: #95613e;
+    border-color: #714527;
+}
+.btn-check:checked + .btn-secondary:focus, .btn-check:active + .btn-secondary:focus, .btn-secondary:active:focus, .btn-secondary.active:focus, .show > .btn-secondary.dropdown-toggle:focus {
+  box-shadow: 0 0 0 0.25rem #bf8b6880;
+}
+.btn-check:focus + .btn-secondary, .btn-secondary:focus {
+  color: #fff;
+  background-color: #aa734d;
+  border-color: #996744;
+  box-shadow: 0 0 0 0.25rem #bf8b6880;
+}
+.card {
+  background-color:#f6e9e0;
+}
+.form-select:focus {
+  border-color: #996744;
+  box-shadow: 0 0 0 0.25rem #bf8b6880;
+}
+.form-control:focus {
+  border-color: #996744;
+  box-shadow: 0 0 0 0.25rem #bf8b6880;
+}
+.form-select:-moz-focusring {
+  text-shadow: 0 0 0 #292421;
+}
+.swimaway-control {
+  width: 4em;
+}
+input.hide-scroll::-webkit-outer-spin-button,
+input.hide-scroll::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    /*-moz-appearance:textfield;*/
+    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+.hide-scroll {
+    -moz-appearance:textfield;
+}
