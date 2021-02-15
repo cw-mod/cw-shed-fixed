@@ -41,14 +41,15 @@ $(document).ready(function(){
         if (toNum === null) {
             toNum = concatArr[toStr];
         }
-        if (fromNum === undefined) {
+        if (fromNum === undefined || isNaN(parseInt(fromNum))) {
             $("#search_res").html("<hr>В "+((whereFrom=="dush")?"Душе":"Степях")+" не найдена такая начальная локация.");
             return;
         }
-        if (toNum === undefined) {
+        if (toNum === undefined || isNaN(parseInt(toNum))) {
             $("#search_res").html("<hr>В "+((whereFrom=="dush")?"Душе":"Степях")+" не найдена такая конечная локация.");
             return;
         }
+        console.log(toNum)
         if (!Array.isArray(fromNum)) {
             fromNum = [parseInt(fromNum)];
             //console.log('fromNum was not an array')
