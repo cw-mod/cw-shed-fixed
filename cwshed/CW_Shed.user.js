@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.5.37
+// @version      1.6
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020, Ленивый (https://catwar.su/cat930302)
@@ -16,16 +16,37 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.5.37';
+  const version = '1.6';
   /*
+  1.6
+  Полностью переделан код чата. Внешне никак не отличается от предыдущей версии, но код более оптимизирован. Всё, связанное с чатом, переехало под свой заголовок в настройках
+  Теперь можно переворачивать чат на человеческий! Форма написания нового сообщения переедет вниз, а сообщения будут отображаться сверху вниз, как и в нормальных, человеческих, широко распространённых чатах. Копироваться
+    сообщения тоже будут в правильном порядке, чего нельзя достичь через css-ное flex direction column-reverse. Также убрано выделение стрелочки-ссылки в профиль и крестика-жалобы, теперь чат можно красиво копировать без лишних артефактов
+  Также добавилась возможность выводить, помимо ID, должность пишущего в чат (плачу вместе с вами, собирающие патрули с дозорами). Подгружается она не сразу, так как при большом количестве новых котов игровой может просто стать плохо, если
+    метод запроса не асинхронный (если бы страница ждала, пока код подсмотрит в профиль игрока).
+  1.5.43
+  Плывите сосиски
+  1.5.42
+  Возможность убрать "Настройки модов" из ссылок наверху Игровой
+  1.5.41
+  Действие для домашних
+  1.5.40
+  Добавлена возможность подчеркивать "Поднял/Опустил" в истории чистки
+  1.5.39
+  *Звуки переезда*
   1.5.37
   Добавлены титульники ачивкам Реки и вдобавок инфоблок к ним (пыталась сделать в стиле Варомода, чтоб не выбивалось из общей темы)
   todo: сомята
   */
   //Настройки + умолчания глобальные
+  const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
-'on_actNotif' : false // Уведомления на действия
+'on_customChat' : false // Кастомный чат
+,'on_chatReverse' : false // "Перевернуть" чат
+,'on_chatSwapIdTItle' : true // поменять местами ID и должность в чате
+,'on_chatTitles' : false // должность игрока в чате
+,'on_actNotif' : false // Уведомления на действия
 , 'on_newDM' : false // уведомления на новые лс
 , 'on_newChat' : false // уведомления на новое соо в чате (не игровой)
 , 'on_chatMention' : false // уведомления на упоминание имени в чате
@@ -50,6 +71,7 @@
 , 'on_oldDialogue' : false // старый вид диалогов (1 колонка в выборе)
 , 'on_smellTimer' : false // таймер нюха
 , 'on_cuMovesNote' : true // Окно заметок для ВТ
+, 'on_settLink' : true // Ссылка на настройки в игровой
  //Громкость звуков
 , 'sound_notifEaten' : 0.2 // Звук, когда тебя подняли
 , 'sound_notifBeaten' : 0.2 // Звук, когда тебя атакуют
@@ -63,6 +85,7 @@
 , 'sound_smellTimer' : 0.1 // Звук при окончании таймера нюха
  //Настройки лога чистки
 , 'clean_id' : true // Писать в логе ID поднятого
+, 'clean_underscore' : false // Подчеркивать "поднял/опустил"
 , 'clean_title' : true // Писать в логе должность поднятого
 , 'clean_location' : true // Писать в логе локацию, где подняли и где отпустили
 , 'clean_action' : false // Писать в логе проверку на действие
@@ -96,6 +119,7 @@
 , 'snd_act_clean' : true // Вылизывать(ся)
 , 'snd_act_swim' : true // Поплавать
 , 'snd_act_fill_moss' : true // Наполнить водой мох
+, 'snd_act_dive' : true // Нырять
 , 'snd_act_murr' : true // Помурлыкать
 , 'snd_act_tails' : false // Переплести хвосты
 , 'snd_act_cheek' : false // Потереться щекой о щёку
@@ -108,6 +132,7 @@
 , 'snd_act_rug' : false // Чистить ковёр
 , 'snd_act_attention' : false // Привлекать внимание
 , 'snd_act_domestsleep' : false // Сон в лежанке
+, 'snd_act_domesthunt' : false // Грандиозная охота
 , 'snd_act_checkup' : false // Осмотреть кота
 , 'snd_act_loottr' : true // осмотреть дупло
 , 'snd_act_lootcr' : true // осмотреть расщелину
@@ -123,6 +148,7 @@
 , 'txt_act_clean' : true // Вылизывать(ся)
 , 'txt_act_swim' : true // Поплавать
 , 'txt_act_fill_moss' : true // Наполнить водой мох
+, 'txt_act_dive' : true // Нырять
 , 'txt_act_murr' : true // Помурлыкать
 , 'txt_act_tails' : true // Переплести хвосты
 , 'txt_act_cheek' : true // Потереться щекой о щёку
@@ -135,6 +161,7 @@
 , 'txt_act_rug' : true // Чистить ковёр
 , 'txt_act_attention' : true // Привлекать внимание
 , 'txt_act_domestsleep' : true // Сон в лежанке
+, 'txt_act_domesthunt' : true // Грандиозная охота
 , 'txt_act_checkup' : true // Осмотреть кота
 , 'txt_act_loottr' : true // осмотреть дупло
 , 'txt_act_lootcr' : true // осмотреть расщелину
@@ -175,26 +202,27 @@
   };
   const globals = {}; //Настройки
   for (var key in defaults) {
-      let settings = getSettings(key);
-      if (settings === null) {
-          globals[key] = defaults[key];
-      } else {
-          if (Array.isArray(defaults[key])) {
-              globals[key] = JSON.parse(settings);
-          }
-          else {
-              globals[key] = settings;
-          }
+    let settings = getSettings(key);
+    if (settings === null) {
+      globals[key] = defaults[key];
+    }
+    else {
+      if (Array.isArray(defaults[key])) {
+        globals[key] = JSON.parse(settings);
       }
+      else {
+        globals[key] = settings;
+      }
+    }
   }
   const sounds = {};
   sounds.new_message = 'https://catwar.su/new_message.mp3';
-  sounds.action_notif = 'https://abstract-shed.site/cwm_catalog/action_end.mp3';
-  sounds.chat_mention = 'https://abstract-shed.site/cwm_catalog/chat_mention.mp3';
+  sounds.action_notif = 'https://abstract-class-shed.github.io/cwshed/action_end.mp3';
+  sounds.chat_mention = 'https://abstract-class-shed.github.io/cwshed/chat_mention.mp3';
   sounds.alert_attacked = 'https://d.zaix.ru/ihrv.mp3';
-  sounds.tt_refresh = 'https://abstract-shed.site/cwm_catalog/refresh.wav'; //изменить потом
-  sounds.block_start = 'https://abstract-shed.site/cwm_catalog/lock.mp3';
-  sounds.block_end = 'https://abstract-shed.site/cwm_catalog/unlock.mp3';
+  sounds.tt_refresh = 'https://abstract-class-shed.github.io/cwshed/refresh.wav'; //изменить потом
+  sounds.block_start = 'https://abstract-class-shed.github.io/cwshed/lock.mp3';
+  sounds.block_end = 'https://abstract-class-shed.github.io/cwshed/unlock.mp3';
 
   function playAudio(src, vlm) {
     let audio = new Audio();
@@ -286,15 +314,17 @@
           }
         });
       }
-    /*function setItemListSort() {
-    if ($('#itemList').length) {
-      $( "#itemList" ).sortable();
-        clearInterval(setItemListSort);
-        }
-    }
-    setInterval(setItemListSort, 1000);*/
+      /*function setItemListSort() {
+      if ($('#itemList').length) {
+        $( "#itemList" ).sortable();
+          clearInterval(setItemListSort);
+          }
+      }
+      setInterval(setItemListSort, 1000);*/
     });
-    $('.small').first().append(` | <a href="/settings">Настройки модов</a>`); //Настройки мода
+      if (globals.on_settLink) {
+          $('.small').first().append(` | <a href="/settings">Настройки модов</a>`); //Настройки мода
+      }
     if (globals.on_smellTimer) {
       $(document).ready(function () {
         $('.small').first().append(` | Нюх через: <span id="cws_smell_timer" value=0>0 с</span>`);
@@ -443,7 +473,190 @@
         }
       });
     }
-    if (globals.on_chatMention || globals.on_nickHighlight) {
+      if (globals.on_customChat) {
+          let messages = 1;
+          addCSS(`#chat_msg {display: none;}
+#cws_chat_msg {
+  width: 1000px;
+  overflow: auto;
+  height: 275px;
+}
+.cws_chat_wrapper {
+	display: -webkit-flex;
+    padding: 0 .25em;
+	display: flex;
+}
+.cws_chat_msg {
+	-webkit-flex: auto;
+	flex: auto;
+	-webkit-flex-direction: row;
+	flex-direction: row;
+}
+.cws_chat_report {
+	width: 42px;
+}
+#chat_msg {display: none;}
+.cws_chat_report {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+}`);
+          if (globals.on_chatReverse) {
+              $('<div id="cws_chat_msg"><hr></div>').insertBefore('#chat_form');
+          }
+          else {
+              $('<div id="cws_chat_msg"><hr></div>').insertAfter('#chat_form');
+          }
+          let name_array = {}
+          , scroll = false; // была прокрутка до предыдущих сообщений
+          const chatTarget = document.getElementById('chat_msg');
+          const chatObserver = new MutationObserver(function(mutationsList, observer) { // привет я даун а как тебе живеца
+              let name_heard = false;
+              let last_mutation = mutationsList[mutationsList.length-1].target;
+              let msg_new = last_mutation.children.length;
+              let msg_blocks = last_mutation.children;
+              for(let i = messages + 1; i <= msg_new; i++) { // Добавление во временный чат новых сообщений
+                  let block = msg_blocks[msg_new-i];
+                  if (block.nodeName == "SPAN") {
+                      let msg = block.getElementsByClassName('chat_text')[0]
+                      , classList = msg.classList.value
+                      , text = msg.querySelectorAll('span')[0].innerHTML
+                      , nick = msg.getElementsByClassName('nick')[0].outerHTML
+                      , bot_resp = msg.querySelectorAll('b + span')[0]
+                      , bot_msg = (bot_resp === undefined) ? '<!---->' : bot_resp.outerHTML
+                      , report = block.querySelectorAll('td[style="width: 42px;"]')[0]
+                      , cat_id = report.querySelectorAll('a[href^="/cat"]')[0].getAttribute('href')
+                      , silent_bot = msg.querySelectorAll('.nick[style*="italic"]').length
+                      , cat_title = '';
+                      cat_id = parseInt(cat_id.replace(/\D/g, ''));
+                      let cat_id_format = (globals.on_idChat && !silent_bot) ? ` <i>[${cat_id}]</i>` : '';
+                      if (globals.on_chatTitles) { // Должность челпука
+                          if (name_array[cat_id] === undefined) {
+                              cat_title = '<span class="cws_chat_title cws_chat_title'+cat_id+'"></span>';
+                          }
+                          else {
+                              cat_title = '<span class="cws_chat_title">, '+name_array[cat_id]+'</span>';
+                          }
+                      }
+                      if (globals.on_nickHighlight) { // Покрасить ники в myname
+                          $.each(globals.nickListArray, function (index, key) {
+                              let expr = new RegExp('^(' + key + ')[^А-ЯЁёA-Za-z0-9]|[^А-ЯЁёA-Za-z0-9>](' + key + ')[^А-ЯЁёA-Za-z0-9<]|[^А-ЯЁёA-Za-z0-9](' + key + ')$|^(' + key + ')$', "ig");
+                              if (text.match(expr)) { //есть имя и оно ещё не внутри тега
+                                  let matchAll = text.matchAll(expr);
+                                  matchAll = Array.from(matchAll); // теперь массив
+                                  $.each(matchAll, function (index, value) {
+                                      let replacer = value[1] || value[2] || value[3] || value[4]; //То, что было найдено (4 местоположения key, 4 варианта регулярки)
+                                      text = text.replace(value[0], value[0].replace(replacer, '<b class=myname>&shy;' + replacer + '&shy;</b>'));
+                                  });
+                              }
+                          });
+                      }
+                      if (globals.on_chatMention && !name_heard) {// Если в текущем сообщении есть myname и !name_heard - проиграть звук и выставить name_heard = true
+                          let has_myname = msg.getElementsByClassName('myname').length;
+                          if (has_myname) {
+                              let is_bot = msg.getElementsByTagName('i').length;
+                              if (jQuery.inArray(cat_id, globals.cm_blocked) == -1 && !is_bot) { //ЕСЛИ НЕ В МАССИВЕ ИГНОРИРУЕМЫХ и не бот
+                                  console.log("Услышано имя в сообщении:");
+                                  console.log(text);
+                                  playAudio(sounds.chat_mention, globals.sound_chatMention);
+                                  name_heard = true; // чтоб не спамило звуки, когда загружаешь страницу а там чел твое имя 228 раз написал
+                              } else {
+                                  console.log("Услышано имя в сообщении:");
+                                  console.log(text);
+                                  console.log("Но сообщение было от бота или от игрока в ЧС");
+                              }
+                          }
+                      }
+                      // Если надо свапнуть (и ID включены, иначе будет жирный пробел перед должностью)
+                      let result = (globals.on_chatSwapIdTItle && globals.on_idChat) ? `
+<div class="cws_chat_wrapper">
+  <div class="cws_chat_msg">
+    <span class="${classList}">
+      ${text}
+      -
+      ${nick}
+      ${cat_id_format}${cat_title}
+      ${bot_msg}
+    </span>
+  </div>
+  <div class="cws_chat_report">${report.outerHTML}</div>
+</div>` : `
+<div class="cws_chat_wrapper">
+  <div class="cws_chat_msg">
+    <span class="${classList}">
+      ${text}
+      -
+      ${nick}${cat_title}
+      ${cat_id_format}
+      ${bot_msg}
+    </span>
+  </div>
+  <div class="cws_chat_report">${report.outerHTML}</div>
+</div>`;
+                      if (globals.on_chatReverse) {
+                          $('#cws_chat_msg').append(result);
+                          $('#cws_chat_msg').append('<hr>');
+                          if (!scroll) { $('#cws_chat_msg')[0].scrollTop = $('#cws_chat_msg')[0].scrollHeight; }
+                      }
+                      else {
+                          $('#cws_chat_msg').prepend(result);
+                          $('#cws_chat_msg').prepend('<hr>');
+                      }
+                      if (globals.on_chatTitles) { // Должность челпука
+                          if (name_array[cat_id] === undefined) {
+                              $.ajax({
+                                  type: "POST",
+                                  url: "/cat"+cat_id,
+                                  contentType: "application/json; charset=utf-8",
+                                  success: function (data) {
+                                      let pattern = /<big>([^<]+)<\/big> — <i>([^<]+)<\/i>|<big>([^<]+)<\/big>|Нет такого игрока/i;
+                                      let found = data.match(pattern);
+                                      let title = found[2];
+                                      if (title === undefined) {
+                                          name_array[cat_id] = '';
+                                          $('.cws_chat_title'+cat_id).text('');
+                                      }
+                                      else {
+                                          name_array[cat_id] = title;
+                                          $('.cws_chat_title'+cat_id).text(', ' + title);
+                                      }
+                                  }
+                              });
+                          }
+                      }
+                  }
+              }
+              messages = mutationsList[mutationsList.length-1].target.children.length;
+          });
+          chatObserver.observe(chatTarget, {childList: true});
+
+          $('#cws_chat_msg').on('click', '.nick', function() { // потому что клик на ник с ориг чата работает только на ориг чат фу бе
+              let $text = $('#text');
+              $text.val($text.val() + $(this).text() + ', ');
+              $text.focus();
+          });
+          $('#cws_chat_msg').on('click', '.msg_report', function() { // потому что клик на жалобу с ориг чата тоже работает только на ориг чат
+              let id = $(this).data('id');
+              $('#chat_msg .msg_report[data-id="'+id+'"]')[0].click(); // почему вообще нельзя одновременно кликнуть на несколько элементов массива это глупо jq
+          });
+          if (globals.on_chatReverse) {
+              $('#cws_chat_msg').on('scroll', function() { // потому что клик на жалобу с ориг чата тоже работает только на ориг чат
+                  let $e = $('#cws_chat_msg');
+                  if ($e.scrollTop() + $e.height() == $e[0].scrollHeight) { // прокручено до конца
+                      scroll = false;
+                  } else {
+                      scroll = true;
+                  }
+              });
+          }
+
+      }
+/*
+    if ((globals.on_chatMention || globals.on_nickHighlight) && 0) {
       let myname_count = 0;
       $(document).ready(function () {
         $("#chat_msg").on('DOMNodeInserted', function (e) {
@@ -488,17 +701,20 @@
         });
       });
     }
-    if (globals.on_idChat) { //Включена опция
+    if (globals.on_idChat && 0) { //Включена опция
       let i_chat = 0;
+      //let chat_titles = {};
       let myname_count = $('.myname').length;
       $(document).ready(function () { // ДОБАВЛЕНИЕ АЙДИ ПОСЛЕ ИМЕН В ЧАТЕ ИГРОВОЙ
         $("#chat_msg").on('DOMNodeInserted', function (e) {
           if (e.target.children !== undefined && e.target.children.length == 2) {
             if (i_chat != $('#chat_msg > span').length) {
               $('#chat_msg > span').each(function () {
-                let id = "[" + $(this).find('a[href*="/cat"]').attr('href').slice(4) + "]";
+                  let nobr_id = $(this).find('a[href*="/cat"]').attr('href').slice(4)
+                  , id = "[" + nobr_id + "]";
                 if (!$(this).find('.mod_id').length && !$(this).hasClass('mod_id')) { //Если надписи еще нет (второе для ботов, т.к. там b ник + span кому говорит .nick:not([style*='italic'])
-                  $(`<span class=mod_id_wrap> <i class=mod_id>${id}</i></span>`).insertAfter($(this).find('.nick:not([style*="italic"])'));
+                  $(`<span class="mod_id_wrap"> <i class=mod_id>${id}</i></span>`).insertAfter($(this).find('.nick:not([style*="italic"])'));
+                  //$(`<span class="mod_id_wrap"> <i class=mod_id>${id}</i> <i class=mod_title>${title}</i></span>`).insertAfter($(this).find('.nick:not([style*="italic"])'));
                   //только на последнее сообщение / сгенерированные при загрузке стр/локи / не "молчаливый" бот
                 }
                 else if ($(this).find('.mod_id').html() !== (id)) {
@@ -506,6 +722,7 @@
                     id = "";
                   }
                   $(this).find('.mod_id').html(id);
+                  //$(this).find('.mod_title').html(title);
                 }
               });
             }
@@ -514,22 +731,24 @@
         });
       });
     }
+      */
     if (globals.on_idItemMouth) {
       let item_names_json = {};
-      $.post("https://abstract-shed.site/cwm_catalog/item_names.json?" + Date.now(), {}, function (response) { //Подгрузка имен предметов из json файла с сервера сайта
-        item_names_json = response;
-      });
       $(document).ready(function () {
-        $("#thdey > ul").append('<li>Название предмета: <span id=item_name_ide>[ Неизвестно ]</span> [<span id=item_id_ide>?</span>]</li><li>Уникальный ID: <span id=item_uq_id_ide>[ Неизвестно ]</span></li>');
-        $("body").on('click', "#itemList .itemInMouth", function () {
-          if (!$(this).hasClass("active_thing")) {
-            let uq_id = $(this).attr('id');
-            $("#item_uq_id_ide").html(uq_id);
-            let item_id = $(this).find("img").attr("src").replace(/\D/g, "");
-            let name = item_names_json[item_id] || "[ Неизвестно ]";
-            $("#item_name_ide").html(name);
-            $("#item_id_ide").html(item_id);
-          }
+        $.getJSON("https://abstract-class-shed.github.io/cwshed/item_names.json?" + Date.now(), function (response) { //Подгрузка имен предметов из json файла
+          //$.post("https://abstract-class-shed.github.io/cwshed/item_names.json?" + Date.now(), {}, function (response) {
+          item_names_json = response;
+          $("#thdey > ul").append('<li>Название предмета: <span id=item_name_ide>[ Неизвестно ]</span> [<span id=item_id_ide>?</span>]</li><li>Уникальный ID: <span id=item_uq_id_ide>[ Неизвестно ]</span></li>');
+          $("body").on('click', "#itemList .itemInMouth", function () {
+            if (!$(this).hasClass("active_thing")) {
+              let uq_id = $(this).attr('id');
+              $("#item_uq_id_ide").html(uq_id);
+              let item_id = $(this).find("img").attr("src").replace(/\D/g, "");
+              let name = item_names_json[item_id] || "[ Неизвестно ]";
+              $("#item_name_ide").html(name);
+              $("#item_id_ide").html(item_id);
+            }
+          });
         });
       });
     }
@@ -558,6 +777,7 @@
           "clean": "Вылизывать",
           "swim": "Плавать",
           "fill_moss": "Наполнять мох",
+          "dive": "Нырять",
           "murr": "Мурлыкать",
           "tails": "Переплетаем хвосты",
           "cheek": "Трёмся щекой",
@@ -570,6 +790,7 @@
           "rug": "Чистить ковёр",
           "attention": "Привлекать внимание",
           "domestsleep": "Спать ",
+          "domesthunt": "Грандиозно охотиться ",
           "checkup": "Осматривать к",
           "loottr": "Осматривать дупло",
           "lootcr": "Осматривать расщелину"
@@ -587,6 +808,7 @@
           "clean": "Вылизывание",
           "swim": "Плавание",
           "fill_moss": "Наполнение мха",
+          "dive": "Ныряние",
           "murr": "Мурлыкаем",
           "tails": "Переплетаем хвосты",
           "cheek": "Трёмся щекой",
@@ -599,6 +821,7 @@
           "rug": "Чистка ковра",
           "attention": "Привлечение внимания",
           "domestsleep": "Сон в лежанке",
+          "domesthunt": "Грандиозная охота",
           "checkup": "Осмотр целителем",
           "loottr": "Осмотр дупла",
           "lootcr": "Осмотр расщелины"
@@ -670,7 +893,7 @@
                                 display:inline-block;
                                 height:16px;
                                 width:16px;
-                                background: url(https://abstract-shed.site/cwm_catalog/untargeted.png) center no-repeat;
+                                background: url(https://abstract-class-shed.github.io/cwshed/untargeted.png) center no-repeat;
                                 background-color: #ccc;
                                 margin-right:4px;
                                 border-radius: 5px;
@@ -680,7 +903,7 @@
                                 left: 3px;
                             }
                             #fightPanelHandle:active {
-                                background: url(https://abstract-shed.site/cwm_catalog/targeted.png) center no-repeat;
+                                background: url(https://abstract-class-shed.github.io/cwshed/targeted.png) center no-repeat;
                                 background-color: #ccc;
                             }</style>`);
         $("#fightPanel").prepend(`<a id="fightPanelHandle"></a>`);
@@ -954,11 +1177,11 @@ input:checked + .cws-team {
       }
       let first_load = true;
       let cl_history = (window.localStorage.getItem('cws_cleaner_history_log') !== null) ? window.localStorage.getItem('cws_cleaner_history_log') : 'История очищена.';
+      cl_history = ((globals.clean_underscore) ? cl_history.replace(/ (Подняла*|Опустила*) /ig, ' <u>$1</u> ') : cl_history.replace(/ <u>(Подняла*|Опустила*)<\/u> /ig, ' $1 '));
       $("#ist").ready(function () {
         // ДОБАВЛЕНИЕ ЛОГА ЧИСТИЛЬЩИКОВ
         $('<hr><h2><a href=\"#\" id=cleaner class=toggle>Деятельность в чистильщиках:</a></h2><span id=cleaner_block>' + cl_history + '</span><br><a id=erase_cleaner href=#>Очистить историю чистки</a>').insertAfter("#history_clean");
-        let prev_ist = undefined;
-        let prev_prev_ist = undefined;
+        let prev_ist, prev_prev_ist;
         $("#history_block").on('DOMSubtreeModified', '#ist', function () {
           if (first_load) {
             first_load = false;
@@ -973,7 +1196,7 @@ input:checked + .cws-team {
               }
               last_ist = last_ist.trim().replace(/(<([^>]+)>)/ig, ''); // последняя запись
               if (((last_ist.indexOf("Поднял") !== -1) || (last_ist.indexOf("Опустил") !== -1)) && ((last_ist.indexOf("кота") !== -1) || (last_ist.indexOf("кошку") !== -1))) { //Если есть "поднял(а)/опустил(а) кота/кошку"
-                let hist_str = ' ' + last_ist;
+                let hist_str = ' ' + ((globals.clean_underscore) ? last_ist.replace(/(Подняла*|Опустила*)/, '<u>$1</u>') : last_ist);
                 if (globals.clean_id) {
                   hist_str += ' (' + clean_id + ')';
                 } //Записать ID
@@ -985,7 +1208,7 @@ input:checked + .cws-team {
                   (last_ist.indexOf("Поднял") !== -1) &&
                   (prev_prev_ist !== undefined) &&
                   (prev_ist.indexOf("Отменил") !== -1) && //Отменил действие
-                  (prev_prev_ist.indexOf("по имени") !== -1) && //Перед этим взаимодействуя с кем-то (только не проверяйте других избиением в тетрисе лол)
+                  (prev_prev_ist.indexOf("по имени") !== -1) && //Перед этим взаимодействуя с кем-то
                   (prev_prev_ist.indexOf("Поднял") === -1) && //Не поднял и не опустил
                   (prev_prev_ist.indexOf("Опустил") === -1)) {
                   let clean_curr_name = last_ist.match(/ по имени ([А-Яа-яЁё ]+)/u) || ['', ''];
@@ -1164,7 +1387,7 @@ height: 25px;
           setSettings('tt_fields', JSON.stringify(tt_fields));
         }
         $('#app').append(`<div id="cws_treeTechies"${globals.tt_folded?' class="folded"':''}>
-<div id="cws_treeTechiesHandleWrap"><div id="cws_treeTechiesHandle"><span>Минное поле</span></div><div id=cws_treeTechiesFold><img class="cws-tt-fold-minus${globals.tt_folded?' cws-tt-fold-hidden':''}" src="https://abstract-shed.site/cwm_catalog/minus.png"><img class="cws-tt-fold-plus${globals.tt_folded?'':' cws-tt-fold-hidden'}" src="https://abstract-shed.site/cwm_catalog/plus.png"></div></div>
+<div id="cws_treeTechiesHandleWrap"><div id="cws_treeTechiesHandle"><span>Минное поле</span></div><div id=cws_treeTechiesFold><img class="cws-tt-fold-minus${globals.tt_folded?' cws-tt-fold-hidden':''}" src="https://abstract-class-shed.github.io/cwshed/minus.png"><img class="cws-tt-fold-plus${globals.tt_folded?'':' cws-tt-fold-hidden'}" src="https://abstract-class-shed.github.io/cwshed/plus.png"></div></div>
 <div id="cws_tt_choose">
 <div><input type="radio" checked name="cws_tt_cell" class="cws-tt-cell" id="cws_tt_cell0" value="0" mark="cws-tt-safe"><label class="cws-tt-cell-lbl" for="cws_tt_cell0"><span>[0]</span> Без звука</label></div>
 <div><input type="radio" name="cws_tt_cell" class="cws-tt-cell" id="cws_tt_cell1" value="1" mark="cws-tt-safe"><label class="cws-tt-cell-lbl" for="cws_tt_cell1"><span>[1]</span> Едва различимый треск</label></div>
@@ -1550,83 +1773,108 @@ ${globals.on_treeTechies?`<div><input id="on_treeTechies" type="checkbox" checke
   }
 
   function profile() {
-      $.getJSON("https://abstract-shed.site/cwm_catalog/river_achievements.json?" + Date.now(), function (data) {
-          const achievements = data
-          , elem = `<div id="cws_achievement" style="display: none; margin: 5px; padding: 5px; border-radius: 10px; width: 270px; background: rgba(255, 255, 255, 0.3); color: black;"></div>`
-          , inner = `Ачивка <b>"{name}"</b>
+    $.getJSON("https://abstract-class-shed.github.io/cwshed/river_achievements.json?" + Date.now(), function (data) {
+      const achievements = data,
+        elem = `<div id="cws_achievement" style="display: none; margin: 5px; padding: 5px; border-radius: 10px; width: 270px; background: rgba(255, 255, 255, 0.3); color: black;"></div>`,
+        inner = `Ачивка <b>"{name}"</b>
 <span style="font-size: 0.9em"><br>Тип: <i>{type}</i><br>
 <span style="white-space:pre-wrap">{condition}</span>`;
-          let $achievement = $( (isDesktop ? '#branch' : '#site_table') + ' > .parsed tbody > tr:last-child img[src*="images.vfl.ru"]' )
-          , $body = $('body')
-          , old_code = "";
-          $(document).ready(function() {
-              $achievement.last().after(elem);
-              $achievement.each(function(index) { // Добавить титул к каждой ачивке
-                  let code = $(this).attr('src').match(/images.vfl.ru\/ii\/(\d+\/[\d\w]+\/\d+)\.png/);
-                  if (code !== null) {
-                      code = code[1];
-                      let name = (achievements[code] === undefined) ? "Неизвестная ачивка" : achievements[code].name;
-                      $(this).prop('title', name);
-                  }
-              });
-              $achievement.on('click', function() { // инфоблок
-                  let code = $(this).attr('src').match(/images.vfl.ru\/ii\/(\d+\/[\d\w]+\/\d+)\.png/);
-                  if (code !== null) {
-                      code = code[1];
-                      if (code == old_code && $('#cws_achievement').css('display') != 'none') {
-                          $('#cws_achievement').hide(200);
-                      } else {
-                          let this_achievement = (achievements[code] === undefined) ? {"name":"?", "type":"?", "condition":""} : achievements[code];
-                          let info = inner
-                          .replace("{name}", this_achievement.name)
-                          .replace("{type}", this_achievement.type)
-                          .replace("{condition}", this_achievement.condition);
-                          $('#cws_achievement').html(info).show(200);
-                          old_code = code;
-                      }
-                  }
-              });
-          });
+      let $achievement = $((isDesktop ? '#branch' : '#site_table') + ' > .parsed tbody > tr:last-child img[src*="images.vfl.ru"]'),
+        $body = $('body'),
+        old_code = "";
+      $(document).ready(function () {
+        $achievement.last().after(elem);
+        $achievement.each(function (index) { // Добавить титул к каждой ачивке
+          let code = $(this).attr('src').match(/images.vfl.ru\/ii\/(\d+\/[\d\w]+\/\d+)\.png/);
+          if (code !== null) {
+            code = code[1];
+            let name = (achievements[code] === undefined) ? "Неизвестная ачивка" : achievements[code].name;
+            $(this).prop('title', name);
+          }
+        });
+        $achievement.on('click', function () { // инфоблок
+          let code = $(this).attr('src').match(/images.vfl.ru\/ii\/(\d+\/[\d\w]+\/\d+)\.png/);
+          if (code !== null) {
+            code = code[1];
+            if (code == old_code && $('#cws_achievement').css('display') != 'none') {
+              $('#cws_achievement').hide(200);
+            }
+            else {
+              let this_achievement = (achievements[code] === undefined) ? {
+                "name": "?",
+                "type": "?",
+                "condition": ""
+              } : achievements[code];
+              let info = inner
+                .replace("{name}", this_achievement.name)
+                .replace("{type}", this_achievement.type)
+                .replace("{condition}", this_achievement.condition);
+              $('#cws_achievement').html(info).show(200);
+              old_code = code;
+            }
+          }
+        });
       });
+    });
   }
 
   function dm() { //ЛС игрока
     if (globals.on_idDM) {
-      $(document).ready(function () {
-        $('#main').bind("DOMSubtreeModified", function () {
-          if (!$('#cws_msg_id').length) {
+        function add_id() {
             let id = $('#msg_login').attr('href');
             if (id !== undefined) {
               id = id.replace(/\D/ig, '');
               $('<i id=cws_msg_id> [' + id + ']</i>').insertAfter($('#msg_login'));
             }
+        }
+      $(document).ready(function () {
+        add_id(); // on load
+        $('#main').bind("DOMSubtreeModified", function () {
+          if (!$('#cws_msg_id').length) {
+            add_id(); // on click
           }
         });
       });
     }
+      if (0) {
+            //const pageurl = window.location.href;
+          function add_templates() {
+              if ((/^https:\/\/\w?\.?catwar.su\/ls\?new$/.test(window.location.href))) { // on load
+                  console.log('you should add these');
+                  const templates = '<hr><h4>Шаблоны</h4><hr><div id="cws_ls_templates">kekw</div>';
+                  $('#write_div').append(templates);
+              }
+          }
+          add_templates(); // on load
+          $('#main').bind("DOMSubtreeModified", function () {
+              if (!$('#cws_ls_templates').length) {
+                  add_templates(); // on click
+              }
+          });
+      }
   }
 
   function hunt() {
     if (!isDesktop) {
       if (globals.on_huntMobileBtns) {
-      addCSS(`#select_type:after {
-	content: " (переверните телефон на бок)";
-	font-style: italic;
+        addCSS(`#select_type:after {
+  content: " (переверните телефон на бок)";
+  font-style: italic;
 }
 #select_type {
-	width: 80%;
-	margin-left: 10%;
-	margin-top: 5%;
-	text-align: center;
+  width: 80%;
+  margin-left: 10%;
+  margin-top: 5%;
+  text-align: center;
 }
 input {
-	left: 5%;
-	width: 90%;
+  left: 5%;
+  width: 90%;
 }
 #cws_buttons {
-	position: absolute;
-	top: 10px;
-	left: 0px;
+  position: absolute;
+  top: 10px;
+  left: 0px;
 }
 .mod_btn {
   position: absolute;
@@ -1689,8 +1937,8 @@ input {
 }
 #q_btn, #e_btn, #x_btn, #z_btn {transform: rotate(45deg);}
 #oben, #links, #rechts, #unten {display: none;}`);
-      $("#main").ready(function () {
-        $("#main").append(`<div id="cws_buttons"><button class="mod_btn" data-code="81" id="q_btn"></button>
+        $("#main").ready(function () {
+          $("#main").append(`<div id="cws_buttons"><button class="mod_btn" data-code="81" id="q_btn"></button>
                                  <button class="mod_btn" data-code="87" id="w_btn"></button>
                                  <button class="mod_btn" data-code="69" id="e_btn"></button>
                                  <button class="mod_btn" data-code="65" id="a_btn"></button>
@@ -1698,43 +1946,43 @@ input {
                                  <button class="mod_btn" data-code="68" id="d_btn"></button>
                                  <button class="mod_btn" data-code="90" id="z_btn"></button>
                                  <button class="mod_btn" data-code="88" id="x_btn"></button></div>`);
-        $('.mod_btn').on("mousedown touchstart", function (e) {
-          e.preventDefault();
-          let code = $(this).data('code');
-          $('#main').trigger(
-            jQuery.Event('keydown', {
-              keyCode: code,
-              which: code
-            })
-          );
+          $('.mod_btn').on("mousedown touchstart", function (e) {
+            e.preventDefault();
+            let code = $(this).data('code');
+            $('#main').trigger(
+              jQuery.Event('keydown', {
+                keyCode: code,
+                which: code
+              })
+            );
+          });
+          $('.mod_btn').on("mouseup touchend", function (e) {
+            e.preventDefault();
+            let code = $(this).data('code');
+            $('#main').trigger(
+              jQuery.Event('keyup', {
+                keyCode: code,
+                which: code
+              })
+            );
+          });
         });
-        $('.mod_btn').on("mouseup touchend", function (e) {
-          e.preventDefault();
-          let code = $(this).data('code');
-          $('#main').trigger(
-            jQuery.Event('keyup', {
-              keyCode: code,
-              which: code
-            })
-          );
-        });
-      });
-     }
-        if (globals.on_huntMobileFix) {
+      }
+      if (globals.on_huntMobileFix) {
         addCSS(`body {
-	position: fixed;
-	height: 100%;
-	width: 100%;
-	transform: scale(.8);
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  transform: scale(.8);
 }
 html {
-	height: 100%;
-	width: 100%;
+  height: 100%;
+  width: 100%;
 }
 #smell {
-	position: absolute;
-	bottom: calc(10px - 10%);
-	left: -10%;
+  position: absolute;
+  bottom: calc(10px - 10%);
+  left: -10%;
 }
 #cws_buttons {
     position: absolute;
@@ -1742,7 +1990,7 @@ html {
     left: -12.5%;
     transform: scale(.9);
 }`);
-        }
+      }
     }
 
     if (globals.on_huntText) {
@@ -1762,7 +2010,9 @@ height: 2.3em;
       let color_old = -1;
       setInterval(function () {
         if ($('#smell').attr('style')) {
-          if (!$('#cws_hunt_txt').length) {$('#smell').append('<div id=cws_timer data-sec=0 style="background-color: #ffffff;">00:00</div><div id=cws_hunt_txt></div>')}
+          if (!$('#cws_hunt_txt').length) {
+            $('#smell').append('<div id=cws_timer data-sec=0 style="background-color: #ffffff;">00:00</div><div id=cws_hunt_txt></div>')
+          }
           let color_new = parseInt($('#smell').css('background-color').split('(').pop().split(',')[0]);
           let a = color_new - color_old
           if (color_old != -1) {
@@ -1775,11 +2025,11 @@ height: 2.3em;
       }, 100);
       setInterval(function () {
         if ($('#cws_timer').length) {
-          let sec = parseInt($('#cws_timer').data('sec'))
-          , min;
+          let sec = parseInt($('#cws_timer').data('sec')),
+            min;
           $('#cws_timer').data('sec', ++sec);
           min = parseInt(sec / 60);
-          sec = sec - min*60;
+          sec = sec - min * 60;
           $('#cws_timer').text(leadZero(min) + ':' + leadZero(sec));
         }
       }, 1000);
@@ -1800,9 +2050,9 @@ height: 2.3em;
         e.preventDefault();
         $("#cws_convert_res").html('');
         if ($('#cws_convert_txt').val().trim().length) {
-          let arr = $('#cws_convert_txt').val().replace(/\n/g, "\n|").trim().split(/,|\n|:|;/)
-          , string = ""
-          , name_array = {};
+          let arr = $('#cws_convert_txt').val().replace(/\n/g, "\n|").trim().split(/,|\n|:|;/),
+            string = "",
+            name_array = {};
           $.each(arr, function (key, value) {
             let new_str = value.trim().toLowerCase().replace(/^[а-яё]/ig, function (txtVal) {
               return txtVal.toUpperCase();
@@ -1811,20 +2061,23 @@ height: 2.3em;
             });
             let str = '';
             if (name_array[new_str] === undefined) {
-                $.ajax({
-                    type: "POST",
-                    url: "/ajax/top_cat",
-                    data: {name: new_str},
-                    async: false,
-                    success: function (data) {
-                        const id = parseInt(data, 10);
-                        str = (isNaN(id)) ? new_str : id;
-                        name_array[new_str] = str;
-                        str += ' ';
-                    }
-                });
-            } else {
-                str = name_array[new_str] + ' ';
+              $.ajax({
+                type: "POST",
+                url: "/ajax/top_cat",
+                data: {
+                  name: new_str
+                },
+                async: false,
+                success: function (data) {
+                  const id = parseInt(data, 10);
+                  str = (isNaN(id)) ? new_str : id;
+                  name_array[new_str] = str;
+                  str += ' ';
+                }
+              });
+            }
+            else {
+              str = name_array[new_str] + ' ';
             }
             $("#cws_convert_res").append(str.replace(/\|/ig, '<br>'));
           });
@@ -2028,7 +2281,7 @@ height: 2.3em;
 
   function sett() {
     $('head').append(`<style id="css_cellshade_example">#cages td {box-shadow: inset 0px ${globals.css_cellshadeOpacity}px 0px ${globals.css_cellshadeOpacity}px ${globals.css_cellshadeColor};}</style>`);
-      const pattern = globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':'';
+    const pattern = globals.css_cp_pattern ? 'url(https://i.imgur.com/V4TX5Cv.png), ' : '';
     let css_coloredparam_example = `#dream td:first-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
 #dream td:last-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[2]}, ${globals.css_cp_colors[3]});}
 #hunger td:first-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[4]}, ${globals.css_cp_colors[5]});}
@@ -2045,14 +2298,15 @@ height: 2.3em;
 .parameter td:last-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[26]}, ${globals.css_cp_colors[27]});}`;
     $('head').append(`<style id="css_coloredparam_example">${css_coloredparam_example}</style>`);
     let action_group_dis = (globals.on_actNotif) ? '' : ' disabled',
-    tf_group_dis = (globals.on_teamFights) ? '' : ' disabled',
-    clean_group_dis = (globals.on_cleanerHistory) ? '' : ' disabled',
-    tt_dis = (globals.on_treeTechies) ? '' : ' disabled',
-    cc_group_dis = (globals.on_charChange) ? '' : ' disabled',
-    chatment_group_dis = (globals.on_chatMention) ? '' : ' disabled',
-    nick_group_dis = (globals.on_nickHighlight) ? '' : ' disabled',
-    css_cp_group_dis = (globals.on_css_coloredparam) ? '' : ' disabled',
-    CCArray = '';
+      tf_group_dis = (globals.on_teamFights) ? '' : ' disabled',
+      clean_group_dis = (globals.on_cleanerHistory) ? '' : ' disabled',
+      tt_dis = (globals.on_treeTechies) ? '' : ' disabled',
+      cc_group_dis = (globals.on_charChange) ? '' : ' disabled',
+      chatment_group_dis = (globals.on_chatMention) ? '' : ' disabled',
+      nick_group_dis = (globals.on_nickHighlight) ? '' : ' disabled',
+      css_cp_group_dis = (globals.on_css_coloredparam) ? '' : ' disabled',
+      chat_group_dis = (globals.on_customChat) ? '' : ' disabled',
+      CCArray = '';
     $.each(globals.charListArray, function (index, obj) {
       if (obj.id && obj.name) {
         CCArray += `<tr><td><input class="cc-id" min=0 pattern="[0-9]{1,7}" type="number" group="char-change" value="${obj.id}" ${cc_group_dis}></td>
@@ -2078,8 +2332,8 @@ height: 2.3em;
     }
     let $body = $('body');
     addCSS(`.cp-color-pick, .team-color-pick {
-	background-color: #eaeaea;
-	border: 1px solid #b3b3b3;
+  background-color: #eaeaea;
+  border: 1px solid #b3b3b3;
 }
 .bl_in{
   display: inline-block;
@@ -2093,11 +2347,11 @@ padding: .1em .25em;
 }
 .cat_box {
     padding: .6em .3em;
-	width: fit-content;
+  width: fit-content;
 }
 #fight_bg {
 border-radius: 1em;
-background: url(https://abstract-shed.site/pic/background.png) top center no-repeat;
+background: url(https://abstract-class-shed.github.io/pic/background.png) top center no-repeat;
 width: 320px;
 height: 330px;
 max-width: calc(100% - 1.2em);
@@ -2262,12 +2516,48 @@ margin-top:5px;
     const html = `<hr><hr><div id="cwa_sett"><h2>Настройки CW:Shed</h2>
 <div><i><small>! Большинство изменений применяются автоматически. Для того, чтобы изменения вступили в силу, обновите Игровую (страницу с ЛС, профиль).</small></i></div>
 <h3>Дополнительная информация</h3>
+    <div><input class="cwa-chk" id="on_settLink" type="checkbox"${globals.on_settLink?' checked':''}><label for="on_settLink">Отображать ссылку на настройки в Игровой рядом с "Мой кот | Чат | ЛС"</label></div>
     <div><input class="cwa-chk" id="on_idDM" type="checkbox"${globals.on_idDM?' checked':''}><label for="on_idDM">Включить отображение ID в личных сообщениях</label></div>
     <div><input class="cwa-chk" id="on_idCatMouth" type="checkbox"${globals.on_idCatMouth?' checked':''}><label for="on_idCatMouth">Включить отображение ID котов, находящихся во рту</label></div>
     <div><input class="cwa-chk" id="on_idItemMouth" type="checkbox"${globals.on_idItemMouth?' checked':''}><label for="on_idItemMouth">Включить отображение ID и названий предметов, находящихся во рту</label></div>
-    <div><input class="cwa-chk" id="on_idChat" type="checkbox"${globals.on_idChat?' checked':''}><label for="on_idChat">Включить отображение ID в чате Игровой</label></div>
+
     <div><input class="cwa-chk" id="on_paramInfo" type="checkbox"${globals.on_paramInfo?' checked':''}><label for="on_paramInfo">Информация о параметре при нажатии на иконку</label></div>
     <div><input class="cwa-chk" id="on_cuMovesNote" type="checkbox"${globals.on_cuMovesNote?' checked':''}><label for="on_cuMovesNote">[ВТ] Заметки на странице добавления/удаления переходов</label></div>
+<h3>Чат</h3>
+    <div><input class="cwa-chk group-switch" id="on_customChat" group-header="custom-chat" type="checkbox"${globals.on_customChat?' checked':''}><label for="on_customChat">Использовать новый чат Игровой (выглядит так же, но нужен для корректной работы опций ниже)</label></div>
+    <block class="bl_in">
+        <div><input class="cwa-chk" id="on_idChat" group="custom-chat"${chat_group_dis} type="checkbox"${globals.on_idChat?' checked':''}><label for="on_idChat">Отображать ID в чате</label></div>
+        <div><input class="cwa-chk" id="on_chatTitles" group="custom-chat"${chat_group_dis} type="checkbox"${globals.on_chatTitles?' checked':''}><label for="on_chatTitles">Отображать должность в чате</label></div>
+        <div><input class="cwa-chk" id="on_chatSwapIdTItle" group="custom-chat"${chat_group_dis} type="checkbox"${globals.on_chatSwapIdTItle?' checked':''}><label for="on_chatSwapIdTItle">Ставить ID перед должностью ("- Имя [123], должность" вместо "- Имя, должность [123]")</label></div>
+        <div><input class="cwa-chk" id="on_chatReverse" group="custom-chat"${chat_group_dis} type="checkbox"${globals.on_chatReverse?' checked':''}><label for="on_chatReverse">"Перевернуть" чат, чтобы он шёл сверху вниз</label></div>
+
+<hr>
+    <div><input class="cwa-chk" id="on_nickHighlight" group="custom-chat"${chat_group_dis} type="checkbox"${globals.on_nickHighlight?' checked':''}><label for="on_nickHighlight">Выделять следующие строчки как моё имя</label></div>
+<form id="nickForm">
+<table border=1 id="nickTbl">
+<thead><th>Кличка</th><th></th></thead>
+<tbody id="nickList">
+${nickArray}
+</tbody>
+</table>
+</form>
+<div><button id="nickAdd">Добавить новое поле</button>
+<button form="nickForm">Сохранить</button></div>
+<hr>
+    <div><input class="cwa-chk" id="on_chatMention" group="custom-chat"${chat_group_dis} type="checkbox"${globals.on_chatMention?' checked':''}><label for="on_chatMention">Уведомлять, когда моё имя упоминают в чате</label></div>
+    <table class="volume-table"><tr>
+        <td>Громкость:</td>
+        <td><input type="range" class="custom-range" step="0.01" max="1" min="0.05" data-bind="sound_chatMention" id="sound_chatMention" value="${globals.sound_chatMention}"></td>
+        <td><button data-bind="sound_chatMention" sound-src="${sounds.chat_mention}" class="sound-test">Тест</button></td>
+    </tr></table>
+    <div>Айди персонажей, от которых игнорировать уведомления (<i>через пробел</i>):</div>
+<form id="form_cm_blocked">
+    <textarea id="cm_blocked" pattern="[0-9 ]+" placeholder="420020 930302">${globals.cm_blocked.join(' ')}</textarea>
+<button>Запомнить</button>
+</form>
+    <hr>
+
+    </block>
 <h3>Уведомления</h3>
     <div><input class="cwa-chk" id="on_newDM" type="checkbox"${globals.on_newDM?' checked':''}><label for="on_newDM">Уведомлять о новом ЛС, когда я в Игровой</label></div>
     <table class="volume-table"><tr>
@@ -2282,30 +2572,6 @@ margin-top:5px;
         <td><input type="range" class="custom-range" step="0.01" max="1" min="0.05" data-bind="sound_newChat" id="sound_newChat" value="${globals.sound_newChat}"></td>
         <td><button data-bind="sound_newChat" sound-src="${sounds.new_message}" class="sound-test">Тест</button></td>
     </tr></table>
-    <hr>
-    <div><input class="cwa-chk group-switch" id="on_nickHighlight" group-header="nick-highlight" type="checkbox"${globals.on_nickHighlight?' checked':''}><label for="on_nickHighlight">Выделять следующие строчки как моё имя в Игровой</label></div>
-<form id="nickForm">
-<table border=1 id="nickTbl">
-<thead><th>Кличка</th><th></th></thead>
-<tbody id="nickList">
-${nickArray}
-</tbody>
-</table>
-</form>
-<button id="nickAdd" group="nick-highlight"${nick_group_dis}>Добавить новое поле</button>
-<div><button group="nick-highlight" form="nickForm"${nick_group_dis}>Сохранить</button></div>
-<div><b>*</b> Из-за того, как устроен чат на Варе, эта функция может добавлять лагов, особенно когда за несколько секунд приходит много сообщений. Чем больше Вы установите себе кличек, тем большая будет нагрузка.</div>
-    <div><input class="cwa-chk group-switch" id="on_chatMention" group-header="chat-mention" type="checkbox"${globals.on_chatMention?' checked':''}><label for="on_chatMention">Уведомлять, когда моё имя упоминают в чате Игровой</label></div>
-    <table class="volume-table"><tr>
-        <td>Громкость:</td>
-        <td><input type="range" class="custom-range" step="0.01" max="1" min="0.05" data-bind="sound_chatMention" id="sound_chatMention" value="${globals.sound_chatMention}"></td>
-        <td><button data-bind="sound_chatMention" sound-src="${sounds.chat_mention}" class="sound-test">Тест</button></td>
-    </tr></table>
-    <div>Айди персонажей, от которых игнорировать уведомления (<i>через пробел</i>):</div>
-<form id="form_cm_blocked">
-    <textarea id="cm_blocked" group="chat-mention" ${chatment_group_dis} pattern="[0-9 ]+" placeholder="420020 930302">${globals.cm_blocked.join(' ')}</textarea>
-<button group="chat-mention" ${chatment_group_dis}>Запомнить</button>
-</form>
     <hr>
     <div><input class="cwa-chk" id="notif_eaten" type="checkbox"${globals.notif_eaten?' checked':''}><label for="notif_eaten">Уведомлять, если меня кто-то поднял</label></div>
     <table class="volume-table"><tr>
@@ -2444,6 +2710,11 @@ ${nickArray}
     <td>Сон в лежанке</td>
 </tr>
 <tr>
+    <td align=center><input class="cwa-chk" group="action-notif"${action_group_dis} id="txt_act_domesthunt" type="checkbox"${globals.txt_act_domesthunt?' checked':''}></td>
+    <td align=center><input class="cwa-chk" group="action-notif"${action_group_dis} id="snd_act_domesthunt" type="checkbox"${globals.snd_act_domesthunt?' checked':''}></td>
+    <td>Грандиозная охота</td>
+</tr>
+<tr>
     <td align=center><input class="cwa-chk" group="action-notif"${action_group_dis} id="txt_act_checkup" type="checkbox"${globals.txt_act_checkup?' checked':''}></td>
     <td align=center><input class="cwa-chk" group="action-notif"${action_group_dis} id="snd_act_checkup" type="checkbox"${globals.snd_act_checkup?' checked':''}></td>
     <td>Осмотр целителя</td>
@@ -2511,21 +2782,21 @@ ${nickArray}
     <div class="color-pick-wrapper"><div style="position: relative;">
     <div class="arrow arrow-paws" style="top: 75px; transform: rotate(157deg); opacity: 1;">
     <table style="width: 100px;"><tbody><tr><td class="arrow-color" style="width: 25px; background: ${globals.tf_color_r_team2};" data-bind=cat0r></td><td class="arrow-color" style="width: 25px; background: ${globals.tf_color_g_team2};" data-bind=cat0g></td><td style="width: 50px;"></td></tr></tbody></table></div></div>
-    <span class="cat"><div style="background-image:url('https://abstract-shed.site/pic/catmodel1.png');" class="d"></div></span></div>
+    <span class="cat"><div style="background-image:url('https://abstract-class-shed.github.io/pic/catmodel1.png');" class="d"></div></span></div>
     <div class="color-pick-wrapper"><div style="position: relative;">
     <div class="arrow arrow-teeth" style="top: 75px; transform: rotate(41deg); opacity: 1;">
     <table style="width: 100px;"><tbody><tr><td class="arrow-color" style="width: 13px; background: ${globals.tf_color_r_team3};" data-bind=cat1r></td><td class="arrow-color" style="width: 37px; background: ${globals.tf_color_g_team3};" data-bind=cat1g></td><td style="width: 50px;"></td></tr></tbody></table></div></div>
-    <span class="cat"><div style="background-image:url('https://abstract-shed.site/pic/catmodel2.png');" class="d"></div></span></div>
+    <span class="cat"><div style="background-image:url('https://abstract-class-shed.github.io/pic/catmodel2.png');" class="d"></div></span></div>
     <div class="color-pick-wrapper"><div style="position: relative;">
     <div class="arrow arrow-claws" style="top: 75px; transform: rotate(378deg); opacity: 1;">
     <table style="width: 100px;"><tbody><tr><td class="arrow-color" style="width: 19px; background: ${globals.tf_color_r_team4};" data-bind=cat2r></td><td class="arrow-color" style="width: 31px; background: ${globals.tf_color_g_team4};" data-bind=cat2g></td><td style="width: 50px;"></td></tr></tbody></table></div></div>
-    <span class="cat"><div style="background-image:url('https://abstract-shed.site/pic/catmodel3.png');" class="d"></div></span></div>
+    <span class="cat"><div style="background-image:url('https://abstract-class-shed.github.io/pic/catmodel3.png');" class="d"></div></span></div>
 </div>
 <div class=cat_box>
     <div class="color-pick-wrapper"><div style="position: relative;">
     <div class="arrow arrow-paws" style="top: 75px; transform: rotate(433deg); opacity: 1;">
     <table style="width: 100px;"><tbody><tr><td class="arrow-color" style="width: 19px; background: ${globals.tf_color_r_team1};" data-bind=cat-1r></td><td class="arrow-color" style="width: 31px; background: ${globals.tf_color_g_team1};" data-bind=cat-1g></td><td style="width: 50px;"></td></tr></tbody></table></div></div>
-    <span class="cat"><div style="background-image:url('https://abstract-shed.site/pic/catmodel-1.png');" class="d"></div></span></div>
+    <span class="cat"><div style="background-image:url('https://abstract-class-shed.github.io/pic/catmodel-1.png');" class="d"></div></span></div>
 </div>
 </div>
 <h3>Стили [by <a href="cat892248" target="_blank">Псих</a>]</h3>
@@ -2672,6 +2943,7 @@ ${nickArray}
 <div style="font-size: 12px"><b>Записывать</b></div>
 <block class="bl_in">
 <div><input class="cwa-chk" group="cleaner-log"${clean_group_dis} id="clean_id" type="checkbox"${globals.clean_id?' checked':''}><label for="clean_id">ID поднятого/опущенного</label></div>
+<div><input class="cwa-chk" group="cleaner-log"${clean_group_dis} id="clean_underscore" type="checkbox"${globals.clean_underscore?' checked':''}><label for="clean_underscore">Подчеркивание "Поднял(а)/Опустил(а)" в истории чистки</label></div>
 <div><input class="cwa-chk" group="cleaner-log"${clean_group_dis} id="clean_title" type="checkbox"${globals.clean_title?' checked':''}><label for="clean_title">Должность поднятого/опущенного</label></div>
 <div><input class="cwa-chk" group="cleaner-log"${clean_group_dis} id="clean_location" type="checkbox"${globals.clean_location?' checked':''}><label for="clean_location">Локацию, в которой кот был поднят/опущен</label></div>
 <div><input class="cwa-chk" group="cleaner-log"${clean_group_dis} id="clean_action" type="checkbox"${globals.clean_action?' checked':''}><label for="clean_action">Проверка на действие*.</label>
