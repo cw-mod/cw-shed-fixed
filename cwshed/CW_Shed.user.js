@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.6
+// @version      1.6.1
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020, Ленивый (https://catwar.su/cat930302)
@@ -16,8 +16,10 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.6';
+  const version = '1.6.1';
   /*
+  1.6.1
+  я все сломал
   1.6
   Полностью переделан код чата. Внешне никак не отличается от предыдущей версии, но код более оптимизирован. Всё, связанное с чатом, переехало под свой заголовок в настройках
   Теперь можно переворачивать чат на человеческий! Форма написания нового сообщения переедет вниз, а сообщения будут отображаться сверху вниз, как и в нормальных, человеческих, широко распространённых чатах. Копироваться
@@ -475,9 +477,13 @@
     }
       if (globals.on_customChat) {
           let messages = 1;
+          if (isDesktop) {
+              addCSS('#cws_chat_msg {width: 1000px;}');
+          } else {
+              addCSS('#cws_chat_msg {width: 100%;}');
+          }
           addCSS(`#chat_msg {display: none;}
 #cws_chat_msg {
-  width: 1000px;
   overflow: auto;
   height: 275px;
 }
@@ -495,7 +501,6 @@
 .cws_chat_report {
 	width: 42px;
 }
-#chat_msg {display: none;}
 .cws_chat_report {
   -webkit-touch-callout: none; /* iOS Safari */
     -webkit-user-select: none; /* Safari */
