@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.6.1
+// @version      1.6.2
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020, Ленивый (https://catwar.su/cat930302)
@@ -16,7 +16,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.6.1';
+  const version = '1.6.2';
   /*
   1.6.1
   я все сломал
@@ -555,7 +555,7 @@
                                   matchAll = Array.from(matchAll); // теперь массив
                                   $.each(matchAll, function (index, value) {
                                       let replacer = value[1] || value[2] || value[3] || value[4]; //То, что было найдено (4 местоположения key, 4 варианта регулярки)
-                                      text = text.replace(value[0], value[0].replace(replacer, '<b class=myname>&shy;' + replacer + '&shy;</b>'));
+                                      text = text.replace(value[0], value[0].replace(replacer, '<span class=myname>&shy;' + replacer + '&shy;</span>'));
                                   });
                               }
                           });
@@ -580,11 +580,7 @@
                       let result = (globals.on_chatSwapIdTItle && globals.on_idChat) ? `
 <div class="cws_chat_wrapper">
   <div class="cws_chat_msg">
-    <span class="${classList}">
-      ${text}
-      -
-      ${nick}
-      ${cat_id_format}${cat_title}
+    <span class="${classList}">${text} - ${nick} ${cat_id_format}${cat_title}
       ${bot_msg}
     </span>
   </div>
@@ -592,11 +588,7 @@
 </div>` : `
 <div class="cws_chat_wrapper">
   <div class="cws_chat_msg">
-    <span class="${classList}">
-      ${text}
-      -
-      ${nick}${cat_title}
-      ${cat_id_format}
+    <span class="${classList}">${text} - ${nick}${cat_title} ${cat_id_format}
       ${bot_msg}
     </span>
   </div>
@@ -651,10 +643,18 @@
           if (globals.on_chatReverse) {
               $('#cws_chat_msg').on('scroll', function() { // потому что клик на жалобу с ориг чата тоже работает только на ориг чат
                   let $e = $('#cws_chat_msg');
-                  if ($e.scrollTop() + $e.height() == $e[0].scrollHeight) { // прокручено до конца
+                  if ($e.scrollTop() + $e.height() >= $e[0].scrollHeight - 45) { // прокручено до конца
                       scroll = false;
+                      console.log('Прокручено до конца страницы');
+                      console.log('scrollTop : ' + $e.scrollTop());
+                      console.log('height : ' + $e.height());
+                      console.log('scrollHeight : ' + $e[0].scrollHeight);
                   } else {
                       scroll = true;
+                      console.log('Прокручено на середину');
+                      console.log('scrollTop : ' + $e.scrollTop());
+                      console.log('height : ' + $e.height());
+                      console.log('scrollHeight : ' + $e[0].scrollHeight);
                   }
               });
           }
