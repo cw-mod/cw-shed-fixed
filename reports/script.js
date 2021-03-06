@@ -161,11 +161,11 @@ $(document).ready(function(){
                 txt += (par_list.arr.length) ? `[b]Участники:[/b] ${par_list.arr.join(", ")};<br>` : addErr("Ошибка: нет ID участников.");
                 if (par_list.mul_id_err) {txt += addErr("Ошибка в одном или нескольких ID; некорректные ID убраны из отчёта.");}
                 txt += `[b]Особые происшествия:[/b] ${$("#herb_situ").val()};<br>`;
-                let herb = [];
+                /*let herb = [];
                 if ($("#herb_amt").val() != 0) {herb.push(parseInt($("#herb_amt").val())+" трав");}
                 if ($("#wmoss_amt").val() != 0) {herb.push(parseInt($("#wmoss_amt").val())+" водяного мха");}
                 if ($("#moss_amt").val() != 0) {herb.push(parseInt($("#moss_amt").val())+" обычного мха");}
-                txt += (herb.length) ? `[b]Общее количество принесённых трав:[/b] ${herb.join(", ")}.<br>` : addErr("Ошибка: не указано количество трав.");
+                txt += (herb.length) ? `[b]Общее количество принесённых трав:[/b] ${herb.join(", ")}.<br>` : addErr("Ошибка: не указано количество трав.");*/
                 break;
             case 2://hunt
                 txt += "[b]Вид:[/b] ";
