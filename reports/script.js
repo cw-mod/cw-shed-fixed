@@ -2,7 +2,7 @@ $(document).ready(function(){
     //test
     //var testdt = new Date();
     //testdt.setTime( testdt.getTime() + (testdt.getTimezoneOffset() - 180)*60*1000);
-    //test
+    //test ??
     
     $("form").submit(function(e){e.preventDefault();});
     function getCookie(name) {
