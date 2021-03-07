@@ -136,6 +136,7 @@ $(document).ready(function(){
         let txt = "";
         let lead_id = parseInt($("#patr_lead_id").val().trim());
         let par_list;
+        let m;
         switch (a) {
             case 0:
                 let date = new Date($("#pogr_date").val());
@@ -148,7 +149,7 @@ $(document).ready(function(){
                     if (isNaN(time)) {txt += addErr("Ошибка: не выставлено время.");}
                     else {txt += `[b]Дата и время:[/b] ${day}.${month}, ${time}:00;<br>`;}
                 }
-                let m = $("input[name='marsh_num']:checked").val();
+                m = $("input[name='marsh_num']:checked").val();
                 txt += (m === undefined) ? addErr("Ошибка: не выбран номер маршрута.") : `[b]Маршрут:[/b] ${m};<br>`;
                 txt += (isNaN(lead_id)) ? addErr("Ошибка: некорректный ID ведущего.") : "[b]Ведущий:[/b] "+masking("[cat%ID] [%ID]", lead_id)+";<br>";
                 par_list = toMaskedArr($("#patr_id").val().trim(), "[cat%ID] [%ID]");
@@ -156,7 +157,7 @@ $(document).ready(function(){
                 if (par_list.mul_id_err) {txt += addErr("Ошибка в одном или нескольких ID; некорректные ID убраны из отчёта.");}
                 break;
             case 1://herb
-                let m = $("input[name='herb_type']:checked").val();
+                m = $("input[name='herb_type']:checked").val();
                 txt += (m === undefined) ? addErr("Ошибка: не выбран тип травника.") : `[b]Тип травника:[/b] ${m};<br>`;
                 txt += (isNaN(lead_id)) ? addErr("Ошибка: некорректный ID ведущего.") : "[b]Ведущий:[/b] "+masking("[cat%ID] [%ID]", lead_id)+";<br>";
                 par_list = toMaskedArr($("#patr_id").val().trim(), "[cat%ID] [%ID]");
