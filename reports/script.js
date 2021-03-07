@@ -156,6 +156,8 @@ $(document).ready(function(){
                 if (par_list.mul_id_err) {txt += addErr("Ошибка в одном или нескольких ID; некорректные ID убраны из отчёта.");}
                 break;
             case 1://herb
+                let m = $("input[name='herb_type']:checked").val();
+                txt += (m === undefined) ? addErr("Ошибка: не выбран тип травника.") : `[b]Тип травника:[/b] ${m};<br>`;
                 txt += (isNaN(lead_id)) ? addErr("Ошибка: некорректный ID ведущего.") : "[b]Ведущий:[/b] "+masking("[cat%ID] [%ID]", lead_id)+";<br>";
                 par_list = toMaskedArr($("#patr_id").val().trim(), "[cat%ID] [%ID]");
                 txt += (par_list.arr.length) ? `[b]Участники:[/b] ${par_list.arr.join(", ")};<br>` : addErr("Ошибка: нет ID участников.");
