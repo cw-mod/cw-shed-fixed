@@ -65,6 +65,16 @@
     border: 2px solid #ae8366;
     border-radius: 15px;
 }
+.type-lbl-min {
+    padding: 3px 10px;
+    display: inline-block;
+    text-align: center;
+    margin: 4px;
+    min-width: 10px;
+    border: 2px solid #ae8366;
+    border-radius: 15px;
+}
+
 .table-types {
     width: 100%;
     text-align:center;
