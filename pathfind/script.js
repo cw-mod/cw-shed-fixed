@@ -7,12 +7,13 @@ $(document).ready(function(){
         , thisLoc = pathArr[pathNum] // Для быстроты сокращаем массив из 700 лок до 1 локи
         , thisLocXY = {}; // Для массива вида "07" : 265, "31" : 524
 	    
-for (var pfr = 1; pfr < 10; pfr++) {
+for (var pfr = 1; pfr < 700; pfr++) {
 	let pto = pathArr[pfr];
 	for (var lookto in pto) {
-		console.log(pfr)
-		console.log(' -> ')
-		console.log(pto[lookto])
+		//console.log(pfr)
+		//console.log(' -> ')
+		//console.log(pto[lookto].to)
+		if (pfr == pto[lookto].to) {console.log(pfr)}
 	}
 }
 	    
