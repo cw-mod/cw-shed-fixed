@@ -10,7 +10,9 @@ $(document).ready(function(){
 for (var pfr = 1; pfr < 10; pfr++) {
 	let pto = pathArr[pfr];
 	for (var lookto in pto) {
-		console.log(pto + ' -> ' + lookto)
+		console.log(pfr)
+		console.log(' -> ')
+		console.log(pto[lookto])
 	}
 }
 	    
