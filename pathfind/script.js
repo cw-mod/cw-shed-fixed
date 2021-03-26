@@ -1,5 +1,4 @@
 var whereFrom = "dush";
-
 $(document).ready(function(){
     async function drawing(pathNum) {
         let pathFetch = await fetch('js/path_'+whereFrom+'.json')
@@ -7,6 +6,14 @@ $(document).ready(function(){
         , respStr = ""
         , thisLoc = pathArr[pathNum] // Для быстроты сокращаем массив из 700 лок до 1 локи
         , thisLocXY = {}; // Для массива вида "07" : 265, "31" : 524
+	    
+for (var pfr = 1; pfr < 10; pfr++) {
+	let pto = pathArr[pfr];
+	for (var lookto in pto) {
+		console.log(pto + ' -> ' + lookto)
+	}
+}
+	    
         for (var elem in thisLoc) {
             thisLocXY[thisLoc[elem].x + '' + thisLoc[elem].y] = thisLoc[elem].to;
         }
