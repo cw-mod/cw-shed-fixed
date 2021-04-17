@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.6.2
+// @version      1.6.5
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020, Ленивый (https://catwar.su/cat930302)
@@ -11,13 +11,18 @@
 // @grant        GM.xmlHttpRequest
 // @require      https://code.jquery.com/jquery-3.4.1.min.js
 // @require      https://code.jquery.com/ui/1.12.1/jquery-ui.js
+// @require      https://raw.githubusercontent.com/litera/jquery-scrollintoview/master/jquery.scrollintoview.min.js
 // ==/UserScript==
 /*global jQuery*/
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.6.2';
+  const version = '1.6.5';
   /*
+  1.6.5
+  Река вперед Река вперед
+  1.6.4
+  я все починил
   1.6.1
   я все сломал
   1.6
@@ -69,7 +74,7 @@
 , 'on_nickHighlight' : false // подсвечивание (кастомных) имен в чате
 , 'on_moveFightLog' : false // кнопка (и возможность) перемещения лога бр
 , 'on_shortFightLog' : false // сокращение лога бр
-, 'on_reports' : false // отчеты в блогах
+, 'on_reports' : true // отчеты в блогах
 , 'on_oldDialogue' : false // старый вид диалогов (1 колонка в выборе)
 , 'on_smellTimer' : false // таймер нюха
 , 'on_cuMovesNote' : true // Окно заметок для ВТ
@@ -303,7 +308,28 @@
     window.console.error('CW:Shed error: ', err);
   }
 
+    if (!isDesktop) { // фиксы дизайнов
+        addCSS(`.tag_edit, .tag_save {
+	                font-size: 130%;
+	            }
+	            .tag_remove, .tag_cancel {
+	                font-size: 120%
+	            }
+	            #tag_quest {
+	                padding: 7px
+	            }
+	            #tag_add {
+	            	padding: 9px;
+	            }`);
+    }
+
+
   function cw3() { //Игровая
+      /*ПЕРЕЕЗДЫ: TODO
+      $(document).ready(function(){
+          $('body').append(`<div><table><tbody id="cws_tr_field"></tbody></table></div>`);
+          $("#tr_field").appendTo("#cws_tr_field");
+      });*/
     $('#itemList').ready(function () { //Чинит осмотр расщелины, пока не сделают картинку
       let missActFlag = true;
       if (missActFlag) {
@@ -406,6 +432,7 @@
     if (globals.on_oldDialogue) {
       $(document).ready(function () {
         $("body").on('DOMNodeInserted', '#text', function () {
+            console.log('size of select : ' + $(this).attr('size'));
           $(this).attr('size', 1);
         });
       });
@@ -510,6 +537,11 @@
             user-select: none; /* Non-prefixed version, currently
                                   supported by Chrome, Edge, Opera and Firefox */
 }`);
+          // варомод (почему вы просите добавить совместимость меня, когда совместимость проще добавить тому кто сделал эту компактную игровую?)
+          const hvo_settings = JSON.parse(window.localStorage.getItem('cwmod_settings') || '{}');
+          if (hvo_settings.cw3_compact) {
+              addCSS(`#cws_chat_msg { width: auto !important; height: 350px; padding: 2px; }`);
+          }
           if (globals.on_chatReverse) {
               $('<div id="cws_chat_msg"><hr></div>').insertBefore('#chat_form');
           }
@@ -543,10 +575,13 @@
                           if (name_array[cat_id] === undefined) {
                               cat_title = '<span class="cws_chat_title cws_chat_title'+cat_id+'"></span>';
                           }
-                          else {
+                          else if (name_array[cat_id]) {
                               cat_title = '<span class="cws_chat_title">, '+name_array[cat_id]+'</span>';
+                          } else {
+                              cat_title = '<span class="cws_chat_title">'+name_array[cat_id]+'</span>';
                           }
                       }
+                      let has_nickname = false;
                       if (globals.on_nickHighlight) { // Покрасить ники в myname
                           $.each(globals.nickListArray, function (index, key) {
                               let expr = new RegExp('^(' + key + ')[^А-ЯЁёA-Za-z0-9]|[^А-ЯЁёA-Za-z0-9>](' + key + ')[^А-ЯЁёA-Za-z0-9<]|[^А-ЯЁёA-Za-z0-9](' + key + ')$|^(' + key + ')$', "ig");
@@ -555,14 +590,17 @@
                                   matchAll = Array.from(matchAll); // теперь массив
                                   $.each(matchAll, function (index, value) {
                                       let replacer = value[1] || value[2] || value[3] || value[4]; //То, что было найдено (4 местоположения key, 4 варианта регулярки)
-                                      text = text.replace(value[0], value[0].replace(replacer, '<span class=myname>&shy;' + replacer + '&shy;</span>'));
+                                      text = text.replace(value[0], value[0].replace(replacer, '<span class="myname">&shy;' + replacer + '&shy;</span>'));
+                                      console.log("Замечена кличка, добавлено в текст:");
+                                      console.log(text);
+                                      has_nickname = true;
                                   });
                               }
                           });
                       }
                       if (globals.on_chatMention && !name_heard) {// Если в текущем сообщении есть myname и !name_heard - проиграть звук и выставить name_heard = true
                           let has_myname = msg.getElementsByClassName('myname').length;
-                          if (has_myname) {
+                          if (has_myname || has_nickname) {
                               let is_bot = msg.getElementsByTagName('i').length;
                               if (jQuery.inArray(cat_id, globals.cm_blocked) == -1 && !is_bot) { //ЕСЛИ НЕ В МАССИВЕ ИГНОРИРУЕМЫХ и не бот
                                   console.log("Услышано имя в сообщении:");
@@ -574,7 +612,13 @@
                                   console.log(text);
                                   console.log("Но сообщение было от бота или от игрока в ЧС");
                               }
+                          } else {
+                              console.log("НЕ услышано имя в сообщении:");
+                              console.log(text);
+                              console.log("has_myname : " + has_myname);
+                              console.log("has_nickname : " + has_nickname);
                           }
+                          console.log("_______________________________")
                       }
                       // Если надо свапнуть (и ID включены, иначе будет жирный пробел перед должностью)
                       let result = (globals.on_chatSwapIdTItle && globals.on_idChat) ? `
@@ -645,16 +689,16 @@
                   let $e = $('#cws_chat_msg');
                   if ($e.scrollTop() + $e.height() >= $e[0].scrollHeight - 45) { // прокручено до конца
                       scroll = false;
-                      console.log('Прокручено до конца страницы');
-                      console.log('scrollTop : ' + $e.scrollTop());
-                      console.log('height : ' + $e.height());
-                      console.log('scrollHeight : ' + $e[0].scrollHeight);
+                      //console.log('Прокручено до конца страницы');
+                      //console.log('scrollTop : ' + $e.scrollTop());
+                      //console.log('height : ' + $e.height());
+                      //console.log('scrollHeight : ' + $e[0].scrollHeight);
                   } else {
                       scroll = true;
-                      console.log('Прокручено на середину');
-                      console.log('scrollTop : ' + $e.scrollTop());
-                      console.log('height : ' + $e.height());
-                      console.log('scrollHeight : ' + $e[0].scrollHeight);
+                      //console.log('Прокручено на середину');
+                      //console.log('scrollTop : ' + $e.scrollTop());
+                      //console.log('height : ' + $e.height());
+                      //console.log('scrollHeight : ' + $e[0].scrollHeight);
                   }
               });
           }
@@ -1793,7 +1837,7 @@ ${globals.on_treeTechies?`<div><input id="on_treeTechies" type="checkbox" checke
           let code = $(this).attr('src').match(/images.vfl.ru\/ii\/(\d+\/[\d\w]+\/\d+)\.png/);
           if (code !== null) {
             code = code[1];
-            let name = (achievements[code] === undefined) ? "Неизвестная ачивка" : achievements[code].name;
+            let name = (achievements[code] === undefined) ? "" : achievements[code].name;
             $(this).prop('title', name);
           }
         });
@@ -1804,12 +1848,8 @@ ${globals.on_treeTechies?`<div><input id="on_treeTechies" type="checkbox" checke
             if (code == old_code && $('#cws_achievement').css('display') != 'none') {
               $('#cws_achievement').hide(200);
             }
-            else {
-              let this_achievement = (achievements[code] === undefined) ? {
-                "name": "?",
-                "type": "?",
-                "condition": ""
-              } : achievements[code];
+            else if (achievements[code] !== undefined) {
+              let this_achievement = achievements[code];
               let info = inner
                 .replace("{name}", this_achievement.name)
                 .replace("{type}", this_achievement.type)
@@ -2043,182 +2083,348 @@ height: 2.3em;
 
   function blog() {
     if (globals.on_reports) {
+      addCSS(`.inp-button {background-color: #333;color: #fff;border: 1px solid #000;font-family: Verdana;font-size: .9em;}`);
       const blogID = pageurl.replace(/\D/g, '');
-      const convert = `<hr>
-<div>
-  <p>Конвертация имён в айди</p>
-  <textarea style="width:100%;resize:vertical;" rows="3" id="cws_convert_txt" placeholder="Гриволап, Шерстехвостка, Синяя Звезда"></textarea>
-  <input type="submit" id="cws_convert" value="Получить айди">
-  <div id="cws_convert_res"></div>
-</div>`;
-      $('body').on('click', '#cws_convert', function (e) {
-        e.preventDefault();
-        $("#cws_convert_res").html('');
-        if ($('#cws_convert_txt').val().trim().length) {
-          let arr = $('#cws_convert_txt').val().replace(/\n/g, "\n|").trim().split(/,|\n|:|;/),
-            string = "",
-            name_array = {};
-          $.each(arr, function (key, value) {
-            let new_str = value.trim().toLowerCase().replace(/^[а-яё]/ig, function (txtVal) {
-              return txtVal.toUpperCase();
-            }).replace(/ [а-яё]/ig, function (txtVal) {
-              return txtVal.toUpperCase();
-            });
-            let str = '';
-            if (name_array[new_str] === undefined) {
-              $.ajax({
-                type: "POST",
-                url: "/ajax/top_cat",
-                data: {
-                  name: new_str
-                },
-                async: false,
-                success: function (data) {
-                  const id = parseInt(data, 10);
-                  str = (isNaN(id)) ? new_str : id;
-                  name_array[new_str] = str;
-                  str += ' ';
-                }
-              });
-            }
-            else {
-              str = name_array[new_str] + ' ';
-            }
-            $("#cws_convert_res").append(str.replace(/\|/ig, '<br>'));
-          });
-        }
-      });
-
-      function masking(catID, maskStr) {
-        return maskStr.replace(/%ID%/g, catID);
-      }
-
-      function toMaskedArr(str, maskStr) {
-        str = str.replace(/\n/g, ' ');
-        let tmp_arr = [];
-        let error = false;
-        let array = str.trim().split(' ');
-        if (str.length) {
-          $.each(array, function (key, value) {
-            if (parseInt(value) == value) {
-              tmp_arr.push(masking(value, maskStr));
-            }
-            else if (value !== "") {
-              error = true;
-            }
-          });
-        }
-        let res = {};
-        res.array = tmp_arr;
-        res.error = error;
-        return res;
-      }
-
-      function validateTextarea($textarea) {
-        let pattern = new RegExp('^' + $textarea.attr('pattern') + '$');
-        return $textarea.val().match(pattern);
-      }
-
-      function splitDateStr(datestr) {
-        if (datestr) {
-          let dt = {};
-          let arr = datestr.split('-'); //yyyy-MM-dd
-          dt.shortYear = arr[0].substring(2);
-          dt.year = arr[0];
-          dt.month = arr[1];
-          dt.day = arr[2];
-          return dt;
-        }
-        else {
-          return false;
-        }
-      }
+      let date;
+      date = new Date();
+      date.setTime( date.getTime() + (date.getTimezoneOffset() + 180)*60*1000);
+      const date_str = date.getFullYear() + '-' + leadZero(date.getMonth() + 1) + '-' + leadZero(date.getDate());
+        /*РЕКА*/
       if (blogID == '13664') {
         $(document).ready(function () {
-          const date = new Date();
-          const date_str = date.getFullYear() + '-' + leadZero(date.getMonth() + 1) + '-' + leadZero(date.getDate());
-          const date_hr = leadZero(date.getHours());
-          const form = `<hr>
-<form id="rep_form">
-<div>
-    Отчёт по:
-    <input class="cws-switch cws-input" type="radio" checked name="type" id="type_1" value="doz" data-id="rep_type" data-show="doz"><label for="type_1">Дозору</label>
-    <input class="cws-switch cws-input" type="radio" name="type" id="type_2" value="patr" data-id="rep_type" data-show="patr"><label for="type_2">Патрулю</label>
-</div>
-<div class="cws-switch-obj" data-id="rep_type" data-show="doz">
+            let patr_time = 21,
+            doz_time = leadZero(date.getHours()),
+            patr_date = new Date(date),
+            doz_date = new Date(date);
+            let hour = date.getHours(), minute = date.getMinutes();
+            if (hour < 12) { patr_date.setDate(patr_date.getDate() - 1); } // yesterday
+    		if (hour >= 12) {patr_time = 12;}
+    		if (hour >= 15) {patr_time = 15;}
+    		if (hour >= 18) {patr_time = 18;}
+    		if (hour >= 21) {patr_time = 21;}
+            const patr_date_str = patr_date.getFullYear() + '-' + leadZero(patr_date.getMonth() + 1) + '-' + leadZero(patr_date.getDate());
+            addCSS(`/*.cws_tabs_content { display: none; } .cws_tabs_content.active { display: block; }*/
+.cws_tabs_caption {
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+  list-style: none;
+  position: relative;
+  margin: 0;
+  padding-inline-start:0px;
+}
+.cws_tabs_caption li {
+  padding: 1px 12px;
+  margin: 0 2px 0 0;
+  background: #333;
+  color: #FFF;
+  position: relative;
+  border: solid #000;
+  border-width: 1px;
+  text-align: center;
+}
+.cws_tabs_caption li:not(.active) {
+  cursor: pointer;
+}
+.cws_tabs_caption li:not(.active):hover {
+  background: #444;
+  border-color: #666;
+}
+.cws_tabs_caption .active {
+  background: #444;
+  color: #fff;
+  border-color: #666;
+}`);
+          $('#send_comment').append(`
+<hr>
+<h3>Автоматическое заполнение отчётов</h3>
+<hr>
+<div>Ваш ID:&nbsp;<input type="text" class="cws-input" pattern="[0-9]+" style="width: 145px;" id="r03_myid" required="true" placeholder="123456" value="${globals.my_id ? globals.my_id : ''}"> <input type="checkbox" checked id="remember_id"><label for="remember_id">Запомнить</label></div>
+<hr>
+<div class="cws_tabs">
+  <ul class="cws_tabs_caption">
+    <li class="active">Дозор</li>
+    <li>Патруль</li>
+  </ul>
+
+  <div class="cws_tabs_content active">
+    <div id="r03_doz_block">
     <p class="view-title">Дозор</p>
-    Вид дозора:
-    <select id="doz_type">
-        <option>Пассивный (Камышовые заросли)</option>
-        <option>Пассивный (Травянистый берег)</option>
-        <option>Пассивный (Разрушенная ограда)</option>
-        <option>Пассивный (Редколесье)</option>
-        <option>Пассивный (Расколотое дерево)</option>
-        <option>Пассивный (Лесной ручеёк)</option>
-        <option>Пассивный (Туннель)</option>
-        <option>Активный (1 маршрут)</option>
-        <option>Активный (2 маршрут)</option>
-        <option>Активный (3 маршрут)</option>
-    </select>
-</div>
-<div class="cws-switch-obj" style="display:none;" data-id="rep_type" data-show="patr">
+    <table>
+        <tr><td>Дата начала:</td><td><input type="date" class="cws-input" id="r03_doz_date"   required value="${date_str}"></td></tr>
+    </table>
+    <div><textarea id=r03_doz_text style="width: 95%;resize: none;" rows="11" placeholder="05+
+КЗ: Имя, имя.
+ТБ: имя;
+ро: имя
+рл: имя
+рд: имя
+лр: имя
+гт: имя
+01: имя
+2: имя
+3: имя"></textarea></div>
+    <button class="inp-button" id="r03_doz">Заполнить отчет</button>
+    </div>
+    <hr>
+    <div id="r03_doz_nar_block">
+    <p class="view-title">Дозор (проверка)</p>
+    <table>
+        <tr><td>Дата начала:</td><td style="width:25px;"></td><td><input type="date"   class="cws-input" id="r03_doz_nar_date" value="${date_str}"></td></tr>
+        <tr><td>Время начала:</td><td></td><td><input type="time" class="cws-input"   id="r03_doz_nar_time" value="${doz_time}:00" step="3600"></td></tr>
+        <tr class="r03-doz-nar-free-wrap">
+          <td>Освобождён:</td>
+    <td></td>
+          <td>
+            <input type="text" class="cws-input r03-doz-nar-free" placeholder="Имя ИЛИ ID">
+            <button data-id="r03-doz-nar-free-wrap" class="inp-button add-field">+</button>
+          </td>
+        </tr>
+        <tr class="r03-doz-nar-wrap">
+          <td>Нарушение:</td>
+          <td></td>
+          <td>
+            <input type="text" class="cws-input r03-doz-nar-narname" placeholder="Имя ИЛИ ID">
+<select class="cws-input r03-doz-nar-narreas" style="width:185px;">
+<option>офф в дозоре</option>
+<option>отсутствие на месте дозора</option>
+<option>перепутано место дозора</option>
+<option>пропуск нарушителя</option>
+<option>долгое невыполнение переходов в активном дозоре</option>
+<option>уход с места дозора раньше времени</option>
+<option>тренировка во время дозора</option>
+<option>выполнение посторонних действий в активном дозоре</option>
+</select>
+            <button data-id="r03-doz-nar-wrap" class="inp-button add-field">+</button>
+          </td>
+        </tr>
+    </table>
+    <button class="inp-button" id="r03_doz_nar">Заполнить отчет</button>
+    <template id="r03-doz-nar-free-wrap">
+      <tr class="r03-doz-nar-free-wrap">
+        <td></td>
+        <td><button data-id="r03-doz-nar-free-wrap" class="inp-button   del-field">&times;</button></td>
+        <td>
+          <input type="text" class="cws-input r03-doz-nar-free" placeholder="Имя ИЛИ ID">
+          <button data-id="r03-doz-nar-free-wrap" class="inp-button add-field">+</button>
+        </td>
+      </tr>
+    </template>
+    <template id="r03-doz-nar-wrap">
+      <tr class="r03-doz-nar-wrap">
+        <td></td>
+        <td><button data-id="r03-doz-nar-wrap" class="inp-button del-field">&times;</button></td>
+        <td>
+          <input type="text" class="cws-input r03-doz-nar-narname" placeholder="Имя ИЛИ ID">
+<select class="cws-input r03-doz-nar-narreas" style="width:185px;">
+<option>офф в дозоре</option>
+<option>отсутствие на месте дозора</option>
+<option>перепутано место дозора</option>
+<option>пропуск нарушителя</option>
+<option>долгое невыполнение переходов в активном дозоре</option>
+<option>уход с места дозора раньше времени</option>
+<option>тренировка во время дозора</option>
+<option>выполнение посторонних действий в активном дозоре</option>
+</select>
+          <button data-id="r03-doz-nar-wrap" class="inp-button add-field">+</button>
+        </td>
+      </tr>
+    </template>
+    </div>
+  </div>
+
+  <div id="r03_patr_block" class="cws_tabs_content" style="display:none;">
     <p class="view-title">Патруль</p>
     Маршрут:
-    <input type="radio" class="cws-input" name="mar" id="m_1" required-switch value="1"><label for="m_1">1</label>
-    <input type="radio" class="cws-input" name="mar" id="m_2" required-switch value="2"><label for="m_2">2</label>
-</div>
-<table>
-    <tr><td>Дата начала:</td><td><input type="date" class="cws-input" id="cws_date" required value="${date_str}"></td><td></td></tr>
-    <tr><td>Время начала:</td><td><input type="time" class="cws-input" id="cws_time" required value="${date_hr}:00" step="3600"></td><td></td></tr>
-    <tr><td>Ваш ID:</td><td><input type="text" class="cws-input" pattern="[0-9]+" style="width: 145px;" id="cws_myid" required="true" placeholder="123456" value="${globals.my_id ? globals.my_id : ''}"></td><td><input type="checkbox" checked id="remember_id"><label for="remember_id">Запомнить</label></td></tr>
-</table>
-<div>
-    ID участников, <b>исключая</b> вас, числами <small><i>(через пробел. Если их не было - оставьте поле пустым)</i></small>:
-    <textarea style="width:95%;resize:none;" class="cws-input" pattern="[0-9 ]*" id="cws_allid" placeholder="123456 111111 222222 333333"></textarea>
-</div>
-<input type="submit" value="Заполнить отчет">
-</form>`;
-          $('#send_comment').append(form);
-          $('#send_comment').append(convert);
-          $('#rep_form').on('submit', function (e) {
-            e.preventDefault();
-            if ($(this).find('.cws-input:not(:valid)').length || !validateTextarea($(this).find('textarea'))) return;
-            let myid = parseInt($('#cws_myid').val());
-            if ($('#remember_id').prop('checked') && !isNaN(myid) && myid) {
-              window.localStorage.setItem('cws_sett_my_id', myid);
-            }
-            let txt = '';
-            let date = splitDateStr($("#cws_date").val());
-            let hr = parseInt($("#cws_time").val().split(":")[0]);
-            if ($(this).find('.cws-input[name=type]:checked').val() == 'doz') { //дозор
-              let nextHr = (hr == 23) ? 0 : hr + 1;
-              let type = $('#doz_type').val();
-              hr = leadZero(hr);
-              nextHr = leadZero(nextHr);
-              let ids = $('#cws_myid').val() + ' ' + $('#cws_allid').val();
-              let list = toMaskedArr(ids, "[cat%ID%] [%ID%]");
-              txt = `[b]Дата:[/b] ${date.day}.${date.month};
-[b]Время:[/b] ${hr}:00-${nextHr}:00;
-[b]Участники:[/b] ${list.array.join(', ')};
-[b]Вид дозора:[/b] ${type}.`;
-            }
-            else { //патр
-              hr = leadZero(hr);
-              let leader = masking($('#cws_myid').val().trim(), "[cat%ID%] [%ID%]");
-              let mar = $(this).find('.cws-input[name=mar]:checked').val();
-              let list = toMaskedArr($('#cws_allid').val(), "[cat%ID%] [%ID%]");
-              txt = `[b]Дата и время:[/b] ${date.day}.${date.month}, ${hr}:00;
+      <input type="radio" class="cws-input" name="r03_patr_mar" id="m_1" required-switch value="1"><label for="m_1">1</label>
+      <input type="radio" class="cws-input" name="r03_patr_mar" id="m_2" required-switch value="2"><label for="m_2">2</label>
+    <table>
+        <tr><td>Дата начала:</td><td><input type="date" class="cws-input" id="r03_patr_date" required value="${patr_date_str}"></td><td></td></tr>
+        <tr><td>Время начала:</td><td><input type="time" class="cws-input" id="r03_patr_time" required value="${patr_time}:00" step="3600"></td><td></td></tr>
+    </table>
+    <div>
+        Список участников, <b>исключая</b> вас, разделяя запятой:
+        <textarea style="width:95%;resize:none;" class="cws-input" id="cws_patr_members" placeholder="Синяя Звезда, Львиногрив, Огонёк"></textarea>
+    </div>
+    <button class="inp-button" id="r03_patr">Заполнить отчет</button>
+  </div>
+</div>`);
+            $('ul.cws_tabs_caption').on('click', 'li:not(.active)', function() {
+                $(this)
+                    .addClass('active').siblings().removeClass('active')
+                    .closest('div.cws_tabs').find('div.cws_tabs_content').removeClass('active').slideUp(200).eq($(this).index()).addClass('active').slideDown(200);
+            });
+          $('#r03_patr').on('click', function (e) {
+              let myid = parseInt($('#r03_myid').val()); // id пишущего отчет
+              myid = (isNaN(myid)) ? 'Некорректный ID ведущего' : masking(myid, '[cat%ID%] [%ID%]');
+              if ($('#remember_id').prop('checked') && !isNaN(myid) && myid) { // запомнить
+                   setSettings('my_id', myid);
+              }
+              let mar = $('.cws-input[name=r03_patr_mar]:checked').val();
+              if (mar === undefined) { mar = 'Не выбран маршрут'; }
+              let arr_members = strToArr($('#cws_patr_members').val());
+              let id_arr = [];
+              let name_error = false; // ошибка в имени участника
+              arr_members.forEach((element) => {
+                  let tmp = nameToID(element.trim());
+                  if (parseInt(tmp)) {
+                      id_arr.push(masking(tmp, '[cat%ID%] [%ID%]'));
+                  } else {
+                      name_error = true;
+                  }
+              })
+              let date = splitDateStr($("#r03_patr_date").val()); // дата
+              let hr = parseInt($("#r03_patr_time").val().split(":")[0]);
+              let txt = `[u][b]Патруль[/b][/u]
+[b]Дата и время:[/b] ${date.day}.${date.month}, ${leadZero(hr)}:00;
 [b]Маршрут:[/b] ${mar};
-[b]Ведущий:[/b] ${leader};
-[b]Участники:[/b] ${list.array.join(', ')};`;
-            }
-            let val = $('#comment').val();
-            if (val) {
-              val += "\n\n";
-            }
-            $('#comment').val(val + txt);
+[b]Ведущий:[/b] ${myid};
+[b]Участники:[/b] ${id_arr.join(', ')};`;
+              if (name_error) {
+                  txt += `\n! ! ! В отчёте какая-то ошибка с именем (минимум одно из имён не было найдено). Проверьте его перед тем, как отправить.`
+              }
+              let val = $('#comment').val();
+              if (val) { val += "\n\n"; }
+              $('#comment').val(val + txt).scrollintoview();
           });
-          $('.cws-switch').on('change', function () {
+            $('#r03_doz').on('click', function (e) {
+                let date = splitDateStr($("#r03_doz_date").val()),
+                    txt = '[u][b]Дозор[/b][/u]\n[b]Дата:[/b] '+date.day+'.'+date.month+';\n[b]Время:[/b] ',
+                    my_id = parseInt($('#r03_myid').val()),
+                    som_text = $('#r03_doz_text').val().trim(),
+                    name_error = false,
+                    locations = [],
+                    time,
+                    nextTime,
+                    sign,
+                    found,
+                    pattern,
+                    places = {"КЗ" : "Камышовые заросли",
+                              "ТБ" : "Травянистый берег",
+                              "РО" : "Разрушенная ограда",
+                              "РЛ" : "Редколесье",
+                              "РД" : "Расколотое дерево",
+                              "ЛР" : "Лесной ручеёк",
+                              "ГТ" : "Главный туннель",
+                              "01" : "Активный 1",
+                              "02" : "Активный 2",
+                              "03" : "Активный 3"};
+                if ($('#remember_id').prop('checked') && !isNaN(my_id) && my_id) { // запомнить
+                    setSettings('my_id', my_id);
+                }
+                time = som_text.match(/^(\d{2}) *([\+-])/i);
+                if (time === null) {
+                    let val = $('#comment').val();
+                    if (val) { val += "\n\n"; }
+                    $('#comment').val(val + '! ! ! Отчёт обязательно должен начинаться с двух цифр (час сбора) и знака (+ или -).');
+                    return;
+                }
+                sign = time[2];
+                time = parseInt(time[1]);
+                nextTime = (time == 23) ? 0 : time + 1;
+                txt += leadZero(time)+':00-'+leadZero(nextTime)+':00;\n';
+                my_id = (isNaN(my_id)) ? 'Некорректный ID собирающего' : masking(my_id, '[cat%ID%] [%ID%]');
+                txt += '[b]Собирающий:[/b] '+my_id+';\n[b][u]Участники[/u][/b]\n';
+                if (sign == '+') {
+                    som_text = som_text.replace(/^(\d{2}) *([\+-])[^\n]*\n|\. *$|; *$|, *$/ig, '');
+                    som_text = som_text.replace(/\. *\n|, *\n|; *\n/ig, '\n');
+                    som_text = som_text.replace(/\n(\d):/ig, '\n0$1:');
+                    $.each(places, function(short_name, full_name) {
+                        pattern = new RegExp('\n*'+short_name+': ([^\n]+)', "i");
+                        if (found = som_text.match(pattern)) {
+                            let name_arr = found[1].split(','),
+                                id_arr = [],
+                                tmp_arr = [];
+                            $.each(name_arr, function(index, name) {
+                                let tmp = nameToID(name.trim());
+                                if (parseInt(tmp)) {
+                                    id_arr.push(masking(tmp, '[cat%ID%] [%ID%]'));
+                                } else {
+                                    id_arr.push(name_arr[index] + ' [?]');
+                                    name_error = true;
+                                }
+                            });
+                            locations.push('[b]'+full_name+':[/b] ' + id_arr.join(', '));
+                        }
+                    });
+                    txt += locations.join(';\n') + '.';
+                }
+                else { txt += 'Нет.' }
+                if (name_error) {
+                    txt += `\n! ! ! В отчёте какая-то ошибка с именем (одно из имён не было найдено). Проверьте его перед тем, как отправить.`
+                }
+                let val = $('#comment').val();
+                if (val) { val += "\n\n"; }
+                $('#comment').val(val + txt).scrollintoview();
+            });
+            $('#r03_doz_nar').on('click', function (e) {
+                // heyoooo
+                let date = splitDateStr($("#r03_doz_nar_date").val()),
+                    hr = parseInt($("#r03_doz_nar_time").val().split(":")[0]),
+                    next_hr = (hr == 23) ? 0 : hr+1,
+                    txt = '[u][b]Проверка[/b][/u]\n[b]Дата:[/b] '+date.day+'.'+date.month+';\n[b]Время:[/b] '+leadZero(hr)+':00-'+leadZero(next_hr)+':00';
+                let free_arr = [], nar_arr = [];
+                $('.r03-doz-nar-free-wrap').each(function() {
+                    let free = $(this).find($('input.r03-doz-nar-free')).val();
+                    if (free) {
+                        if (isNaN(parseInt(free))) { free = nameToID(free.trim()); }
+                        free = masking(free, '[cat%ID%] [%ID%]');
+                        free_arr.push(free);
+                    }
+                });
+                $('.r03-doz-nar-wrap').each(function() {
+                    let name = $(this).find($('input.r03-doz-nar-narname')).val(),
+                        reason = $(this).find($('select.r03-doz-nar-narreas')).val();
+                    if (name) {
+                        if (isNaN(parseInt(name))) { name = nameToID(name.trim()); }
+                        name = masking(name, '[cat%ID%] [%ID%]');
+                        nar_arr.push(name + ' (' + reason + ')');
+                    }
+                });
+                if (free_arr.length) {
+                    txt += ';\n[b]Освобождены:[/b] ' + free_arr.join(', ');
+                }
+                if (nar_arr.length) {
+                    txt += ';\n[b]Нарушения:[/b] ' + nar_arr.join(', ');
+                }
+                txt += '.';
+                let val = $('#comment').val();
+                if (val) { val += "\n\n"; }
+                $('#comment').val(val + txt).scrollintoview();
+              // TODO: приписать тут [u][b]Патруль[/b][/u]
+                /*
+[u][b]Проверка[/b][/u]
+[b]Дата:[/b] дд.мм;
+[b]Время:[/b] чч:00-чч:00;
+[b]Освобождены:[/b] Имя [ID];
+[b]Нарушения:[/b] Имя [ID] (нарушение).
+*/
+                $("#comment").scrollintoview();
+            });
+            $('#r03_doz_nar_block').on('click', '.add-field',function (e) {
+                let max_children = 5;
+                let data_id = $(this).data('id'),
+                    template = $('#' + data_id)[0];
+                let $fields = $('.' + data_id);
+                let last_e = $fields[$fields.length - 1];
+                if ($fields.length < max_children) {
+                    let clone = document.importNode(template.content, true);
+                    let add = $(clone).insertAfter(last_e);
+                    $(last_e).find($('.add-field')).css('display', 'none');
+                }
+            });
+            $('#r03_doz_nar_block').on('click', '.del-field',function (e) {
+                let data_id = $(this).data('id');
+                $(this).closest($('.' + data_id)).remove();
+
+                let $fields = $('.' + data_id);
+                let last_e = $fields[$fields.length - 1];
+                $(last_e).find($('.add-field')).css('display', 'inline-block');
+            });
+          /*$('.cws-switch').on('change', function () { // смена радио патруль/дозор мб потом надо будет?
             let data_show = $(this).attr('data-show');
             let data_id = $(this).attr('data-id');
             let $show = $('.cws-switch-obj[data-show=' + data_show + ']');
@@ -2226,50 +2432,8 @@ height: 2.3em;
             $('.cws-switch-obj[data-id=' + data_id + '] .cws-input[required-switch]').not($show).prop('required', false);
             $show.slideDown();
             $show.find('.cws-input[required-switch]').prop('required', true);
-          });
+          });*/
         });
-      }
-      if (blogID == '15935 ///') {
-        const form = `<hr>
-<form id="rep_form">
-<div>
-    Отчёт по:
-    <input class="cws-switch cws-input" type="radio" checked name="type" id="type_1" value="doz" data-id="rep_type" data-show="doz"><label for="type_1">Дозору</label>
-    <input class="cws-switch cws-input" type="radio" name="type" id="type_2" value="patr" data-id="rep_type" data-show="patr"><label for="type_2">Патрулю</label>
-</div>
-<div class="cws-switch-obj" data-id="rep_type" data-show="doz">
-    <p class="view-title">Дозор</p>
-    Вид дозора:
-    <select id="doz_type">
-        <option>Пассивный (Камышовые заросли)</option>
-        <option>Пассивный (Травянистый берег)</option>
-        <option>Пассивный (Разрушенная ограда)</option>
-        <option>Пассивный (Редколесье)</option>
-        <option>Пассивный (Расколотое дерево)</option>
-        <option>Пассивный (Лесной ручеёк)</option>
-        <option>Пассивный (Туннель)</option>
-        <option>Активный (1 маршрут)</option>
-        <option>Активный (2 маршрут)</option>
-        <option>Активный (3 маршрут)</option>
-    </select>
-</div>
-<div class="cws-switch-obj" style="display:none;" data-id="rep_type" data-show="patr">
-    <p class="view-title">Патруль</p>
-    Маршрут:
-    <input type="radio" class="cws-input" name="mar" id="m_1" required-switch value="1"><label for="m_1">1</label>
-    <input type="radio" class="cws-input" name="mar" id="m_2" required-switch value="2"><label for="m_2">2</label>
-</div>
-<table>
-    <tr><td>Ваш ID:</td><td><input type="text" class="cws-input" pattern="[0-9]+" style="width: 145px;" id="cws_myid" required="true" placeholder="123456" value="${globals.my_id ? globals.my_id : ''}"></td><td><input type="checkbox" checked id="remember_id"><label for="remember_id">Запомнить</label></td></tr>
-</table>
-<div>
-    ID участников, <b>исключая</b> вас, числами <small><i>(через пробел. Если их не было - оставьте поле пустым)</i></small>:
-    <textarea style="width:95%;resize:none;" class="cws-input" pattern="[0-9 ]*" id="cws_allid" placeholder="123456 111111 222222 333333"></textarea>
-</div>
-<input type="submit" value="Заполнить отчет">
-</form>`;
-        //$('#send_comment').append(form);
-        $('#send_comment').append(convert);
       }
     }
   }
@@ -2648,6 +2812,11 @@ ${nickArray}
     <td align=center><input class="cwa-chk" group="action-notif"${action_group_dis} id="txt_act_swim" type="checkbox"${globals.txt_act_swim?' checked':''}></td>
     <td align=center><input class="cwa-chk" group="action-notif"${action_group_dis} id="snd_act_swim" type="checkbox"${globals.snd_act_swim?' checked':''}></td>
     <td>Плавание</td>
+</tr>
+<tr>
+    <td align=center><input class="cwa-chk" group="action-notif"${action_group_dis} id="txt_act_dive" type="checkbox"${globals.txt_act_dive?' checked':''}></td>
+    <td align=center><input class="cwa-chk" group="action-notif"${action_group_dis} id="snd_act_dive" type="checkbox"${globals.snd_act_dive?' checked':''}></td>
+    <td>Ныряние</td>
 </tr>
 <tr>
     <td align=center><input class="cwa-chk" group="action-notif"${action_group_dis} id="txt_act_fill_moss" type="checkbox"${globals.txt_act_fill_moss?' checked':''}></td>
@@ -3065,7 +3234,7 @@ Y: <input type=number id="tt_window_top" class="cws-number" min=0 max=9999 value
 </block>
 </block>
 <hr>
-<div><input class="cwa-chk" id="on_reports" type="checkbox"${globals.on_reports?' checked':''}><label for="on_reports">Тестовая штука: Автоматическое составление отчётов в Блоге Охраняющих Границы (только для Речного племени)</label></div>
+<div><input class="cwa-chk" id="on_reports" type="checkbox"${globals.on_reports?' checked':''}><label for="on_reports">Тестовая штука: Автоматическое составление отчётов (пока что есть только в одном блоге только Речного племени)</label></div>
 <p align=right><i>Текущая версия CW:Shed: ${version}</i></p>
 </div>
 <hr><hr>`;
@@ -3284,4 +3453,71 @@ Y: <input type=number id="tt_window_top" class="cws-number" min=0 max=9999 value
       $('#css_cellshade_example').html(html);
     });
   }
+
+    /*functions*/
+      function masking(catID, maskStr) { // 123, '[cat%ID%] [%ID%]' => [cat123] [123]
+        return maskStr.replace(/%ID%/g, catID);
+      }
+
+      function toMaskedArr(str, maskStr) {// '123 456', '[catID] [ID]' => [cat123] [123], [cat456] [456]
+        str = str.replace(/\n/g, ' ');
+        let tmp_arr = [];
+        let error = false;
+        let array = str.trim().split(' ');
+        if (str.length) {
+          $.each(array, function (key, value) {
+            if (parseInt(value) == value) {
+              tmp_arr.push(masking(value, maskStr));
+            }
+            else if (value !== "") {
+              error = true;
+            }
+          });
+        }
+        let res = {};
+        res.array = tmp_arr;
+        res.error = error;
+        return res;
+      }
+
+      function validateTextarea($textarea) {
+        let pattern = new RegExp('^' + $textarea.attr('pattern') + '$');
+        return $textarea.val().match(pattern);
+      }
+
+      function splitDateStr(datestr) { // yyyy-MM-dd => dt = {year: yyyy, month: MM, day: dd, shortYear: YY}
+        if (datestr) {
+          let dt = {};
+          let arr = datestr.split('-'); //yyyy-MM-dd
+          dt.shortYear = arr[0].substring(2);
+          dt.year = arr[0];
+          dt.month = arr[1];
+          dt.day = arr[2];
+          return dt;
+        }
+        else {
+          return false;
+        }
+      }
+
+    function strToArr(str, delimiter = ',') {
+        return str.replace(/\n/g, ",").trim().split(delimiter);
+    }
+    function nameToID(name) {
+        let result;
+        $.ajax({
+            type: "POST",
+            url: "/ajax/top_cat",
+            data: {
+                name: name
+            },
+            async: false,
+            success: function (data) {
+                const id = parseInt(data, 10);
+                result = (isNaN(id)) ? name : id;
+            }
+        });
+        return result;
+    }
+
 })(window, document, jQuery);
