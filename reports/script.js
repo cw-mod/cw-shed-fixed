@@ -133,7 +133,7 @@ $(document).ready(function(){
     });
     $("#create_patr").click(function() {
         let a = parseInt($("input[name='patr_type']:checked").val());
-        let txt = "";
+        let txt = "[u][b]Патруль[/b][/u]<br>";
         let lead_id = parseInt($("#patr_lead_id").val().trim());
         let par_list;
         let m;
