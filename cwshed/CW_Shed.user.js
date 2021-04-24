@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.6.5
+// @version      1.6.7
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020, Ленивый (https://catwar.su/cat930302)
@@ -17,8 +17,10 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.6.5';
+  const version = '1.6.7';
   /*
+  1.6.7
+  Больше никогда не буду ставить [catID]
   1.6.5
   Река вперед Река вперед
   1.6.4
@@ -1828,7 +1830,7 @@ ${globals.on_treeTechies?`<div><input id="on_treeTechies" type="checkbox" checke
         inner = `Ачивка <b>"{name}"</b>
 <span style="font-size: 0.9em"><br>Тип: <i>{type}</i><br>
 <span style="white-space:pre-wrap">{condition}</span>`;
-      let $achievement = $((isDesktop ? '#branch' : '#site_table') + ' > .parsed tbody > tr:last-child img[src*="images.vfl.ru"]'),
+      let $achievement = $((isDesktop ? '#branch' : '#site_table') + ' > .parsed tbody > tr:last-child img[src*="images.vfl.ru"], ' + (isDesktop ? '#branch' : '#site_table') + ' > .parsed > img[src*="images.vfl.ru"]'),
         $body = $('body'),
         old_code = "";
       $(document).ready(function () {
@@ -2154,13 +2156,13 @@ height: 2.3em;
     <div id="r03_doz_block">
     <p class="view-title">Дозор</p>
     <table>
-        <tr><td>Дата начала:</td><td><input type="date" class="cws-input" id="r03_doz_date"   required value="${date_str}"></td></tr>
+        <tr><td>Дата начала:</td><td><input type="date" class="cws-input" id="r03_doz_date" required value="${date_str}"></td></tr>
     </table>
     <div><textarea id=r03_doz_text style="width: 95%;resize: none;" rows="11" placeholder="05+
 КЗ: Имя, имя.
 ТБ: имя;
-ро: имя
 рл: имя
+ро: имя
 рд: имя
 лр: имя
 гт: имя
@@ -2173,8 +2175,8 @@ height: 2.3em;
     <div id="r03_doz_nar_block">
     <p class="view-title">Дозор (проверка)</p>
     <table>
-        <tr><td>Дата начала:</td><td style="width:25px;"></td><td><input type="date"   class="cws-input" id="r03_doz_nar_date" value="${date_str}"></td></tr>
-        <tr><td>Время начала:</td><td></td><td><input type="time" class="cws-input"   id="r03_doz_nar_time" value="${doz_time}:00" step="3600"></td></tr>
+        <tr><td>Дата начала:</td><td style="width:25px;"></td><td><input type="date" class="cws-input" id="r03_doz_nar_date" value="${date_str}"></td></tr>
+        <tr><td>Время начала:</td><td></td><td><input type="time" class="cws-input" id="r03_doz_nar_time" value="${doz_time}:00" step="3600"></td></tr>
         <tr class="r03-doz-nar-free-wrap">
           <td>Освобождён:</td>
     <td></td>
@@ -2269,9 +2271,10 @@ height: 2.3em;
               let id_arr = [];
               let name_error = false; // ошибка в имени участника
               arr_members.forEach((element) => {
-                  let tmp = nameToID(element.trim());
+                  let name = element.trim();
+                  let tmp = nameToID(name);
                   if (parseInt(tmp)) {
-                      id_arr.push(masking(tmp, '[cat%ID%] [%ID%]'));
+                      id_arr.push(name +' [' + tmp +']');
                   } else {
                       name_error = true;
                   }
@@ -2304,8 +2307,8 @@ height: 2.3em;
                     pattern,
                     places = {"КЗ" : "Камышовые заросли",
                               "ТБ" : "Травянистый берег",
-                              "РО" : "Разрушенная ограда",
                               "РЛ" : "Редколесье",
+                              "РО" : "Разрушенная ограда",
                               "РД" : "Расколотое дерево",
                               "ЛР" : "Лесной ручеёк",
                               "ГТ" : "Главный туннель",
@@ -2327,7 +2330,7 @@ height: 2.3em;
                 nextTime = (time == 23) ? 0 : time + 1;
                 txt += leadZero(time)+':00-'+leadZero(nextTime)+':00;\n';
                 my_id = (isNaN(my_id)) ? 'Некорректный ID собирающего' : masking(my_id, '[cat%ID%] [%ID%]');
-                txt += '[b]Собирающий:[/b] '+my_id+';\n[b][u]Участники[/u][/b]\n';
+                txt += '[b]Собирающий:[/b] '+my_id+'.\n[b][u]Участники[/u][/b]\n';
                 if (sign == '+') {
                     som_text = som_text.replace(/^(\d{2}) *([\+-])[^\n]*\n|\. *$|; *$|, *$/ig, '');
                     som_text = som_text.replace(/\. *\n|, *\n|; *\n/ig, '\n');
@@ -2341,7 +2344,8 @@ height: 2.3em;
                             $.each(name_arr, function(index, name) {
                                 let tmp = nameToID(name.trim());
                                 if (parseInt(tmp)) {
-                                    id_arr.push(masking(tmp, '[cat%ID%] [%ID%]'));
+                                    //id_arr.push(masking(tmp, '[cat%ID%] [%ID%]'));
+                                    id_arr.push(name +' [' + tmp +']');
                                 } else {
                                     id_arr.push(name_arr[index] + ' [?]');
                                     name_error = true;
@@ -3519,5 +3523,4 @@ Y: <input type=number id="tt_window_top" class="cws-number" min=0 max=9999 value
         });
         return result;
     }
-
 })(window, document, jQuery);
