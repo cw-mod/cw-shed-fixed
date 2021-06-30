@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Создание карт</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+        <style type="text/css">
+            
+        </style>
+    </head>
+    <body> 
+        <svg width="500" height="500" id="lines">
+            <!-- <line x1="20" y1="10" x2="350" y2="800" stroke="black"/> -->
+        </svg>
+        <div id="panel">
+            ID: 
+            <input id="location_id" type="text" placeholder="ID" value="1">
+            <button id="location_add">Добавить локацию</button>
+            <div id="status">
+            </div>
+        </div>
+        <div id="wrapper">
+            <div id="results_wrapper"><div id="results_header"><b>Результаты:</b></div><div id="results"></div></div>
+            <div id="map"></div>
+        </div>
+    </body>
+    <script type="text/javascript">
+        var draggable_options = {
+          handle: '.location-name-th',
+          containment: [$('#map').offset().left, $('#map').offset().top],
+          stop: function( event, ui ) {
+                let offset = $(this).offset(),
+                map_offset = $('#map').offset();
+                //console.log($('#map').offset().left);
+                //if (offset.left < map_offset.left) offset.left = map_offset.left;
+                //if (offset.top < map_offset.top) offset.top = map_offset.top;
+                //$(this).offset(offset);
+                let xPos = offset.left + map_offset.left;
+                let yPos = offset.top + map_offset.top;
+                let svgWidth = $('#lines').attr('width');
+                let svgHeight = $('#lines').attr('height');
+                if (svgWidth < xPos) $('#lines').attr('width', xPos)
+                if (svgHeight < yPos) $('#lines').attr('height', yPos)
+          },
+          drag: function(event, ui) {
+                let id = $(this).closest('.location').data('id'),
+                $loc = $(this);
+                $('#lines line[data-from='+id+'], #lines line[data-to='+id+']').each(function() {
+                    let index = ($(this).data('from') == id) ? 1 : 2,
+                    x = $(this).data('x'+index), // x клетки которая привязана из локации
+                    y = $(this).data('y'+index); // y клетки которая привязана из локации
+                    if (x !== undefined && y !== undefined) { // двухсторонний
+                        let offset = $loc.closest('.location').find('tbody').children().eq(y - 1).children().eq(x - 1).offset();
+                        $(this).attr('x'+index, offset.left + 7.5)
+                        $(this).attr('y'+index, offset.top + 10)
+                    } else {
+
+                    }
+                });
+          }
+        };
+        var id, x, y, loc_height = 135, loc_width = 150, results = [];
+
+        $('body').on('click', '.location-delete', function() {
+            if (confirm('Удалить локацию?')) {
+                $(this).closest('.location').remove();
+            }
+        });
+
+        $('#location_add').click(function() {
+            let id_val = $('#location_id').val(),
+                id = parseInt(id_val);
+            if (/\D/g.test(id_val) ||isNaN(id) || $('.location[data-id='+id+']').length) {
+                alert('Некорректный ID или локация с таким ID уже существует на карте');
+            } else {
+                let elem = `<table class="location ui-draggable" data-id="${id}" style="position:absolute;top:0px;left:0px;"><thead><th colspan="9" class="location-name-th">${id}</th><th class="location-delete">&times;</th></thead>`;
+                for (let i = 0; i < 6; i++) {
+                    let row = '<tr>';
+                    for (let j = 0; j < 10; j++) {
+                        row += '<td class="cell"></td>';
+                    }
+                    row += '</tr>';
+                    elem += row;
+                }
+                elem += `</table>`;
+                let $elem = $('#map').append(elem);
+                $('.location[data-id='+id+']').draggable(draggable_options);
+                $('#status').html(`Добавили локацию ID = ${id}... <a href='#' id='abort' data-action='location add' data-id='${id}'>Отменить?</a>`);
+                $('#location_id').val(++id);
+            }
+        });
+        $('body').on('click', '.location .cell, .location-name-th', function() {
+            let $connect = $('.cell-selected'),
+                isCell = $(this).hasClass('cell');
+            $('#location_add').prop('disabled', !$connect.length);
+            if ($connect.length) { // соединить локации
+                let to_id = $(this).closest('.location').data('id');
+                if (isCell) { // присоединяем к ячейке (двухсторонний)
+                    if (to_id != id) { // не сам в себя
+                        let to_x = $(this).index() + 1,
+                            to_y = $(this).parent().index() + 1;
+                        addResults(id, x, y, to_id, to_x, to_y);
+                        $connect.removeClass('cell-selected').addClass('cell-twoside');
+                        $(this).addClass('cell-twoside');
+                        let from_offset = $connect.offset(),
+                            to_offset = $(this).offset();
+                        var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', from_offset.left + 7.5);
+                        line.setAttribute('y1', from_offset.top + 10);
+                        line.setAttribute('x2', to_offset.left + 7.5);
+                        line.setAttribute('y2', to_offset.top + 10);
+                        line.setAttribute('stroke', '#e47f35');
+                        line.setAttribute('stroke-width', 1);
+                        line.dataset.from = id;
+                        line.dataset.x1 = x;
+                        line.dataset.y1 = y;
+                        line.dataset.to = to_id;
+                        line.dataset.x2 = to_x;
+                        line.dataset.y2 = to_y;
+                        $('#lines').append(line);
+                    }
+                    // если сам в себя, то нажимайте на заголовок, лалки что ли
+                } else { // присоединяем к локации (свс или односторонний)
+                    $connect.removeClass('cell-selected').addClass((to_id == id) ? 'cell-self' : 'cell-oneside');
+                    if (to_id != id) {
+                        // draw line
+                    }
+                    addResults(id, x, y, to_id);
+                }
+            } else { // нажимается клетка, откуда будет переход
+                if (isCell && !$(this).is('.cell-self, .cell-oneside, .cell-twoside')) { // нажимаем не на заголовок при пустой выборке и не на уже существующий переход
+                    $(this).addClass('cell-selected');
+                    id = $(this).closest('.location').data('id');
+                    x = $(this).index() + 1;
+                    y = $(this).parent().index() + 1;
+                    $('#status').html(`Добавляем переход из ID = ${id}-${x}x${y}... <a href='#' id='abort' data-action='cell connect'>Отменить?</a>`);
+                } else {
+                    $('#location_add').prop('disabled', false);
+                }
+            }
+        });
+        $('body').on('click', '#abort', function() {
+            let action = $(this).data('action');
+            if (action == 'cell connect') {
+                $('.cell-selected').removeClass('cell-selected');
+                $('#location_add').prop('disabled', false);
+            } else if (action = 'location add') {
+                let id = $(this).data('id');
+                $('.location[data-id='+id+']').remove();
+                if ($('#location_id').val() == id + 1) {
+                    $('#location_id').val(id)
+                }
+            }
+            $('#status').html('');
+        });
+        function addResults(id, x, y, to_id, to_x = null, to_y = null) {
+            pushResults(id, x, y, to_id);
+            if (to_x != null && to_y != null) {
+                pushResults(to_id, to_x, to_y, id);
+            }
+            results = _.sortBy(results, ['string']);
+            var $wrapper = $('#results');
+            $wrapper.find('.move-wrapper').sort(function(a, b) {
+                if (a.dataset.string < b.dataset.string)
+                    return -1;
+                if ( a.dataset.string > b.dataset.string)
+                    return 1;
+                return 0;
+            }).appendTo($wrapper);
+            id = x = y = undefined;
+            $('#status').html('');
+        }
+        function pushResults(id, x, y, to_id) {
+            results.push({ string: `${id}-${x}x${y} => ${to_id}`, from: id, x: x, y: y, to: to_id });
+            $('#results').append(`<div class="move-wrapper" data-string="${id}-${x}x${y} => ${to_id}"><div class="move">${id}-${x}x${y} => ${to_id}</div><div class="move-delete">&times;</div></div>`);
+        }
+
+    </script>
+</html>
