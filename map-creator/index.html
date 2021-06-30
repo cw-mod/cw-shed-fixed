@@ -7,7 +7,96 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
         <style type="text/css">
-            
+            #lines {
+                position: fixed;
+                top: 0;
+                left: 0;
+                pointer-events: none;
+                z-index: 1;
+            }
+            .location, .location td, .location th {
+                border: 1px solid #b35a0bba;
+            }
+            .location  {
+                width: max-content;
+                border-collapse: collapse;
+            }
+            .location td {
+                height: 1em;
+                width: .75em;
+            }
+            .location thead {
+                background-color: #ffdaa4;
+            }
+            .location-name {
+                width: 10.5em;
+            }
+            .location-name-th {
+                padding: 0 .25em;
+                text-align: left;
+            }
+            .location-delete {
+                background-color: #e25454;
+                color: white;
+            }
+            #wrapper {
+                white-space: nowrap;
+            }
+            #results_wrapper {
+                border: 1px solid #0000006e;
+                background-color: #ddd;
+                width: 20%;
+                max-width: 12em;
+                min-width: 6em;
+                display: inline-block;
+                vertical-align: top; /* here */
+            }
+            #map {
+                min-width: 50em;
+                min-height: 50em;
+                position: relative;
+                display: inline-block;
+            }
+            #panel {
+                margin-bottom: .75em;
+            }
+            #status {
+                display: inline-block;
+            }
+            .location .cell {
+                background-color: #fff4da;
+            }
+            .location .cell:hover:not(.cell-self, .cell-twoside, .cell-oneside), .location .cell-selected {
+                background-color: #ffdfab;
+            }
+            .location .cell-self {
+                background-color: #106ed9;
+            }
+            .location .cell-oneside {
+                background-color: #ae1404;
+            }
+            .location .cell-twoside {
+                background-color: #e47f35;
+            }
+            #results_header, .move-wrapper {
+                padding: .15em .25em;
+            }
+            .move-wrapper {
+                display: flex;
+                justify-content: space-between;
+            }
+            .move-delete {
+                width: 1em;
+                background-color: #e25454;
+                color: white;
+                cursor: pointer;
+                text-align: center;
+                font-weight: bold;
+                border-radius: .25em;
+            }
+            .move {
+                width: max-content;
+            }
         </style>
     </head>
     <body> 
