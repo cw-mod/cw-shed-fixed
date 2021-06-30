@@ -7,107 +7,107 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
         <style type="text/css">
-			#lines {
-				position: fixed;
-				top: 0;
-				left: 0;
-				pointer-events: none;
-				z-index: 100;
-			}
-			.location, .location td, .location th {
-				border: 1px solid #b35a0bba;
-			}
-			.location  {
-				width: max-content;
-				border-collapse: collapse;
-			}
-			.location td {
-				height: 1em;
-				width: .75em;
-			}
-			.location thead {
-				background-color: #ffdaa4;
-			}
-			.location-name {
-				width: 10.5em;
-			}
-			.location-handle {
-				background-color: #ffa92a;
-			}
-			.location-name-th {
-				padding: 0 .25em;
-				text-align: left;
-			}
-			.location-delete {
-				background-color: #e25454;
-				color: white;
-			}
-			#wrapper {
-				white-space: nowrap;
-			}
-			#results_wrapper {
-				border: 1px solid #0000006e;
-				background-color: #ddd;
-				width: 10em;
-				display: inline-block;
-				vertical-align: top;
-			}
-			#map {
-				min-width: 50em;
-				min-height: 50em;
-				position: relative;
-				display: inline-block;
-			}
-			#panel {
-				margin-bottom: .75em;
-			}
-			#status {
-				display: inline-block;
-			}
-			.location .cell {
-				background-color: #fff4da;
-			}
-			.location .cell:hover:not(.cell-self, .cell-twoside, .cell-oneside), .location .cell-selected {
-				background-color: #ffdfab;
-			}
-			.location .cell-self {
-				background-color: #106ed9;
-			}
-			.location .cell-oneside {
-				background-color: #ae1404;
-			}
-			.location .cell-twoside {
-				background-color: #e47f35;
-			}
-			#results_header, .move-wrapper {
-				padding: .15em .25em;
-			}
-			.move-wrapper {
-				display: flex;
-				justify-content: space-between;
-			}
-			.move-delete {
-				width: 1em;
-				background-color: #e25454;
-				color: white;
-				cursor: pointer;
-				text-align: center;
-				font-weight: bold;
-				border-radius: .25em;
-				user-select: none;
-			}
-			.move {
-				width: max-content;
-			}
-			#input {
-				padding: 0 .25em;
-			}
-			#input_submit {
-				background-color: #5bce07;
-				color: white;
-				border: transparent;
-				border-radius: .25em;
-			}
+            #lines {
+                position: fixed;
+                top: 0;
+                left: 0;
+                pointer-events: none;
+                z-index: 100;
+            }
+            .location, .location td, .location th {
+                border: 1px solid #b35a0bba;
+            }
+            .location  {
+                width: max-content;
+                border-collapse: collapse;
+            }
+            .location td {
+                height: 1em;
+                width: .75em;
+            }
+            .location thead {
+                background-color: #ffdaa4;
+            }
+            .location-name {
+                width: 10.5em;
+            }
+            .location-handle {
+                background-color: #ffa92a;
+            }
+            .location-name-th {
+                padding: 0 .25em;
+                text-align: left;
+            }
+            .location-delete {
+                background-color: #e25454;
+                color: white;
+            }
+            #wrapper {
+                white-space: nowrap;
+            }
+            #results_wrapper {
+                border: 1px solid #0000006e;
+                background-color: #ddd;
+                width: 10em;
+                display: inline-block;
+                vertical-align: top;
+            }
+            #map {
+                min-width: 50em;
+                min-height: 50em;
+                position: relative;
+                display: inline-block;
+            }
+            #panel {
+                margin-bottom: .75em;
+            }
+            #status {
+                display: inline-block;
+            }
+            .location .cell {
+                background-color: #fff4da;
+            }
+            .location .cell:hover:not(.cell-self, .cell-twoside, .cell-oneside), .location .cell-selected {
+                background-color: #ffdfab;
+            }
+            .location .cell-self {
+                background-color: #106ed9;
+            }
+            .location .cell-oneside {
+                background-color: #ae1404;
+            }
+            .location .cell-twoside {
+                background-color: #e47f35;
+            }
+            #results_header, .move-wrapper {
+                padding: .15em .25em;
+            }
+            .move-wrapper {
+                display: flex;
+                justify-content: space-between;
+            }
+            .move-delete {
+                width: 1em;
+                background-color: #e25454;
+                color: white;
+                cursor: pointer;
+                text-align: center;
+                font-weight: bold;
+                border-radius: .25em;
+                user-select: none;
+            }
+            .move {
+                width: max-content;
+            }
+            #input {
+                padding: 0 .25em;
+            }
+            #input_submit {
+                background-color: #5bce07;
+                color: white;
+                border: transparent;
+                border-radius: .25em;
+            }
         </style>
     </head>
     <body> 
@@ -330,7 +330,7 @@
                     }
                     // если сам в себя, то нажимайте на заголовок, лалки что ли
                 } else { // присоединяем к локации (свс или односторонний)
-                    $connect.removeClass('cell-selected').addClass((to_id == id) ? 'cell-self' : 'cell-oneside');
+                    $connect.removeClass('cell-selected').addClass((to_id == id) ? 'cell-self' : 'cell-oneside').attr('data-to', to_id);
                     if (to_id != id) {
                         let from_offset = $connect.offset(),
                         from_loc_offset = $connect.closest('.location').offset()
@@ -367,7 +367,7 @@
                 $(this).closest('.location').remove();
                 _.remove(results, function(o) { return o.from == id || o.to == id});
                 $('.move-wrapper[data-from='+id+'], .move-wrapper[data-to='+id+'], line[data-from='+id+'], line[data-to='+id+']').remove();
-                $('.cell-twoside[data-to='+id+']').removeClass().addClass('cell')
+                $('.cell[data-to='+id+']').removeClass().addClass('cell')
             }
         });
 
