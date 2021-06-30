@@ -7,104 +7,121 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
         <style type="text/css">
-            #lines {
-	            position: fixed;
-                top: 0;
-                left: 0;
-                pointer-events: none;
-                z-index: 100;
-            }
-            .location, .location td, .location th {
-                border: 1px solid #b35a0bba;
-            }
-            .location  {
-                width: max-content;
-                border-collapse: collapse;
-            }
-            .location td {
-                height: 1em;
-                width: .75em;
-            }
-            .location thead {
-                background-color: #ffdaa4;
-            }
-            .location-name {
-                width: 10.5em;
-            }
-            .location-name-th {
-                padding: 0 .25em;
-                text-align: left;
-            }
-            .location-delete {
-                background-color: #e25454;
-                color: white;
-            }
-            #wrapper {
-                white-space: nowrap;
-            }
-            #results_wrapper {
-                border: 1px solid #0000006e;
-                background-color: #ddd;
-                width: 10em;
-                display: inline-block;
-                vertical-align: top;
-            }
-            #map {
-                min-width: 50em;
-                min-height: 50em;
-                position: relative;
-                display: inline-block;
-            }
-            #panel {
-                margin-bottom: .75em;
-            }
-            #status {
-                display: inline-block;
-            }
-            .location .cell {
-                background-color: #fff4da;
-            }
-            .location .cell:hover:not(.cell-self, .cell-twoside, .cell-oneside), .location .cell-selected {
-                background-color: #ffdfab;
-            }
-            .location .cell-self {
-                background-color: #106ed9;
-            }
-            .location .cell-oneside {
-                background-color: #ae1404;
-            }
-            .location .cell-twoside {
-                background-color: #e47f35;
-            }
-            #results_header, .move-wrapper {
-                padding: .15em .25em;
-            }
-            .move-wrapper {
-                display: flex;
-                justify-content: space-between;
-            }
-            .move-delete {
-                width: 1em;
-                background-color: #e25454;
-                color: white;
-                cursor: pointer;
-                text-align: center;
-                font-weight: bold;
-                border-radius: .25em;
-                user-select: none;
-            }
-            .move {
-                width: max-content;
-            }
+			#lines {
+				position: fixed;
+				top: 0;
+				left: 0;
+				pointer-events: none;
+				z-index: 100;
+			}
+			.location, .location td, .location th {
+				border: 1px solid #b35a0bba;
+			}
+			.location  {
+				width: max-content;
+				border-collapse: collapse;
+			}
+			.location td {
+				height: 1em;
+				width: .75em;
+			}
+			.location thead {
+				background-color: #ffdaa4;
+			}
+			.location-name {
+				width: 10.5em;
+			}
+			.location-handle {
+				background-color: #ffa92a;
+			}
+			.location-name-th {
+				padding: 0 .25em;
+				text-align: left;
+			}
+			.location-delete {
+				background-color: #e25454;
+				color: white;
+			}
+			#wrapper {
+				white-space: nowrap;
+			}
+			#results_wrapper {
+				border: 1px solid #0000006e;
+				background-color: #ddd;
+				width: 10em;
+				display: inline-block;
+				vertical-align: top;
+			}
+			#map {
+				min-width: 50em;
+				min-height: 50em;
+				position: relative;
+				display: inline-block;
+			}
+			#panel {
+				margin-bottom: .75em;
+			}
+			#status {
+				display: inline-block;
+			}
+			.location .cell {
+				background-color: #fff4da;
+			}
+			.location .cell:hover:not(.cell-self, .cell-twoside, .cell-oneside), .location .cell-selected {
+				background-color: #ffdfab;
+			}
+			.location .cell-self {
+				background-color: #106ed9;
+			}
+			.location .cell-oneside {
+				background-color: #ae1404;
+			}
+			.location .cell-twoside {
+				background-color: #e47f35;
+			}
+			#results_header, .move-wrapper {
+				padding: .15em .25em;
+			}
+			.move-wrapper {
+				display: flex;
+				justify-content: space-between;
+			}
+			.move-delete {
+				width: 1em;
+				background-color: #e25454;
+				color: white;
+				cursor: pointer;
+				text-align: center;
+				font-weight: bold;
+				border-radius: .25em;
+				user-select: none;
+			}
+			.move {
+				width: max-content;
+			}
+			#input {
+				padding: 0 .25em;
+			}
+			#input_submit {
+				background-color: #5bce07;
+				color: white;
+				border: transparent;
+				border-radius: .25em;
+			}
         </style>
     </head>
     <body> 
         <svg width="1000" height="1000" id="lines"></svg>
         <div id="panel">
-            ID: 
-            <input id="location_id" type="text" placeholder="ID" value="1">
-            <button id="location_add">Добавить локацию</button>
-            <div id="status"></div>
+            <div>
+                Тянуть за левый верхний угол, смена айди локации - двойное нажатие по полю заголовка с ним.
+            </div>
+            <div>
+                ID: 
+                <input id="location_id" type="text" placeholder="ID" value="1">
+                <button id="location_add">Добавить локацию</button>
+                <div id="status"></div>
+            </div>
         </div>
         <div id="wrapper">
             <div id="results_wrapper"><div id="results_header"><b>Результаты:</b></div><div id="results"></div></div>
@@ -113,10 +130,10 @@
     </body>
     <script type="text/javascript">
         var id, x, y, stroke_color = '#e47f35', results = []
-            , loc_height = 136, loc_width = 151
-            , cell_height = 20, cell_width = 15;
+            , loc_height = 136, loc_width = 151 // высота и ширина окошка с локацией
+            , cell_height = 20, cell_width = 15; // высота и ширина ячейки в локации
         var draggable_options = {
-            handle: '.location-name-th',
+            handle: '.location-handle',
             containment: [$('#map').offset().left, $('#map').offset().top],
             start: function(event, ui) {
                 $(this).css('z-index', '99');
@@ -124,29 +141,28 @@
             stop: function( event, ui ) {
                 $(this).css('z-index', '');
                 let offset = $(this).offset(),
-                map_offset = $('#map').offset();
-                let xPos = offset.left + map_offset.left;
-                let yPos = offset.top + map_offset.top;
-                let svgWidth = $('#lines').attr('width');
-                let svgHeight = $('#lines').attr('height');
-                if (svgWidth < xPos) $('#lines').attr('width', xPos)
-                if (svgHeight < yPos) $('#lines').attr('height', yPos)
+                    $lines = $('#lines'),
+                    map_offset = $('#map').offset(),
+                    xPos = offset.left + map_offset.left,
+                    yPos = offset.top + map_offset.top;
+                if ($lines.attr('width') < xPos) $lines.attr('width', xPos)
+                if ($lines.attr('height') < yPos) $lines.attr('height', yPos)
             },
             drag: function(event, ui) {
-                let id = $(this).closest('.location').data('id'),
+                let id = $(this).closest('.location').attr('data-id'),
                 $loc = $(this);
                 $('#lines line[data-from='+id+'], #lines line[data-to='+id+']').each(function() {
-                    let linestart_id = $(this).data('from'),
-                        lineend_id = $(this).data('to'),
+                    let linestart_id = $(this).attr('data-from'),
+                        lineend_id = $(this).attr('data-to'),
                         index = (linestart_id == id) ? 1 : 2,
-                        x = $(this).data('x'+index), // x клетки локации, которую перемещаем
-                        y = $(this).data('y'+index); // y клетки локации, которую перемещаем
+                        x = $(this).attr('data-x'+index), // x клетки локации, которую перемещаем
+                        y = $(this).attr('data-y'+index); // y клетки локации, которую перемещаем
                     if (x !== undefined) { // двухсторонний
                         let offset = $loc.closest('.location').find('tbody').children().eq(y - 1).children().eq(x - 1).offset();
                         $(this).attr('x'+index, offset.left + cell_width/2);
                         $(this).attr('y'+index, offset.top + cell_height/2);
                         index = (linestart_id == id) ? 2 : 1;
-                        let to_x = $(this).data('x'+index); // x клетки локации, к которой присоединена перемещаемая
+                        let to_x = $(this).attr('data-x'+index); // x клетки локации, к которой присоединена перемещаемая
                         if (to_x === undefined) {
                             let from_offset = $('.location[data-id='+lineend_id+']').offset(),
                                 to_offset = $loc.closest('.location').offset();
@@ -207,74 +223,77 @@
             if (to_x != undefined && to_y != undefined) {
                 pushResults(to_id, to_x, to_y, id, true);
             }
+            sortResults();
+            id = x = y = undefined;
+            $('#status').html('');
+        }
+        function sortResults() {
             results = _.sortBy(results, ['string']);
-            var $wrapper = $('#results');
+            let $wrapper = $('#results');
             $wrapper.find('.move-wrapper').sort(function(a, b) {
                 return (a.dataset.from - b.dataset.from) * 100 + (a.dataset.x - b.dataset.x) * 10 + (a.dataset.y - b.dataset.y);
             }).appendTo($wrapper);
-            id = x = y = undefined;
-            $('#status').html('');
         }
         function pushResults(id, x, y, to_id, fake = false) {
             results.push({ string: `${id}-${x}x${y} => ${to_id}`, from: id, x: x, y: y, to: to_id });
             $('#results').append(`<div class="move-wrapper" data-from="${id}" data-x="${x}" data-y="${y}" data-to="${to_id}" data-string="${id}-${x}x${y} => ${to_id}"><div class="move">${id}-${x}x${y} => ${to_id}</div><div class="move-delete${fake ? " is-fake":""}">&times;</div></div>`);
         }
-        $('body').on('click', '.location-delete', function() {
-            if (confirm('Удалить локацию?')) {
-                let id = $(this).closest('.location').data('id');
-                $(this).closest('.location').remove();
-                _.remove(results, function(o) { return o.from == id || o.to == id});
-                $('.move-wrapper[data-from='+id+'], .move-wrapper[data-to='+id+'], line[data-from='+id+'], line[data-to='+id+']').remove();
-                $('.cell-twoside[data-to='+id+']').removeClass().addClass('cell')
-            }
-        });
-        // var array = [{x: 1, y: 6}, {x: 1, y: 4}, {x: 2, y: 2}];
-        // _.remove(array, {x: 1})
-        // console.log(array)
-        $('body').on('click', '.move-delete', function() {
-            let $move = $(this).closest('.move-wrapper'),
-                from = $move.data('from'),
-                to = $move.data('to'),
-                x = $move.data('x'),
-                y = $move.data('y'),
-                $loc = $('.location[data-id='+from+']'),
-                $cell = $loc.find('tbody').children().eq(y - 1).children().eq(x - 1);
-            if ($cell.hasClass('cell-oneside')) { // односторонний
-                $cell.removeClass('cell-oneside');
-                $('line[data-from='+from+'][data-x1='+x+'][data-y1='+y+']').remove();
-            } else if ($cell.hasClass('cell-self')) { // свс
-                $cell.removeClass('cell-self');
-            } else { // двухсторонний
-                $cell.removeClass('cell-twoside');
-                let $line, to_x, to_y, $to_cell;
-                if ($(this).hasClass('is-fake')) { // переход был автоматически окрашен и вставлен
-                    $line = $('line[data-from='+to+'][data-x2='+x+'][data-y2='+y+'][data-to='+from+']'),
-                    to_x = $line.data('x1'),
-                    to_y = $line.data('y1');
-                } else { // переход был окрашен вручную
-                    $line = $('line[data-from='+from+'][data-x1='+x+'][data-y1='+y+'][data-to='+to+']'),
-                    to_x = $line.data('x2'),
-                    to_y = $line.data('y2');
-                }
-                $('.location[data-id='+to+']').find('tbody').children().eq(to_y - 1).children().eq(to_x - 1).removeClass('cell-twoside');
-                $line.remove();
-                _.remove(results, {from: to, to: from, x: to_x, y: to_y});
-                    $('.move-wrapper[data-from='+to+'][data-x='+to_x+'][data-y='+to_y+']').remove();
-            }
-            _.remove(results, {from: from, to: to, x: x, y: y})
 
-            $move.remove();
-            console.log('results после удаления перехода');
-            console.log(results);
+        $('body').on('dblclick', '.location-name-th', function() {
+            if ($('#input').length) {
+                if ($(this).find('#input').length) return;
+                alert('Название какой-то локации уже меняется.');
+                return;
+            }
+            let id = $(this).text();
+            $(this).html(`<input type="text" id="input" size=7 value=${id} data-old-value=${id}><button id="input_submit">✓</button>`);
         });
 
+        $('body').on('click', '#input_submit', function(e) {
+            let $input = $('#input'),
+                id_val = $input.val(), id = parseInt(id_val),
+                old_id = $input.attr('data-old-value');
+            if (/\D/g.test(id_val) ||isNaN(id) || ($('.location[data-id='+id+']').length && id != old_id)) {
+                alert('Некорректный ID или локация с таким ID уже существует на карте');
+                id = old_id;
+            } else if (id != old_id) {
+                $('line[data-from='+old_id+']').attr('data-from', id); // я не знаю что пошло не так
+                $('line[data-to='+old_id+']').attr('data-to', id);
+                $(this).closest('.location').attr('data-id', id);
+                let $move_wrapper = $('.move-wrapper[data-from='+old_id+']')
+                , x = $move_wrapper.attr('data-x')
+                , y = $move_wrapper.attr('data-y')
+                , to = $move_wrapper.attr('data-to');
+                let text = $move_wrapper.find('.move').text();
+                $('.move-wrapper[data-from='+old_id+'] > .move').each(function() {
+                    $(this).text($(this).text().replace(/\d+-/ig, id+'-'));
+                });
+                $('.move-wrapper[data-from='+old_id+']').attr('data-from', id);
+                $('.move-wrapper[data-to='+old_id+'] > .move').each(function() {
+                    $(this).text($(this).text().replace(/=> \d+/ig, '=> '+id));
+                });
+                $('.move-wrapper[data-to='+old_id+']').attr('data-to', id);
+                _.forEach(results, function(result) {
+                    if (result.from == old_id) {
+                        result.string = result.string.replace(/\d+-/ig, id+'-');
+                        result.from = id;
+                    }
+                    if (result.to == old_id) {
+                        result.string = result.string.replace(/=> \d+/ig, '=> '+id);
+                        result.to = id;
+                    }
+                });
+                sortResults();
+            }
+            $(this).closest('.location-name-th').text(id);
+        });
         $('#location_add').click(function() {
             let id_val = $('#location_id').val(),
                 id = parseInt(id_val);
             if (/\D/g.test(id_val) ||isNaN(id) || $('.location[data-id='+id+']').length) {
                 alert('Некорректный ID или локация с таким ID уже существует на карте');
             } else {
-                let elem = `<table class="location ui-draggable" data-id="${id}" style="position:absolute;top:0px;left:0px;"><thead><th colspan="9" class="location-name-th">${id}</th><th class="location-delete">&times;</th></thead>`;
+                let elem = `<table class="location ui-draggable" data-id="${id}" style="position:absolute;top:0px;left:0px;"><thead><th colspan=2 class="location-handle"></th><th colspan="7" class="location-name-th">${id}</th><th class="location-delete">&times;</th></thead>`;
                 for (let i = 0; i < 6; i++) {
                     let row = '<tr>';
                     for (let j = 0; j < 10; j++) {
@@ -289,12 +308,13 @@
                 $('#location_id').val(++id);
             }
         });
-        $('body').on('click', '.location .cell:not(.cell-oneside, .cell-twoside, .cell-selected, .cell-self), .location-name-th', function() {
+
+        $('body').on('click', '.location .cell:not(.cell-oneside, .cell-twoside, .cell-selected, .cell-self), .location thead', function() {
             let $connect = $('.cell-selected'),
                 isCell = $(this).hasClass('cell');
             $('#location_add').prop('disabled', !$connect.length);
             if ($connect.length) { // соединить локации
-                let to_id = $(this).closest('.location').data('id');
+                let to_id = $(this).closest('.location').attr('data-id');
                 if (isCell) { // присоединяем к ячейке (двухсторонний)
                     if (to_id != id) { // не сам в себя
                         let to_x = $(this).index() + 1,
@@ -325,7 +345,7 @@
             } else { // нажимается клетка, откуда будет переход
                 if (isCell && !$(this).is('.cell-self, .cell-oneside, .cell-twoside')) { // нажимаем не на заголовок при пустой выборке и не на уже существующий переход
                     $(this).addClass('cell-selected');
-                    id = $(this).closest('.location').data('id');
+                    id = $(this).closest('.location').attr('data-id');
                     x = $(this).index() + 1;
                     y = $(this).parent().index() + 1;
                     $('#status').html(`Добавляем переход из ID = ${id}-${x}x${y}... <a href='#' id='abort'>Отменить?</a>`);
@@ -334,12 +354,57 @@
                 }
             }
         });
+
         $('body').on('click', '#abort', function() {
-            let action = $(this).data('action');
             $('.cell-selected').removeClass('cell-selected');
             $('#location_add').prop('disabled', false);
             $('#status').html('');
         });
 
+        $('body').on('click', '.location-delete', function() {
+            if (confirm('Удалить локацию?')) {
+                let id = $(this).closest('.location').attr('data-id');
+                $(this).closest('.location').remove();
+                _.remove(results, function(o) { return o.from == id || o.to == id});
+                $('.move-wrapper[data-from='+id+'], .move-wrapper[data-to='+id+'], line[data-from='+id+'], line[data-to='+id+']').remove();
+                $('.cell-twoside[data-to='+id+']').removeClass().addClass('cell')
+            }
+        });
+
+        $('body').on('click', '.move-delete', function() {
+            let $move = $(this).closest('.move-wrapper'),
+                from = $move.attr('data-from'),
+                to = $move.attr('data-to'),
+                x = $move.attr('data-x'),
+                y = $move.attr('data-y'),
+                $loc = $('.location[data-id='+from+']'),
+                $cell = $loc.find('tbody').children().eq(y - 1).children().eq(x - 1);
+            if ($cell.hasClass('cell-oneside')) { // односторонний
+                $cell.removeClass('cell-oneside');
+                $('line[data-from='+from+'][data-x1='+x+'][data-y1='+y+']').remove();
+            } else if ($cell.hasClass('cell-self')) { // свс
+                $cell.removeClass('cell-self');
+            } else { // двухсторонний
+                $cell.removeClass('cell-twoside');
+                let $line, to_x, to_y, $to_cell;
+                if ($(this).hasClass('is-fake')) { // переход был автоматически окрашен и вставлен
+                    $line = $('line[data-from='+to+'][data-x2='+x+'][data-y2='+y+'][data-to='+from+']'),
+                    to_x = $line.attr('data-x1'),
+                    to_y = $line.attr('data-y1');
+                } else { // переход был окрашен вручную
+                    $line = $('line[data-from='+from+'][data-x1='+x+'][data-y1='+y+'][data-to='+to+']'),
+                    to_x = $line.attr('data-x2'),
+                    to_y = $line.attr('data-y2');
+                }
+                $('.location[data-id='+to+']').find('tbody').children().eq(to_y - 1).children().eq(to_x - 1).removeClass('cell-twoside');
+                $line.remove();
+                _.remove(results, {from: to, to: from, x: to_x, y: to_y});
+                    $('.move-wrapper[data-from='+to+'][data-x='+to_x+'][data-y='+to_y+']').remove();
+            }
+            _.remove(results, {from: from, to: to, x: x, y: y})
+            $move.remove();
+            console.log('results после удаления перехода');
+            console.log(results);
+        });
     </script>
 </html>
