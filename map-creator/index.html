@@ -8,7 +8,7 @@
         <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
         <style type="text/css">
             #lines {
-                position: fixed;
+	            position: fixed;
                 top: 0;
                 left: 0;
                 pointer-events: none;
@@ -91,6 +91,7 @@
                 text-align: center;
                 font-weight: bold;
                 border-radius: .25em;
+                user-select: none;
             }
             .move {
                 width: max-content;
@@ -111,7 +112,9 @@
         </div>
     </body>
     <script type="text/javascript">
-        var id, x, y, stroke_color = '#e47f35', results = [];
+        var id, x, y, stroke_color = '#e47f35', results = []
+            , loc_height = 136, loc_width = 151
+            , cell_height = 20, cell_width = 15;
         var draggable_options = {
             handle: '.location-name-th',
             containment: [$('#map').offset().left, $('#map').offset().top],
@@ -140,8 +143,8 @@
                         y = $(this).data('y'+index); // y клетки локации, которую перемещаем
                     if (x !== undefined) { // двухсторонний
                         let offset = $loc.closest('.location').find('tbody').children().eq(y - 1).children().eq(x - 1).offset();
-                        $(this).attr('x'+index, offset.left + 7.5);
-                        $(this).attr('y'+index, offset.top + 10);
+                        $(this).attr('x'+index, offset.left + cell_width/2);
+                        $(this).attr('y'+index, offset.top + cell_height/2);
                         index = (linestart_id == id) ? 2 : 1;
                         let to_x = $(this).data('x'+index); // x клетки локации, к которой присоединена перемещаемая
                         if (to_x === undefined) {
@@ -163,21 +166,21 @@
         };
         function setOnesideOffset(from_offset /*Локация, в которой переход*/, to_offset /*Куда ведет односторонний переход*/) {
             let new_offset = {left: to_offset.left, top: to_offset.top};
-            if (from_offset.top + 136 > to_offset.top) { // нижняя часть локи из > верхняя часть локи в
-                new_offset.top += 68;
-                if (from_offset.top > to_offset.top + 136) { // верхняя часть локи из > нижняя часть локи в
-                    new_offset.top += 68;
+            if (from_offset.top + loc_height > to_offset.top) { // нижняя часть локи из > верхняя часть локи в
+                new_offset.top += loc_height/2;
+                if (from_offset.top > to_offset.top + loc_height) { // верхняя часть локи из > нижняя часть локи в
+                    new_offset.top += loc_height/2;
                 }
             }
-            if (from_offset.left + 151 > to_offset.left) { // правая часть локи из > левая часть локи в
-                new_offset.left += 75.5;
-                if (from_offset.left > to_offset.left + 151) { // левая часть локи из > правая часть локи в
-                    new_offset.left += 75.5;
+            if (from_offset.left + loc_width > to_offset.left) { // правая часть локи из > левая часть локи в
+                new_offset.left += loc_width/2;
+                if (from_offset.left > to_offset.left + loc_width) { // левая часть локи из > правая часть локи в
+                    new_offset.left += loc_width/2;
                 }
             }
-            if (Math.abs(from_offset.top - to_offset.top) <= 136 && Math.abs(from_offset.left - to_offset.left) <= 151) {
-                new_offset.left += (from_offset.left > to_offset.left) ? 75.5 : -75.5;
-                new_offset.top += (from_offset.top > to_offset.top) ? 68 : -68;
+            if (Math.abs(from_offset.top - to_offset.top) <= loc_height && Math.abs(from_offset.left - to_offset.left) <= loc_width) {
+                new_offset.left += (from_offset.left > to_offset.left) ? loc_width/2 : -loc_width/2;
+                new_offset.top += (from_offset.top > to_offset.top) ? loc_height/2 : -loc_height/2;
             }
             return new_offset;
         }
@@ -202,7 +205,7 @@
         function addResults(id, x, y, to_id, to_x, to_y) {
             pushResults(id, x, y, to_id);
             if (to_x != undefined && to_y != undefined) {
-                pushResults(to_id, to_x, to_y, id);
+                pushResults(to_id, to_x, to_y, id, true);
             }
             results = _.sortBy(results, ['string']);
             var $wrapper = $('#results');
@@ -212,9 +215,9 @@
             id = x = y = undefined;
             $('#status').html('');
         }
-        function pushResults(id, x, y, to_id) {
+        function pushResults(id, x, y, to_id, fake = false) {
             results.push({ string: `${id}-${x}x${y} => ${to_id}`, from: id, x: x, y: y, to: to_id });
-            $('#results').append(`<div class="move-wrapper" data-from="${id}" data-x="${x}" data-y="${y}" data-to="${to_id}" data-string="${id}-${x}x${y} => ${to_id}"><div class="move">${id}-${x}x${y} => ${to_id}</div><div class="move-delete">&times;</div></div>`);
+            $('#results').append(`<div class="move-wrapper" data-from="${id}" data-x="${x}" data-y="${y}" data-to="${to_id}" data-string="${id}-${x}x${y} => ${to_id}"><div class="move">${id}-${x}x${y} => ${to_id}</div><div class="move-delete${fake ? " is-fake":""}">&times;</div></div>`);
         }
         $('body').on('click', '.location-delete', function() {
             if (confirm('Удалить локацию?')) {
@@ -224,6 +227,45 @@
                 $('.move-wrapper[data-from='+id+'], .move-wrapper[data-to='+id+'], line[data-from='+id+'], line[data-to='+id+']').remove();
                 $('.cell-twoside[data-to='+id+']').removeClass().addClass('cell')
             }
+        });
+        // var array = [{x: 1, y: 6}, {x: 1, y: 4}, {x: 2, y: 2}];
+        // _.remove(array, {x: 1})
+        // console.log(array)
+        $('body').on('click', '.move-delete', function() {
+            let $move = $(this).closest('.move-wrapper'),
+                from = $move.data('from'),
+                to = $move.data('to'),
+                x = $move.data('x'),
+                y = $move.data('y'),
+                $loc = $('.location[data-id='+from+']'),
+                $cell = $loc.find('tbody').children().eq(y - 1).children().eq(x - 1);
+            if ($cell.hasClass('cell-oneside')) { // односторонний
+                $cell.removeClass('cell-oneside');
+                $('line[data-from='+from+'][data-x1='+x+'][data-y1='+y+']').remove();
+            } else if ($cell.hasClass('cell-self')) { // свс
+                $cell.removeClass('cell-self');
+            } else { // двухсторонний
+                $cell.removeClass('cell-twoside');
+                let $line, to_x, to_y, $to_cell;
+                if ($(this).hasClass('is-fake')) { // переход был автоматически окрашен и вставлен
+                    $line = $('line[data-from='+to+'][data-x2='+x+'][data-y2='+y+'][data-to='+from+']'),
+                    to_x = $line.data('x1'),
+                    to_y = $line.data('y1');
+                } else { // переход был окрашен вручную
+                    $line = $('line[data-from='+from+'][data-x1='+x+'][data-y1='+y+'][data-to='+to+']'),
+                    to_x = $line.data('x2'),
+                    to_y = $line.data('y2');
+                }
+                $('.location[data-id='+to+']').find('tbody').children().eq(to_y - 1).children().eq(to_x - 1).removeClass('cell-twoside');
+                $line.remove();
+                _.remove(results, {from: to, to: from, x: to_x, y: to_y});
+                    $('.move-wrapper[data-from='+to+'][data-x='+to_x+'][data-y='+to_y+']').remove();
+            }
+            _.remove(results, {from: from, to: to, x: x, y: y})
+
+            $move.remove();
+            console.log('results после удаления перехода');
+            console.log(results);
         });
 
         $('#location_add').click(function() {
@@ -244,7 +286,6 @@
                 elem += `</table>`;
                 let $elem = $('#map').append(elem);
                 $('.location[data-id='+id+']').draggable(draggable_options);
-                $('#status').html(`Добавили локацию ID = ${id}... <a href='#' id='abort' data-action='location add' data-id='${id}'>Отменить?</a>`);
                 $('#location_id').val(++id);
             }
         });
@@ -263,8 +304,8 @@
                         $(this).addClass('cell-twoside').attr('data-to', id);
                         let from_offset = $connect.offset(),
                             to_offset = $(this).offset();
-                        drawLine(from_offset.left + 7.5, from_offset.top + 10, 
-                            to_offset.left + 7.5, to_offset.top + 10, 
+                        drawLine(from_offset.left + cell_width/2, from_offset.top + cell_height/2, 
+                            to_offset.left + cell_width/2, to_offset.top + cell_height/2, 
                             id, x, y, to_id, to_x, to_y);
                     }
                     // если сам в себя, то нажимайте на заголовок, лалки что ли
@@ -275,7 +316,7 @@
                         from_loc_offset = $connect.closest('.location').offset()
                         to_offset = $(this).closest('.location').offset();
                         to_offset = setOnesideOffset(from_loc_offset, to_offset);
-                        drawLine(from_offset.left + 7.5, from_offset.top + 10, 
+                        drawLine(from_offset.left + cell_width/2, from_offset.top + cell_height/2, 
                             to_offset.left, to_offset.top, 
                             id, x, y, to_id);
                     }
@@ -287,7 +328,7 @@
                     id = $(this).closest('.location').data('id');
                     x = $(this).index() + 1;
                     y = $(this).parent().index() + 1;
-                    $('#status').html(`Добавляем переход из ID = ${id}-${x}x${y}... <a href='#' id='abort' data-action='cell connect'>Отменить?</a>`);
+                    $('#status').html(`Добавляем переход из ID = ${id}-${x}x${y}... <a href='#' id='abort'>Отменить?</a>`);
                 } else {
                     $('#location_add').prop('disabled', false);
                 }
@@ -295,16 +336,8 @@
         });
         $('body').on('click', '#abort', function() {
             let action = $(this).data('action');
-            if (action == 'cell connect') {
-                $('.cell-selected').removeClass('cell-selected');
-                $('#location_add').prop('disabled', false);
-            } else if (action = 'location add') {
-                let id = $(this).data('id');
-                $('.location[data-id='+id+']').remove();
-                if ($('#location_id').val() == id + 1) {
-                    $('#location_id').val(id)
-                }
-            }
+            $('.cell-selected').removeClass('cell-selected');
+            $('#location_add').prop('disabled', false);
             $('#status').html('');
         });
 
