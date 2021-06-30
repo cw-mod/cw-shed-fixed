@@ -100,15 +100,12 @@
         </style>
     </head>
     <body> 
-        <svg width="500" height="500" id="lines">
-            <!-- <line x1="20" y1="10" x2="350" y2="800" stroke="black"/> -->
-        </svg>
+        <svg width="1000" height="1000" id="lines"></svg>
         <div id="panel">
             ID: 
             <input id="location_id" type="text" placeholder="ID" value="1">
             <button id="location_add">Добавить локацию</button>
-            <div id="status">
-            </div>
+            <div id="status"></div>
         </div>
         <div id="wrapper">
             <div id="results_wrapper"><div id="results_header"><b>Результаты:</b></div><div id="results"></div></div>
@@ -122,10 +119,6 @@
           stop: function( event, ui ) {
                 let offset = $(this).offset(),
                 map_offset = $('#map').offset();
-                //console.log($('#map').offset().left);
-                //if (offset.left < map_offset.left) offset.left = map_offset.left;
-                //if (offset.top < map_offset.top) offset.top = map_offset.top;
-                //$(this).offset(offset);
                 let xPos = offset.left + map_offset.left;
                 let yPos = offset.top + map_offset.top;
                 let svgWidth = $('#lines').attr('width');
@@ -144,7 +137,7 @@
                         let offset = $loc.closest('.location').find('tbody').children().eq(y - 1).children().eq(x - 1).offset();
                         $(this).attr('x'+index, offset.left + 7.5)
                         $(this).attr('y'+index, offset.top + 10)
-                    } else {
+                    } else { // односторонний
 
                     }
                 });
@@ -154,7 +147,17 @@
 
         $('body').on('click', '.location-delete', function() {
             if (confirm('Удалить локацию?')) {
+                let id = $(this).closest('.location').data('id');
                 $(this).closest('.location').remove();
+                // var array = [{x: 1, y: 2},{x: 1, y: 5},{x: 2, y: 1}];
+                // var evens = _.remove(array, function(n) {
+                //     return n.x == 1;
+                // });
+                // console.log(array)
+                _.remove(results, function(o) { return o.from == id || o.to == id});
+                $('.move-wrapper[data-from='+id+'], .move-wrapper[data-to='+id+'], #lines > line[data-from='+id+'], #lines > line[data-to='+id+']').remove();
+                $('.cell-twoside[data-to='+id+']').removeClass().addClass('cell')
+
             }
         });
 
@@ -191,8 +194,8 @@
                         let to_x = $(this).index() + 1,
                             to_y = $(this).parent().index() + 1;
                         addResults(id, x, y, to_id, to_x, to_y);
-                        $connect.removeClass('cell-selected').addClass('cell-twoside');
-                        $(this).addClass('cell-twoside');
+                        $connect.removeClass('cell-selected').addClass('cell-twoside').attr('data-to', to_id);
+                        $(this).addClass('cell-twoside').attr('data-to', id);
                         let from_offset = $connect.offset(),
                             to_offset = $(this).offset();
                         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -263,7 +266,7 @@
         }
         function pushResults(id, x, y, to_id) {
             results.push({ string: `${id}-${x}x${y} => ${to_id}`, from: id, x: x, y: y, to: to_id });
-            $('#results').append(`<div class="move-wrapper" data-string="${id}-${x}x${y} => ${to_id}"><div class="move">${id}-${x}x${y} => ${to_id}</div><div class="move-delete">&times;</div></div>`);
+            $('#results').append(`<div class="move-wrapper" data-from="${id}" data-to="${to_id}" data-string="${id}-${x}x${y} => ${to_id}"><div class="move">${id}-${x}x${y} => ${to_id}</div><div class="move-delete">&times;</div></div>`);
         }
 
     </script>
