@@ -157,6 +157,7 @@
             },
             drag: function(event, ui) {
                 let id = $(this).closest('.location').attr('data-id'),
+                    $lines = $('#lines'),
                     $map = $('#map'),
                     $loc = $(this);
                 // Перерисовка линий
@@ -201,9 +202,12 @@
                         $max_top = $(this);
                     }
                 }
-                $map.css('width', $max_left.offset().left - $map.offset().left + loc_width)
-                $map.css('height', $max_top.offset().top - $map.offset().top + loc_height)
-
+                let width = $max_left.offset().left - $map.offset().left + loc_width,
+                    height = $max_top.offset().top - $map.offset().top + loc_height;
+                $map.css('width', width);
+                $map.css('height', height);
+                $lines.attr('width', width);
+                $lines.attr('height', height);
             }
         };
         function setOnesideOffset(from_offset /*Локация, в которой переход*/, to_offset /*Куда ведет односторонний переход*/) {
@@ -445,6 +449,5 @@
                 delete link;
             });
         });
-
     </script>
 </html>
