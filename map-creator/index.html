@@ -144,7 +144,7 @@
         var id, x, y, stroke_color = '#e47f35', results = [], locations = []
             , loc_height = 136, loc_width = 151 // высота и ширина окошка с локацией
             , cell_height = 20, cell_width = 15 // высота и ширина ячейки в локации
-            , $max_left = undefined, $max_top = undefined; // самые дальние локации
+            , $max_left = undefined, $max_top = undefined, max_left_offset = 0, max_top_offset = 0; // самые дальние локации
         var draggable_options = {
             handle: '.location-handle',
             containment: [$('#map').offset().left, $('#map').offset().top],
@@ -194,12 +194,30 @@
                 if ($max_left == undefined) {
                     $max_left = $(this);
                     $max_top = $(this);
+                    max_left_offset = $(this).offset().left;
+                    max_top_offset = $(this).offset().top;
                 } else {
                     if ($max_left.offset().left < $(this).offset().left) {
                         $max_left = $(this);
+                        max_left_offset = $(this).offset().left;
+                    } else if ($(this).data('id') == $max_left.data('id') && max_left_offset > $(this).offset().left) {
+                        let $new_max_left = $(this);
+                        $('.location').each(function(index) {
+                            if ($(this).offset().left > $new_max_left.offset().left) $new_max_left = $(this);
+                        });
+                        $max_left = $new_max_left;
+                        max_left_offset = $new_max_left.offset().left;
                     }
                     if ($max_top.offset().top < $(this).offset().top) {
                         $max_top = $(this);
+                        max_top_offset = $(this).offset().top;
+                    } else if ($(this).data('id') == $max_top.data('id') && max_top_offset > $(this).offset().top) {
+                        let $new_max_top = $(this);
+                        $('.location').each(function(index) {
+                            if ($(this).offset().top > $new_max_top.offset().top) $new_max_top = $(this);
+                        });
+                        $max_top = $new_max_top;
+                        max_top_offset = $new_max_top.offset().top;
                     }
                 }
                 let width = $max_left.offset().left - $map.offset().left + loc_width,
