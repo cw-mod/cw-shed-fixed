@@ -6,7 +6,11 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
         <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+        <script src="https://html2canvas.hertzen.com/dist/html2canvas.js"></script>
         <style type="text/css">
+            #panel > div {
+                margin-bottom: .5em;
+            }
             #lines {
                 position: absolute;
                 top: 0;
@@ -111,27 +115,36 @@
         </style>
     </head>
     <body> 
-        <svg width="1000" height="1000" id="lines"></svg>
         <div id="panel">
             <div>
                 Тянуть за левый верхний угол, смена айди локации - двойное нажатие по полю заголовка с ним, односторонний переход - закончить создание кликом на заголовок, сам в себя - то же самое, но на себя.
             </div>
+            <!-- <div>
+                Окошко для импорта: <input type="text" ud="import_input"> <button id="import">Импортировать</button>
+            </div>
+            <div>
+                Текущая карта: <input type="text" id="export_input"> <button id="reset">Сбросить</button>
+            </div> -->
             <div>
                 ID: 
                 <input id="location_id" type="text" placeholder="ID" value="1">
                 <button id="location_add">Добавить локацию</button>
+                <button id="download">Сохранить карту как PNG</button>
                 <div id="status"></div>
             </div>
         </div>
         <div id="wrapper">
             <div id="results_wrapper"><div id="results_header"><b>Результаты:</b></div><div id="results"></div></div>
-            <div id="map"></div>
+            <div id="map">
+                <svg width="1000" height="1000" id="lines"></svg>
+            </div>
         </div>
     </body>
     <script type="text/javascript">
-        var id, x, y, stroke_color = '#e47f35', results = []
+        var id, x, y, stroke_color = '#e47f35', results = [], locations = []
             , loc_height = 136, loc_width = 151 // высота и ширина окошка с локацией
-            , cell_height = 20, cell_width = 15; // высота и ширина ячейки в локации
+            , cell_height = 20, cell_width = 15 // высота и ширина ячейки в локации
+            , $max_left = undefined, $max_top = undefined; // самые дальние локации
         var draggable_options = {
             handle: '.location-handle',
             containment: [$('#map').offset().left, $('#map').offset().top],
@@ -140,44 +153,57 @@
             },
             stop: function( event, ui ) {
                 $(this).css('z-index', '');
-                let offset = $(this).offset(),
-                    $lines = $('#lines'),
-                    map_offset = $('#map').offset(),
-                    xPos = offset.left + map_offset.left,
-                    yPos = offset.top + map_offset.top;
-                if ($lines.attr('width') < xPos) $lines.attr('width', xPos)
-                if ($lines.attr('height') < yPos) $lines.attr('height', yPos)
+                // SAVE left & top of location
             },
             drag: function(event, ui) {
                 let id = $(this).closest('.location').attr('data-id'),
-                $loc = $(this);
+                    $map = $('#map'),
+                    $loc = $(this);
+                // Перерисовка линий
                 $('#lines line[data-from='+id+'], #lines line[data-to='+id+']').each(function() {
                     let linestart_id = $(this).attr('data-from'),
                         lineend_id = $(this).attr('data-to'),
+                        base_offset = $('#lines').offset(),
                         index = (linestart_id == id) ? 1 : 2,
                         x = $(this).attr('data-x'+index), // x клетки локации, которую перемещаем
                         y = $(this).attr('data-y'+index); // y клетки локации, которую перемещаем
                     if (x !== undefined) { // двухсторонний
                         let offset = $loc.closest('.location').find('tbody').children().eq(y - 1).children().eq(x - 1).offset();
-                        $(this).attr('x'+index, offset.left + cell_width/2);
-                        $(this).attr('y'+index, offset.top + cell_height/2);
+                        $(this).attr('x'+index, offset.left - base_offset.left + cell_width/2);
+                        $(this).attr('y'+index, offset.top - base_offset.top + cell_height/2);
                         index = (linestart_id == id) ? 2 : 1;
                         let to_x = $(this).attr('data-x'+index); // x клетки локации, к которой присоединена перемещаемая
                         if (to_x === undefined) {
                             let from_offset = $('.location[data-id='+lineend_id+']').offset(),
                                 to_offset = $loc.closest('.location').offset();
                             from_offset = setOnesideOffset(to_offset, from_offset);
-                            $(this).attr('x'+index, from_offset.left);
-                            $(this).attr('y'+index, from_offset.top);
+                            $(this).attr('x'+index, from_offset.left - base_offset.left);
+                            $(this).attr('y'+index, from_offset.top - base_offset.top);
                         }
                     } else { // односторонний
                         let from_offset = $('.location[data-id='+linestart_id+']').offset(),
                             to_offset = $loc.closest('.location').offset();
                         to_offset = setOnesideOffset(from_offset, to_offset);
-                        $(this).attr('x'+index, to_offset.left);
-                        $(this).attr('y'+index, to_offset.top);
+                        $(this).attr('x'+index, to_offset.left - base_offset.left);
+                        $(this).attr('y'+index, to_offset.top - base_offset.top);
                     }
                 });
+
+                // Поправка на размер блока
+                if ($max_left == undefined) {
+                    $max_left = $(this);
+                    $max_top = $(this);
+                } else {
+                    if ($max_left.offset().left < $(this).offset().left) {
+                        $max_left = $(this);
+                    }
+                    if ($max_top.offset().top < $(this).offset().top) {
+                        $max_top = $(this);
+                    }
+                }
+                $map.css('width', $max_left.offset().left - $map.offset().left + loc_width)
+                $map.css('height', $max_top.offset().top - $map.offset().top + loc_height)
+
             }
         };
         function setOnesideOffset(from_offset /*Локация, в которой переход*/, to_offset /*Куда ведет односторонний переход*/) {
@@ -235,7 +261,7 @@
             }).appendTo($wrapper);
         }
         function pushResults(id, x, y, to_id, fake = false) {
-            results.push({ string: `${id}-${x}x${y} => ${to_id}`, from: id, x: x, y: y, to: to_id });
+            results.push({ string: `${id}-${x}x${y} => ${to_id}`, from: id, x: x, y: y, to: to_id, fake: fake });
             $('#results').append(`<div class="move-wrapper" data-from="${id}" data-x="${x}" data-y="${y}" data-to="${to_id}" data-string="${id}-${x}x${y} => ${to_id}"><div class="move">${id}-${x}x${y} => ${to_id}</div><div class="move-delete${fake ? " is-fake":""}">&times;</div></div>`);
         }
 
@@ -311,6 +337,7 @@
 
         $('body').on('click', '.location .cell:not(.cell-oneside, .cell-twoside, .cell-selected, .cell-self), .location thead', function() {
             let $connect = $('.cell-selected'),
+                base_offset = $('#lines').offset(),
                 isCell = $(this).hasClass('cell');
             $('#location_add').prop('disabled', !$connect.length);
             if ($connect.length) { // соединить локации
@@ -324,8 +351,8 @@
                         $(this).addClass('cell-twoside').attr('data-to', id);
                         let from_offset = $connect.offset(),
                             to_offset = $(this).offset();
-                        drawLine(from_offset.left + cell_width/2, from_offset.top + cell_height/2, 
-                            to_offset.left + cell_width/2, to_offset.top + cell_height/2, 
+                        drawLine(from_offset.left - base_offset.left + cell_width/2, from_offset.top - base_offset.top + cell_height/2, 
+                            to_offset.left - base_offset.left + cell_width/2, to_offset.top - base_offset.top + cell_height/2, 
                             id, x, y, to_id, to_x, to_y);
                     }
                     // если сам в себя, то нажимайте на заголовок, лалки что ли
@@ -336,8 +363,8 @@
                         from_loc_offset = $connect.closest('.location').offset()
                         to_offset = $(this).closest('.location').offset();
                         to_offset = setOnesideOffset(from_loc_offset, to_offset);
-                        drawLine(from_offset.left + cell_width/2, from_offset.top + cell_height/2, 
-                            to_offset.left, to_offset.top, 
+                        drawLine(from_offset.left - base_offset.left + cell_width/2, from_offset.top - base_offset.top + cell_height/2, 
+                            to_offset.left - base_offset.left, to_offset.top - base_offset.top, 
                             id, x, y, to_id);
                     }
                     addResults(id, x, y, to_id);
@@ -367,7 +394,7 @@
                 $(this).closest('.location').remove();
                 _.remove(results, function(o) { return o.from == id || o.to == id});
                 $('.move-wrapper[data-from='+id+'], .move-wrapper[data-to='+id+'], line[data-from='+id+'], line[data-to='+id+']').remove();
-                $('.cell[data-to='+id+']').removeClass().addClass('cell')
+                $('.cell[data-to='+id+']').removeClass().addClass('cell');
             }
         });
 
@@ -406,5 +433,18 @@
             console.log('results после удаления перехода');
             console.log(results);
         });
+        $('#download').click(function() {
+            html2canvas(document.getElementById("map")).then(function (canvas) {
+                var dataURL = canvas.toDataURL("image/png", 1); // боже упаси stack overflow
+                var link = document.createElement("a");
+                link.download = "map.png";
+                link.href = dataURL;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                delete link;
+            });
+        });
+
     </script>
 </html>
