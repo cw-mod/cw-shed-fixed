@@ -167,8 +167,6 @@
         function refreshExport() {
             $export_inp.val(JSON.stringify(export_obj));
             window.localStorage.setItem('mapping_export_save', JSON.stringify(export_obj));
-            console.log('refresh')
-            console.log(export_obj)
         }
         
         function setOnesideOffset(from_offset /*Локация, в которой переход*/, to_offset /*Куда ведет односторонний переход*/) {
@@ -244,11 +242,7 @@
                 }
             }
             for (const move of object.moves) {
-                console.log()
-                console.log(move)
                 var $loc_cell = $('.location[data-id='+move.from+'] tbody').children().eq(move.y - 1).children().eq(move.x - 1);
-                console.log('trying to click cell')
-                console.log($loc_cell)
                 $loc_cell.click();
                 if (move.to_x && move.to_y) { // двухсторонний
                     $('.location[data-id='+move.to+'] tbody').children().eq(move.to_y - 1).children().eq(move.to_x - 1).click();
@@ -445,7 +439,6 @@
         });
 
         $('body').on('click', '.location .cell:not(.cell-oneside, .cell-twoside, .cell-selected, .cell-self), .location thead', function() {
-            console.log('cell clicked')
             let $connect = $('.cell-selected'),
                 base_offset = $('#lines').offset(),
                 isCell = $(this).hasClass('cell');
