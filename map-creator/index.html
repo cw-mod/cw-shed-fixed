@@ -117,14 +117,15 @@
     <body> 
         <div id="panel">
             <div>
+                <!-- {"locations":{"73000":{"top":117,"left":310},"73001":{"top":120,"left":731},"73002":{"top":301,"left":773},"73003":{"top":471,"left":727},"73004":{"top":329,"left":309},"73005":{"top":326,"left":497}},"moves":[{"from":73000,"x":10,"y":2,"to":73001,"to_x":1,"to_y":2},{"from":73001,"x":4,"y":6,"to":73002,"to_x":3,"to_y":1},{"from":73002,"x":4,"y":6,"to":73003,"to_x":7,"to_y":1},{"from":73000,"x":3,"y":6,"to":73004,"to_x":4,"to_y":1},{"from":73004,"x":10,"y":2,"to":73005,"to_x":1,"to_y":2}]} -->
                 Тянуть за левый верхний угол, смена айди локации - двойное нажатие по полю заголовка с ним, односторонний переход - закончить создание кликом на заголовок, сам в себя - то же самое, но на себя.
             </div>
-            <!-- <div>
-                Окошко для импорта: <input type="text" ud="import_input"> <button id="import">Импортировать</button>
+            <div>
+                Окошко для импорта: <input type="text" id="import_input"> <button id="import">Импортировать</button>
             </div>
             <div>
-                Текущая карта: <input type="text" id="export_input"> <button id="reset">Сбросить</button>
-            </div> -->
+                Текущая карта: <input type="text" id="export_input" style="width: 500px"> <button style="transition: background-color .25s, color .25s;" id="copy">Копировать</button> <button id="reset" style="color: #fff;background-color: #d93535;">Сбросить</button>
+            </div>
             <div>
                 ID: 
                 <input id="location_id" type="text" placeholder="ID" value="1">
@@ -141,7 +142,141 @@
         </div>
     </body>
     <script type="text/javascript">
-        var id, x, y, stroke_color = '#e47f35', results = [], locations = []
+        var cpy_tm;
+        var def_export_obj = {
+            locations: {},
+            moves: []
+        };
+        const old = window.localStorage.getItem('mapping_export_save');
+        var export_obj = old ? JSON.parse(old) : def_export_obj;
+        var $export_inp = $('#export_input');
+        $export_inp.val(JSON.stringify(export_obj));
+        
+        function reset() {
+            results = [];
+                export_obj = {
+                    locations: {},
+                    moves: []
+                };
+                $('.location, .move-wrapper, #lines > line').remove();
+        }
+        function revertCopyBtn() {
+            clearTimeout(cpy_tm);
+            $('#copy').css('background-color','-internal-light-dark(rgb(239, 239, 239), rgb(59, 59, 59))').css('color','-internal-light-dark(rgb(0, 0, 0), rgb(255, 255, 255))');
+        }
+        function refreshExport() {
+            $export_inp.val(JSON.stringify(export_obj));
+            window.localStorage.setItem('mapping_export_save', JSON.stringify(export_obj));
+            console.log('refresh')
+            console.log(export_obj)
+        }
+        
+        function setOnesideOffset(from_offset /*Локация, в которой переход*/, to_offset /*Куда ведет односторонний переход*/) {
+            let new_offset = {left: to_offset.left, top: to_offset.top};
+            if (from_offset.top + loc_height > to_offset.top) { // нижняя часть локи из > верхняя часть локи в
+                new_offset.top += loc_height/2;
+                if (from_offset.top > to_offset.top + loc_height) { // верхняя часть локи из > нижняя часть локи в
+                    new_offset.top += loc_height/2;
+                }
+            }
+            if (from_offset.left + loc_width > to_offset.left) { // правая часть локи из > левая часть локи в
+                new_offset.left += loc_width/2;
+                if (from_offset.left > to_offset.left + loc_width) { // левая часть локи из > правая часть локи в
+                    new_offset.left += loc_width/2;
+                }
+            }
+            if (Math.abs(from_offset.top - to_offset.top) <= loc_height && Math.abs(from_offset.left - to_offset.left) <= loc_width) {
+                new_offset.left += (from_offset.left > to_offset.left) ? loc_width/2 : -loc_width/2;
+                new_offset.top += (from_offset.top > to_offset.top) ? loc_height/2 : -loc_height/2;
+            }
+            return new_offset;
+        }
+        function drawLine(x1, y1, x2, y2, from, data_x1, data_y1, to, data_x2, data_y2) {
+            let line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+            line.setAttribute('stroke', stroke_color);
+            line.setAttribute('stroke-width', 1);
+            line.dataset.from = from;
+            line.dataset.x1 = data_x1;
+            line.dataset.y1 = data_y1;
+            line.dataset.to = to;
+            if (data_x2 !== undefined && data_y2 !== undefined) {
+                line.dataset.x2 = data_x2;
+                line.dataset.y2 = data_y2;
+            }
+            $('#lines').append(line);
+            // from_x1_y1_to_x2_y2
+        }
+        function addResults(id, x, y, to_id, to_x, to_y) {
+            pushResults(id, x, y, to_id);
+            if (to_x && to_y) {
+                pushResults(to_id, to_x, to_y, id, true);
+            }
+            export_obj.moves.push({from: +id, x: +x, y: +y, to: +to_id, to_x: +to_x, to_y: +to_y});
+            refreshExport();
+            sortResults();
+            id = x = y = undefined;
+            $('#status').html('');
+        }
+        function sortResults() {
+            results = _.sortBy(results, ['string']);
+            let $wrapper = $('#results');
+            $wrapper.find('.move-wrapper').sort(function(a, b) {
+                return (a.dataset.from - b.dataset.from) * 100 + (a.dataset.x - b.dataset.x) * 10 + (a.dataset.y - b.dataset.y);
+            }).appendTo($wrapper);
+        }
+        function pushResults(id, x, y, to_id, fake = false) {
+            results.push({ string: `${id}-${x}x${y} => ${to_id}`, from: +id, x: +x, y: +y, to: +to_id, fake: fake });
+            $('#results').append(`<div class="move-wrapper" data-from="${id}" data-x="${x}" data-y="${y}" data-to="${to_id}" data-string="${id}-${x}x${y} => ${to_id}"><div class="move">${id}-${x}x${y} => ${to_id}</div><div class="move-delete${fake ? " is-fake":""}">&times;</div></div>`);
+        }
+        function loadMap(object) {
+            for (const loc_id in object.locations) {
+                addLocation(loc_id, object.locations[loc_id].top, object.locations[loc_id].left);
+                //$max_left = , $max_top = 
+                if ($max_left === undefined || $max_left.position().left < object.locations[loc_id].left) {
+                    $max_left = $('.location[data-id='+loc_id+']');
+                }
+                if ($max_top === undefined || $max_top.position().top < object.locations[loc_id].top) {
+                    $max_top = $('.location[data-id='+loc_id+']');
+                }
+            }
+            for (const move of object.moves) {
+                console.log()
+                console.log(move)
+                var $loc_cell = $('.location[data-id='+move.from+'] tbody').children().eq(move.y - 1).children().eq(move.x - 1);
+                console.log('trying to click cell')
+                console.log($loc_cell)
+                $loc_cell.click();
+                if (move.to_x && move.to_y) { // двухсторонний
+                    $('.location[data-id='+move.to+'] tbody').children().eq(move.to_y - 1).children().eq(move.to_x - 1).click();
+                } else if (move.from == move.to) {
+                    $('.location[data-id='+move.from+'] thead')[0].click();
+                } else {
+                    $('.location[data-id='+move.to+'] thead')[0].click();
+                }
+            }
+        }
+        function addLocation(loc, top = 0, left = 0) {
+            let elem = `<table class="location ui-draggable" data-id="${loc}" style="position:absolute;top:${top}px;left:${left}px;"><thead><th colspan=2 class="location-handle"></th><th colspan="7" class="location-name-th">${loc}</th><th class="location-delete">&times;</th></thead><tbody>`;
+                for (let i = 0; i < 6; i++) {
+                    let row = '<tr>';
+                    for (let j = 0; j < 10; j++) {
+                        row += '<td class="cell"></td>';
+                    }
+                    row += '</tr>';
+                    elem += row;
+                }
+                elem += `</tbody></table>`;
+                let $elem = $('#map').append(elem);
+                export_obj.locations[loc] = {top: top, left: left};
+                refreshExport();
+                $('.location[data-id='+loc+']').draggable(draggable_options);
+        }
+
+        var id, x, y, stroke_color = '#e47f35', results = []
             , loc_height = 136, loc_width = 151 // высота и ширина окошка с локацией
             , cell_height = 20, cell_width = 15 // высота и ширина ячейки в локации
             , $max_left = undefined, $max_top = undefined, max_left_offset = 0, max_top_offset = 0; // самые дальние локации
@@ -153,7 +288,8 @@
             },
             stop: function( event, ui ) {
                 $(this).css('z-index', '');
-                // SAVE left & top of location
+                export_obj.locations[$(this).attr('data-id')] = $(this).position();
+                refreshExport();
             },
             drag: function(event, ui) {
                 let id = $(this).closest('.location').attr('data-id'),
@@ -228,64 +364,21 @@
                 $lines.attr('height', height);
             }
         };
-        function setOnesideOffset(from_offset /*Локация, в которой переход*/, to_offset /*Куда ведет односторонний переход*/) {
-            let new_offset = {left: to_offset.left, top: to_offset.top};
-            if (from_offset.top + loc_height > to_offset.top) { // нижняя часть локи из > верхняя часть локи в
-                new_offset.top += loc_height/2;
-                if (from_offset.top > to_offset.top + loc_height) { // верхняя часть локи из > нижняя часть локи в
-                    new_offset.top += loc_height/2;
-                }
+        $('#copy').click(function() {
+            $(this).css('background-color', 'rgb(55 193 30)').css('color', 'rgb(255 255 255)');
+            cpy_tm = setTimeout(function() { revertCopyBtn() }, 4000);
+        });
+        $('#reset').click(function() {
+            if (confirm("Сбросить всю карту? Ничего не сохранится.")) {
+                reset();
             }
-            if (from_offset.left + loc_width > to_offset.left) { // правая часть локи из > левая часть локи в
-                new_offset.left += loc_width/2;
-                if (from_offset.left > to_offset.left + loc_width) { // левая часть локи из > правая часть локи в
-                    new_offset.left += loc_width/2;
-                }
+        });
+        $('#import').click(function() {
+            if (confirm("Импортировать новую карту? Прошлая не сохранится.")) {
+                reset();
+                loadMap(JSON.parse($('#import_input').val()));
             }
-            if (Math.abs(from_offset.top - to_offset.top) <= loc_height && Math.abs(from_offset.left - to_offset.left) <= loc_width) {
-                new_offset.left += (from_offset.left > to_offset.left) ? loc_width/2 : -loc_width/2;
-                new_offset.top += (from_offset.top > to_offset.top) ? loc_height/2 : -loc_height/2;
-            }
-            return new_offset;
-        }
-        function drawLine(x1, y1, x2, y2, from, data_x1, data_y1, to, data_x2, data_y2) {
-            let line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', x1);
-            line.setAttribute('y1', y1);
-            line.setAttribute('x2', x2);
-            line.setAttribute('y2', y2);
-            line.setAttribute('stroke', stroke_color);
-            line.setAttribute('stroke-width', 1);
-            line.dataset.from = from;
-            line.dataset.x1 = data_x1;
-            line.dataset.y1 = data_y1;
-            line.dataset.to = to;
-            if (data_x2 !== undefined && data_y2 !== undefined) {
-                line.dataset.x2 = data_x2;
-                line.dataset.y2 = data_y2;
-            }
-            $('#lines').append(line);
-        }
-        function addResults(id, x, y, to_id, to_x, to_y) {
-            pushResults(id, x, y, to_id);
-            if (to_x != undefined && to_y != undefined) {
-                pushResults(to_id, to_x, to_y, id, true);
-            }
-            sortResults();
-            id = x = y = undefined;
-            $('#status').html('');
-        }
-        function sortResults() {
-            results = _.sortBy(results, ['string']);
-            let $wrapper = $('#results');
-            $wrapper.find('.move-wrapper').sort(function(a, b) {
-                return (a.dataset.from - b.dataset.from) * 100 + (a.dataset.x - b.dataset.x) * 10 + (a.dataset.y - b.dataset.y);
-            }).appendTo($wrapper);
-        }
-        function pushResults(id, x, y, to_id, fake = false) {
-            results.push({ string: `${id}-${x}x${y} => ${to_id}`, from: id, x: x, y: y, to: to_id, fake: fake });
-            $('#results').append(`<div class="move-wrapper" data-from="${id}" data-x="${x}" data-y="${y}" data-to="${to_id}" data-string="${id}-${x}x${y} => ${to_id}"><div class="move">${id}-${x}x${y} => ${to_id}</div><div class="move-delete${fake ? " is-fake":""}">&times;</div></div>`);
-        }
+        });
 
         $('body').on('dblclick', '.location-name-th', function() {
             if ($('#input').length) {
@@ -332,6 +425,11 @@
                     }
                 });
                 sortResults();
+
+                let old = export_obj.locations[old_id];
+                export_obj.locations[id] = {top: old.top, left: old.left};
+                delete export_obj.locations[old_id];
+                refreshExport();
             }
             $(this).closest('.location-name-th').text(id);
         });
@@ -341,23 +439,13 @@
             if (/\D/g.test(id_val) ||isNaN(id) || $('.location[data-id='+id+']').length) {
                 alert('Некорректный ID или локация с таким ID уже существует на карте');
             } else {
-                let elem = `<table class="location ui-draggable" data-id="${id}" style="position:absolute;top:0px;left:0px;"><thead><th colspan=2 class="location-handle"></th><th colspan="7" class="location-name-th">${id}</th><th class="location-delete">&times;</th></thead>`;
-                for (let i = 0; i < 6; i++) {
-                    let row = '<tr>';
-                    for (let j = 0; j < 10; j++) {
-                        row += '<td class="cell"></td>';
-                    }
-                    row += '</tr>';
-                    elem += row;
-                }
-                elem += `</table>`;
-                let $elem = $('#map').append(elem);
-                $('.location[data-id='+id+']').draggable(draggable_options);
+                addLocation(id);
                 $('#location_id').val(++id);
             }
         });
 
         $('body').on('click', '.location .cell:not(.cell-oneside, .cell-twoside, .cell-selected, .cell-self), .location thead', function() {
+            console.log('cell clicked')
             let $connect = $('.cell-selected'),
                 base_offset = $('#lines').offset(),
                 isCell = $(this).hasClass('cell');
@@ -417,6 +505,8 @@
                 _.remove(results, function(o) { return o.from == id || o.to == id});
                 $('.move-wrapper[data-from='+id+'], .move-wrapper[data-to='+id+'], line[data-from='+id+'], line[data-to='+id+']').remove();
                 $('.cell[data-to='+id+']').removeClass().addClass('cell');
+                delete export_obj.locations[id];
+                refreshExport();
             }
         });
 
@@ -447,13 +537,14 @@
                 }
                 $('.location[data-id='+to+']').find('tbody').children().eq(to_y - 1).children().eq(to_x - 1).removeClass('cell-twoside');
                 $line.remove();
-                _.remove(results, {from: to, to: from, x: to_x, y: to_y});
+                _.remove(results, {from: +to, to: +from, x: +to_x, y: +to_y});
+                _.remove(export_obj.moves, {from: +to, to: +from, x: +to_x, y: +to_y});
                     $('.move-wrapper[data-from='+to+'][data-x='+to_x+'][data-y='+to_y+']').remove();
             }
-            _.remove(results, {from: from, to: to, x: x, y: y})
+            _.remove(results, {from: +from, to: +to, 'x': +x, 'y': +y})
+            _.remove(export_obj.moves, {from: +from, to: +to, 'x': +x, 'y': +y})
+            refreshExport();
             $move.remove();
-            console.log('results после удаления перехода');
-            console.log(results);
         });
         $('#download').click(function() {
             html2canvas(document.getElementById("map")).then(function (canvas) {
@@ -467,5 +558,9 @@
                 delete link;
             });
         });
+
+        if (old) {
+            loadMap(export_obj);
+        }
     </script>
 </html>
