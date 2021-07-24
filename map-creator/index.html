@@ -159,7 +159,6 @@
                 moves: []
             };
             window.localStorage.removeItem('mapping_export_save');
-            $export_inp.val(JSON.stringify(export_obj));
             $('.location, .move-wrapper, #lines > line').remove();
         }
         function revertCopyBtn() {
@@ -242,7 +241,13 @@
                 if ($max_top === undefined || $max_top.position().top < object.locations[loc_id].top) {
                     $max_top = $('.location[data-id='+loc_id+']');
                 }
+                let $map = $('#map'), $lines = $('#lines'),
+                    width = $max_left.offset().left - $map.offset().left + loc_width,
+                    height = $max_top.offset().top - $map.offset().top + loc_height;
+                $map.css('width', width).css('height', height);
+                $lines.attr('width', width).attr('height', height);
             }
+            // $max_top
             for (const move of object.moves) {
                 var $loc_cell = $('.location[data-id='+move.from+'] tbody').children().eq(move.y - 1).children().eq(move.x - 1);
                 $loc_cell.click();
@@ -354,10 +359,8 @@
                 }
                 let width = $max_left.offset().left - $map.offset().left + loc_width,
                     height = $max_top.offset().top - $map.offset().top + loc_height;
-                $map.css('width', width);
-                $map.css('height', height);
-                $lines.attr('width', width);
-                $lines.attr('height', height);
+                $map.css('width', width).css('height', height);
+                $lines.attr('width', width).attr('height', height);
             }
         };
         $('#copy').click(function() {
