@@ -359,6 +359,9 @@
             }
         };
         $('#copy').click(function() {
+            var copyText = document.getElementById("export_input");
+            copyText.select();
+            document.execCommand("copy");
             $(this).css('background-color', 'rgb(55 193 30)').css('color', 'rgb(255 255 255)');
             cpy_tm = setTimeout(function() { revertCopyBtn() }, 4000);
         });
