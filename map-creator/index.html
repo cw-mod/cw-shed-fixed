@@ -503,7 +503,8 @@
             if (confirm('Удалить локацию?')) {
                 let id = $(this).closest('.location').attr('data-id');
                 $(this).closest('.location').remove();
-                _.remove(results, function(o) { return o.from == id || o.to == id});
+                _.remove(results, function(o) { return o.from == +id || o.to == +id});
+                _.remove(export_obj.moves, function(o) { return o.from == +id || o.to == +id});
                 $('.move-wrapper[data-from='+id+'], .move-wrapper[data-to='+id+'], line[data-from='+id+'], line[data-to='+id+']').remove();
                 $('.cell[data-to='+id+']').removeClass().addClass('cell');
                 delete export_obj.locations[id];
