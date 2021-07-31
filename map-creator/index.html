@@ -426,6 +426,14 @@
                         result.to = id;
                     }
                 });
+                _.forEach(export_obj.moves, function(result) {
+                    if (result.from == old_id) {
+                        result.from = id;
+                    }
+                    if (result.to == old_id) {
+                        result.to = id;
+                    }
+                });
                 sortResults();
 
                 let old = export_obj.locations[old_id];
