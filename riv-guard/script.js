@@ -1,0 +1,403 @@
+function addLeadZero(num) {
+	return num < 10 ? '0' + num : num;
+}
+function error(message) {
+	$('#additional_output').val($('#additional_output').val() + message + '\n');
+}
+function dateToStr(date) {
+	return date.getFullYear() 
+	+ '-' + addLeadZero(date.getMonth()+1) 
+	+ '-' + addLeadZero(date.getDate());
+}
+
+$(document).ready(function() {
+	var date = new Date();
+	if (date.getDay() != 6) { // Суббота
+		date.setDate(date.getDate() - date.getDay() - 1);
+	}
+	$('#date').val(dateToStr(date));
+	$('#count').click(function() {
+		date = new Date($('#date').val());
+		var present_doz = [], present_patr = [];
+		const thisFri = new Date(date);
+		$('#additional_output').val('');
+		thisFri.setDate(thisFri.getDate() - 1);
+		thisFri.setHours(23);
+		const lastWeek = new Date(thisFri);
+		lastWeek.setDate(lastWeek.getDate() - 6);
+		lastWeek.setHours(0);
+		while (lastWeek <= thisFri) {
+			present_doz.push({
+				year: lastWeek.getFullYear(),
+				month: lastWeek.getMonth(),
+				day: lastWeek.getDate(),
+				hour: lastWeek.getHours()
+			});
+			if ([11, 15, 18, 21].includes(lastWeek.getHours())) {
+				present_patr.push({
+					year: lastWeek.getFullYear(),
+					month: lastWeek.getMonth(),
+					day: lastWeek.getDate(),
+					hour: lastWeek.getHours(),
+					type: "П1"
+				});
+				present_patr.push({
+					year: lastWeek.getFullYear(),
+					month: lastWeek.getMonth(),
+					day: lastWeek.getDate(),
+					hour: lastWeek.getHours(),
+					type: "П2"
+				});
+			}
+			lastWeek.setHours(lastWeek.getHours() + 1);
+		};
+		count = {
+			"medals" : {
+				"patr" : [],
+				"doz" : [],
+				"war" : [],
+				"mzauvzhp" : {},
+				"di" : {}
+			},
+			"patr" : [],
+			"doz" : [],
+			"totals" : [],
+			"doz_leaver" : []
+		};
+		const months = {
+			"января": 0, 
+			"февраля": 1, 
+			"марта": 2, 
+			"апреля": 3, 
+			"мая": 4, 
+			"июня": 5, 
+			"июля": 6, 
+			"августа": 7, 
+			"сентября": 8, 
+			"октября": 9, 
+			"ноября": 10, 
+			"декабря": 11
+		};
+		const places = {
+            "Камышовые заросли": "КЗ",
+            "Травянистый берег": "ТБ",
+            "Редколесье": "РЛ",
+            "Разрушенная ограда": "РО",
+            "Расколотое дерево": "РД",
+            "Лесной ручеёк": "ЛР",
+            "Главный туннель": "ГТ",
+            "Активный 1": "01",
+            "Активный 2": "02",
+            "Активный 3": "03"
+        };
+		var comments = $('#comments').val().split('\n'), comment_date, pd_date, is_doz = false, patr_type, comment_num, comment_author;
+
+		for (const string_i in comments) {
+			var string = comments[string_i];
+			if (!string.length || string == 'Участники'
+				|| /^Собирающий/.test(string)
+				|| /^Нет\.?/i.test(string)
+				|| /^Самые активные/i.test(string)) {
+				continue;
+			}
+			if (string[0] == '#') {
+				let strdate = string.split(' @ ')[0].trim();
+				comment_author = string.split(' @ ')[1].replace(/Удалить$/g, '').replace(/Жалоба \| $/g, '').trim();
+				comment_num = string.match(/^#(\d+)/)[1];
+				strdate = strdate.replace(/^#\d+ /, '');
+				strdate = strdate.split(' в ');
+				let strday = strdate[0], strtime = strdate[1];
+				if (strday.indexOf('Сегодня') != -1) {
+					const today = new Date();
+					strday = dateToStr(today);
+				} else if (strday.indexOf('Вчера') != -1) {
+					let yesterday = new Date();
+					yesterday.setDate(yesterday.getDate() - 1);
+					strday = dateToStr(yesterday);
+				} else {
+					let today = new Date();
+					let re = strday.match(/(\d+) ([а-я]+) ?(\d+)?/);
+					today.setDate(1);
+					today.setMonth(months[re[2]]);
+					today.setDate(re[1]);
+					if (re[3]) {
+						today.setFullYear(re[3]);
+					}
+					strday = dateToStr(today);
+				}
+				strtime = strtime.split(':');
+				comment_date = new Date(strday);
+				comment_date.setHours(strtime[0]);
+				comment_date.setMinutes(strtime[1]);
+			} else if (/^Дата:/u.test(string)) { // Дозор
+				pd_date = new Date();
+				let re = string.match(/^Дата: ?(\d+)\.(\d+)\.?(\d+)?/u);
+				pd_date.setDate(1);
+				pd_date.setMonth(+(re[2]) - 1);
+				pd_date.setDate(re[1]);
+				if (re[3]) {
+					pd_date.setFullYear(re[3]);
+				}
+			} else if (/^Время:/u.test(string)) {
+				let re = string.match(/^Время: ?(\d+):(\d+)/);
+				pd_date.setHours(re[1]);
+				pd_date.setMinutes(0);
+				pd_date.setSeconds(0);
+				if (comment_date - pd_date < 0) {
+					error(`Вероятно, ошибка в дате на ${string_i}, строчка выглядит как ${string}`);
+				}
+				if (comment_date - pd_date > 1000 * 60 * 60 * 24 * 3) {
+					error(`Опять ${comment_author} отписал ${Math.floor((comment_date - pd_date) / (1000 * 60 * 60 * 24))} лет спустя в комменте #${comment_num}`);
+				}
+			} else if (/^Дозор/u.test(string)) {
+				is_doz = true;
+			} else if (/^Патруль/u.test(string)) {
+				is_doz = false;
+			} else if (is_doz && /(Камышовые заросли|Травянистый берег|Редколесье|Разрушенная ограда|Расколотое дерево|Лесной ручеёк|Главный туннель|Активный \d)/u.test(string)) {
+				let s = string.split(':');
+				if (s.length != 2) {
+					return error(`Нет двоеточия на ${string_i}, строчка выглядит как ${string}`);
+				}
+				let doz_type = s[0].trim();
+				let ids = s[1].match(/\d+/g);
+				for (const id_i in ids) {
+					const id = ids[id_i];
+					count.doz.push({
+						year: pd_date.getFullYear(),
+						month: pd_date.getMonth(),
+						day: pd_date.getDate(),
+						hour: pd_date.getHours(),
+						type: places[doz_type],
+						cat: +id
+					});
+				}
+			} else if (is_doz && /^(Нарушения|Освобожд)/u.test(string)) {
+				let s = string.split(':');
+				if (s.length != 2) {
+					return error(`Нет двоеточия на ${string_i}, строчка выглядит как ${string}`);
+				}
+				let del_type = (/^Наруш/u.test(s[0].trim()) ? "Нарушение" : "Освобождён");
+				let ids = s[1].match(/\d+/g);
+				for (const id_i in ids) {
+					const id = ids[id_i];
+					count.doz_leaver.push({
+						year: pd_date.getFullYear(),
+						month: pd_date.getMonth(),
+						day: pd_date.getDate(),
+						hour: pd_date.getHours(),
+						type: del_type,
+						cat: +id
+					});
+				}
+			} else if (!is_doz && /^Дата и время:/u.test(string)) {
+				let tmpdate = string.match(/(\d+)\.(\d+)/);
+				let tmptime = string.match(/(\d+):(\d+)/);
+				if (!tmpdate || !tmptime) {
+					return error(`Какая-то хрень с датой-временем на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}`);
+				}
+				pd_date.setDate(1);
+				pd_date.setMonth(+(tmpdate[2]) - 1);
+				pd_date.setDate(tmpdate[1]);
+				pd_date.setHours(tmptime[1]);
+				pd_date.setMinutes(0);
+				pd_date.setSeconds(0);
+				if (comment_date - pd_date < 0) {
+					return error(`Вероятно, ошибка в дате на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}`);
+				}
+				if (comment_date - pd_date > 1000 * 60 * 60 * 24 * 3) {
+					error(`Патруль отписан ${Math.floor((comment_date - pd_date) / (1000 * 60 * 60 * 24))} лет спустя в комменте #${comment_num}`);
+				}
+			} else if (!is_doz && /^Маршрут:/u.test(string)) {
+				patr_type = string.replace(/\D+/g, '');
+				patr_type = "П" + ((+patr_type == 1) ? "1" : "2");
+			} else if (!is_doz && /^Участники:/u.test(string)) {
+				let s = string.split(':');
+				if (s.length != 2) {
+					return error(`Нет двоеточия на ${string_i}, строчка выглядит как ${string}`);
+				}
+				let ids = s[1].match(/\d+/g);
+				for (const id_i in ids) {
+					const id = ids[id_i];
+					count.patr.push({
+						year: pd_date.getFullYear(),
+						month: pd_date.getMonth(),
+						day: pd_date.getDate(),
+						hour: pd_date.getHours(),
+						type: patr_type,
+						cat: +id
+					});
+				}
+			} else if (!is_doz && /^Ведущий:/u.test(string)) {
+				let s = string.split(':');
+				if (s.length != 2) {
+					return error(`Нет двоеточия на ${string_i}, строчка выглядит как ${string}`);
+				}
+				let leader = string.replace(/\D+/g, '');
+				count.patr.push({
+					year: pd_date.getFullYear(),
+					month: pd_date.getMonth(),
+					day: pd_date.getDate(),
+					hour: pd_date.getHours(),
+					type: patr_type,
+					cat: +leader
+				});
+			} else if (string.indexOf('медаль') != -1) {
+				let medal = string.replace(/\D+/g, '');
+				let medal_type = `Медаль за активное участие в патрулях`;
+				if (string.indexOf('жизни') != -1) {
+					medal_type = `Медаль за активное участие в жизни племени`;
+					comment_date.setMinutes(0);
+					comment_date.setSeconds(0);
+					let end_date = new Date(comment_date);
+					end_date.setDate(end_date.getDate() + 30);
+					count.medals.mzauvzhp[+medal] = {
+						start_patr: 0,
+						start_doz: 0,
+						from_year: comment_date.getFullYear(),
+						from_month: comment_date.getMonth(),
+						from_day: comment_date.getDate(),
+						to_year: end_date.getFullYear(),
+						to_month: end_date.getMonth(),
+						to_day: end_date.getDate(),
+					};
+				} else if (string.indexOf('дозорах') != -1) {
+					count.medals.doz.push(+medal);
+				} else {
+					count.medals.patr.push(+medal);
+				}
+			} else if (string.indexOf('таблицу воителей') != -1) {
+				let add = string.replace(/\D+/g, '');
+					count.medals.war.push(+add);
+			} else {
+				return error(`Непонятно что происходит на ${string_i}, строчка выглядит как ${string}`);
+			}
+		}
+
+		var missing_doz = [];
+		count.totals = count.doz.concat(count.patr);
+		for (const present_i in present_doz) {
+			let cur = present_doz[present_i];
+			let doz = _.filter(count.doz, {year: cur.year, month: cur.month, day: cur.day, hour: cur.hour});
+			if (!doz.length) {
+				missing_doz.push(cur);
+			}
+			let hush = [];
+			for (const doz_i in doz) {
+				const thisdoz = doz[doz_i];
+				let doubles = _.filter(count.doz, {year: cur.year, month: cur.month, day: cur.day, hour: cur.hour, cat: thisdoz.cat});
+				if (doubles.length > 1 && !hush.includes(thisdoz.cat)) {
+					error('Дубль дозора...' + JSON.stringify(doubles));
+					hush.push(thisdoz.cat);
+				}
+			}
+		};
+		error('Не собраны дозоры:');
+		for (const missing_i in missing_doz) {
+			let cur = missing_doz[missing_i];
+			let str = `${addLeadZero(cur.day)}.${addLeadZero(cur.month)} ${addLeadZero(cur.hour)}`;
+			error(str)
+		}
+
+		var missing_patr = [];
+		for (const present_i in present_patr) {
+			let cur = present_patr[present_i];
+			let patr = _.filter(count.patr, {year: cur.year, month: cur.month, day: cur.day, type: cur.type, hour: cur.hour});
+			if (!patr.length) {
+				missing_patr.push(cur);
+			}
+			let hush = [];
+			for (const patr_i in patr) {
+				const thispatr = patr[patr_i];
+				let doubles = _.filter(count.patr, {year: cur.year, month: cur.month, day: cur.day, hour: cur.hour, cat: thispatr.cat});
+				if (doubles.length > 1 && !hush.includes(thispatr.cat)) {
+					error('Дубль патруля...' + JSON.stringify(doubles));
+					hush.push(thispatr.cat);
+				}
+			}
+		}
+		error('Не собраны патрули:');
+		for (const missing_i in missing_patr) {
+			let cur = missing_patr[missing_i];
+			let str = `${addLeadZero(cur.day)}.${addLeadZero(cur.month)} ${addLeadZero(cur.hour)} (${cur.type})`;
+			error(str)
+		}
+		let hush = [];
+		for (const totals_i in count.totals) {
+			const cur = count.totals[totals_i];
+			let doubles = _.filter(count.totals, {year: cur.year, month: cur.month, day: cur.day, hour: cur.hour, cat: cur.cat});
+			if (doubles.length > 1 && !hush.includes(cur.cat)) {
+				error('Дубль чего-то там...' + JSON.stringify(doubles));
+				hush.push(cur.cat);
+			}
+		}
+
+		let count_out = {};
+		for (const doz_i in count.doz) {
+			const doz = count.doz[doz_i];
+			if (!count_out[doz.cat]) {
+				count_out[doz.cat] = {patr: 0, doz: 0};
+			}
+			const nar = _.find(count.doz_leaver, {year: doz.year, month: doz.month, day: doz.day, hour: doz.hour, cat: doz.cat});
+			if (!nar) {
+				count_out[doz.cat].doz++;
+			}
+			if (count.medals.mzauvzhp[doz.cat]) {
+				const mzcat = count.medals.mzauvzhp[doz.cat];
+				if (mzcat.from_year > doz.year
+					|| mzcat.from_year == doz.year && mzcat.from_month > doz.month
+					|| mzcat.from_year == doz.year && mzcat.from_month == doz.month && mzcat.from_day > doz.day) {
+					count.medals.mzauvzhp[doz.cat].start_doz--;
+				}
+			}
+		}
+		for (const patr_i in count.patr) {
+			const patr = count.patr[patr_i];
+			if (!count_out[patr.cat]) {
+				count_out[patr.cat] = {patr: 0, doz: 0};
+			}
+			count_out[patr.cat].patr++;
+			if (count.medals.mzauvzhp[patr.cat]) {
+				const mzcat = count.medals.mzauvzhp[patr.cat];
+				if (mzcat.from_year > patr.year
+					|| mzcat.from_year == patr.year && mzcat.from_month > patr.month
+					|| mzcat.from_year == patr.year && mzcat.from_month == patr.month && mzcat.from_day > patr.day) {
+					count.medals.mzauvzhp[patr.cat].start_patr--;
+				}
+			}
+		}
+		var val = '';
+		if (count.medals.war.length) {
+			val += 'Таблица воителей:\n';
+			val += count.medals.war.join('\n');
+			val += '\n\n';
+		}
+		if (Object.keys(count.medals.di).length) {
+			val += 'Идущие на практику на ДИ:\n';
+			val += count.medals.war.join('\n');
+			val += '\n\n';
+		}
+		if (count.medals.patr.length) {
+			val += 'Идущие на медаль за активное участие в патрулях:\n';
+			val += count.medals.patr.join('\n');
+			val += '\n\n';
+		}
+		if (count.medals.doz.length) {
+			val += 'Идущие на медаль за активное участие в дозорах:\n';
+			val += count.medals.doz.join('\n');
+			val += '\n\n';
+		}
+		if (Object.keys(count.medals.mzauvzhp).length) {
+			val += 'Идущие на медаль за активное участие в жизни племени:\n';
+			for (const cat in count.medals.mzauvzhp) {
+				const cur = count.medals.mzauvzhp[cat];
+				val += `${addLeadZero(cur.from_day)}.${addLeadZero(cur.from_month+1)}-${addLeadZero(cur.to_day)}.${addLeadZero(cur.to_month+1)}	${cat}	${cur.start_patr}	${cur.start_doz}\n`;
+			}
+			val += '\n';
+		}
+		val += `Патрули и дозоры [${addLeadZero(date.getDate())}.${addLeadZero(date.getMonth()+1)}]:\n`;
+		for (const cat in count_out) {
+			val += `${cat}	${count_out[cat].patr}	${count_out[cat].doz}\n`;
+		}
+		$('#output').val(val);
+	});
+});
