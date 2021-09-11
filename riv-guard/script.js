@@ -18,7 +18,7 @@ $(document).ready(function() {
 	$('#date').val(dateToStr(date));
 	$('#count').click(function() {
 		date = new Date($('#date').val());
-		var present_doz = [], present_patr = [];
+		var present_doz = [], present_patr = [], present_doz2 = [];
 		const thisFri = new Date(date);
 		$('#additional_output').val('');
 		thisFri.setDate(thisFri.getDate() - 1);
@@ -149,6 +149,14 @@ $(document).ready(function() {
 				if (comment_date - pd_date > 1000 * 60 * 60 * 24 * 3) {
 					error(`Опять ${comment_author} отписал ${Math.floor((comment_date - pd_date) / (1000 * 60 * 60 * 24))} лет спустя в комменте #${comment_num}`);
 				}
+				if (comments[+string_i + 1] && comments[+string_i + 1].indexOf('Собирающий') != -1) {
+					present_doz2.push({
+						year: pd_date.getFullYear(),
+						month: pd_date.getMonth(),
+						day: pd_date.getDate(),
+						hour: pd_date.getHours()
+					});
+				}
 			} else if (/^Дозор/u.test(string)) {
 				is_doz = true;
 			} else if (/^Патруль/u.test(string)) {
@@ -277,7 +285,7 @@ $(document).ready(function() {
 		count.totals = count.doz.concat(count.patr);
 		for (const present_i in present_doz) {
 			let cur = present_doz[present_i];
-			let doz = _.filter(count.doz, {year: cur.year, month: cur.month, day: cur.day, hour: cur.hour});
+			let doz = _.filter(present_doz2, {year: cur.year, month: cur.month, day: cur.day, hour: cur.hour});
 			if (!doz.length) {
 				missing_doz.push(cur);
 			}
