@@ -9,6 +9,12 @@ function dateToStr(date) {
 	+ '-' + addLeadZero(date.getMonth()+1) 
 	+ '-' + addLeadZero(date.getDate());
 }
+function dt_format(date) {
+	return addLeadZero(date.getDate())
+	+ '.' + addLeadZero(date.getMonth()+1)
+	+ ' ' + addLeadZero(date.getHours())
+	+ ':00'; 
+}
 
 $(document).ready(function() {
 	var date = new Date();
@@ -18,7 +24,7 @@ $(document).ready(function() {
 	$('#date').val(dateToStr(date));
 	$('#count').click(function() {
 		date = new Date($('#date').val());
-		var present_doz = [], present_patr = [], present_doz2 = [];
+		var all_doz = [], present_patr = [], present_doz = [];
 		const thisFri = new Date(date);
 		$('#additional_output').val('');
 		thisFri.setDate(thisFri.getDate() - 1);
@@ -27,7 +33,7 @@ $(document).ready(function() {
 		lastWeek.setDate(lastWeek.getDate() - 6);
 		lastWeek.setHours(0);
 		while (lastWeek <= thisFri) {
-			present_doz.push({
+			all_doz.push({
 				year: lastWeek.getFullYear(),
 				month: lastWeek.getMonth(),
 				day: lastWeek.getDate(),
@@ -51,6 +57,8 @@ $(document).ready(function() {
 			}
 			lastWeek.setHours(lastWeek.getHours() + 1);
 		};
+		lastWeek.setDate(lastWeek.getDate() - 7);
+		lastWeek.setHours(0);
 		count = {
 			"medals" : {
 				"patr" : [],
@@ -144,18 +152,24 @@ $(document).ready(function() {
 				pd_date.setMinutes(0);
 				pd_date.setSeconds(0);
 				if (comment_date - pd_date < 0) {
-					error(`Вероятно, ошибка в дате на ${string_i}, строчка выглядит как ${string}`);
+					error(`Вероятно, ошибка в дате на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}`);
 				}
 				if (comment_date - pd_date > 1000 * 60 * 60 * 24 * 3) {
 					error(`Опять ${comment_author} отписал ${Math.floor((comment_date - pd_date) / (1000 * 60 * 60 * 24))} лет спустя в комменте #${comment_num}`);
 				}
+				if (pd_date < lastWeek) {
+					error(`Вероятно, ошибка в дате или старая отпись на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}. Начало недели: ${dt_format(lastWeek)}, отпись: ${dt_format(pd_date)}.`);
+				}
 				if (comments[+string_i + 1] && comments[+string_i + 1].indexOf('Собирающий') != -1) {
-					present_doz2.push({
+					present_doz.push({
 						year: pd_date.getFullYear(),
 						month: pd_date.getMonth(),
 						day: pd_date.getDate(),
 						hour: pd_date.getHours()
 					});
+				}
+				if (!is_doz) {
+					error(`Зачем-то отписали патруль без "Дата и время" на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}`);
 				}
 			} else if (/^Дозор/u.test(string)) {
 				is_doz = true;
@@ -164,7 +178,7 @@ $(document).ready(function() {
 			} else if (is_doz && /(Камышовые заросли|Травянистый берег|Редколесье|Разрушенная ограда|Расколотое дерево|Лесной ручеёк|Главный туннель|Активный \d)/u.test(string)) {
 				let s = string.split(':');
 				if (s.length != 2) {
-					return error(`Нет двоеточия на ${string_i}, строчка выглядит как ${string}`);
+					return error(`Нет двоеточия на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}`);
 				}
 				let doz_type = s[0].trim();
 				let ids = s[1].match(/\d+/g);
@@ -182,7 +196,7 @@ $(document).ready(function() {
 			} else if (is_doz && /^(Нарушения|Освобожд)/u.test(string)) {
 				let s = string.split(':');
 				if (s.length != 2) {
-					return error(`Нет двоеточия на ${string_i}, строчка выглядит как ${string}`);
+					return error(`Нет двоеточия на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}`);
 				}
 				let del_type = (/^Наруш/u.test(s[0].trim()) ? "Нарушение" : "Освобождён");
 				let ids = s[1].match(/\d+/g);
@@ -215,13 +229,16 @@ $(document).ready(function() {
 				if (comment_date - pd_date > 1000 * 60 * 60 * 24 * 3) {
 					error(`Патруль отписан ${Math.floor((comment_date - pd_date) / (1000 * 60 * 60 * 24))} лет спустя в комменте #${comment_num}`);
 				}
+				if (is_doz) {
+					error(`Зачем-то отписали дозор через "Дата и время" на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}`);
+				}
 			} else if (!is_doz && /^Маршрут:/u.test(string)) {
 				patr_type = string.replace(/\D+/g, '');
 				patr_type = "П" + ((+patr_type == 1) ? "1" : "2");
 			} else if (!is_doz && /^Участники:/u.test(string)) {
 				let s = string.split(':');
 				if (s.length != 2) {
-					return error(`Нет двоеточия на ${string_i}, строчка выглядит как ${string}`);
+					return error(`Нет двоеточия на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}`);
 				}
 				let ids = s[1].match(/\d+/g);
 				for (const id_i in ids) {
@@ -238,7 +255,7 @@ $(document).ready(function() {
 			} else if (!is_doz && /^Ведущий:/u.test(string)) {
 				let s = string.split(':');
 				if (s.length != 2) {
-					return error(`Нет двоеточия на ${string_i}, строчка выглядит как ${string}`);
+					return error(`Нет двоеточия на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}`);
 				}
 				let leader = string.replace(/\D+/g, '');
 				count.patr.push({
@@ -277,15 +294,15 @@ $(document).ready(function() {
 				let add = string.replace(/\D+/g, '');
 					count.medals.war.push(+add);
 			} else {
-				return error(`Непонятно что происходит на ${string_i}, строчка выглядит как ${string}`);
+				return error(`Непонятно что происходит на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}`);
 			}
 		}
 
 		var missing_doz = [];
 		count.totals = count.doz.concat(count.patr);
-		for (const present_i in present_doz) {
-			let cur = present_doz[present_i];
-			let doz = _.filter(present_doz2, {year: cur.year, month: cur.month, day: cur.day, hour: cur.hour});
+		for (const present_i in all_doz) {
+			let cur = all_doz[present_i];
+			let doz = _.filter(present_doz, {year: cur.year, month: cur.month, day: cur.day, hour: cur.hour});
 			if (!doz.length) {
 				missing_doz.push(cur);
 			}
@@ -403,9 +420,50 @@ $(document).ready(function() {
 			val += '\n';
 		}
 		val += `Патрули и дозоры [${addLeadZero(date.getDate())}.${addLeadZero(date.getMonth()+1)}]:\n`;
+		let best_doz = 0, best_patr = 0, second_best_doz = 0, second_best_patr = 0;
 		for (const cat in count_out) {
-			val += `${cat}	${count_out[cat].patr}	${count_out[cat].doz}\n`;
+			const this_cat = count_out[cat];
+			val += `${cat}	${this_cat.patr}	${this_cat.doz}\n`;
+			if (this_cat.patr > best_patr) {
+				best_patr = this_cat.patr;
+			}
+			if (this_cat.doz > best_doz) {
+				best_doz = this_cat.doz;
+			}
 		}
+		for (const cat in count_out) {
+			const this_cat = count_out[cat];
+			
+			if (this_cat.patr > second_best_patr && this_cat.patr != best_patr) {
+				second_best_patr = this_cat.patr;
+			}
+			if (this_cat.doz > second_best_doz && this_cat.doz != best_doz) {
+				second_best_doz = this_cat.doz;
+			}
+		}
+		let best_doz_id = _.keys(_.pickBy(count_out, function(value, key) { return value.doz == best_doz })).map(Number),
+		second_best_doz_id = _.keys(_.pickBy(count_out, function(value, key) { return value.doz == second_best_doz })).map(Number),
+		best_patr_id = _.keys(_.pickBy(count_out, function(value, key) { return value.patr == best_patr })).map(Number),
+		second_best_patr_id = _.keys(_.pickBy(count_out, function(value, key) { return value.patr == second_best_patr })).map(Number);
+
+		val += `[font=vrinda][size=14][b]Самые активные патрульные:[/b] ${(format(best_patr_id, '[cat%ID%]')).join(', ')} [I группа] и ${(format(second_best_patr_id, '[cat%ID%]')).join(', ')} [II группа].\n`;
+		val += `[b]Самые активные дозорные:[/b] ${(format(best_doz_id, '[cat%ID%]')).join(', ')} [I группа] и ${(format(second_best_doz_id, '[cat%ID%]')).join(', ')} [II группа].[/size][/font]\n`;
+
+		val += `Блог Охраняющих Границы  +\n`;
+		val += `Патрульные:\n`;
+		val += `I: ${(format(best_patr_id, '[cat%ID%] [%ID%]')).join(', ')}\n`;
+		val += `II: ${(format(second_best_patr_id, '[cat%ID%] [%ID%]')).join(', ')}\n\n`;
+		val += `Дозорные:\n`;
+		val += `I: ${(format(best_doz_id, '[cat%ID%] [%ID%]')).join(', ')}\n`;
+		val += `II: ${(format(second_best_doz_id, '[cat%ID%] [%ID%]')).join(', ')}`;
 		$('#output').val(val);
 	});
 });
+
+function format(array, mask) {
+	let string = '', new_array = [];
+	for (let i in array) {
+		new_array.push(mask.replace(/%ID%/g, array[i]));
+	}
+	return new_array;
+}
