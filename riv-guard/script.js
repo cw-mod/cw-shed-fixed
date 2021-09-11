@@ -294,7 +294,7 @@ $(document).ready(function() {
 		error('Не собраны дозоры:');
 		for (const missing_i in missing_doz) {
 			let cur = missing_doz[missing_i];
-			let str = `${addLeadZero(cur.day)}.${addLeadZero(cur.month)} ${addLeadZero(cur.hour)}`;
+			let str = `${addLeadZero(cur.day)}.${addLeadZero(cur.month + 1)} ${addLeadZero(cur.hour)}`;
 			error(str)
 		}
 
@@ -318,7 +318,7 @@ $(document).ready(function() {
 		error('Не собраны патрули:');
 		for (const missing_i in missing_patr) {
 			let cur = missing_patr[missing_i];
-			let str = `${addLeadZero(cur.day)}.${addLeadZero(cur.month)} ${addLeadZero(cur.hour)} (${cur.type})`;
+			let str = `${addLeadZero(cur.day)}.${addLeadZero(cur.month + 1)} ${addLeadZero(cur.hour)} (${cur.type})`;
 			error(str)
 		}
 		let hush = [];
