@@ -8,6 +8,9 @@
         <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
         <script src="https://html2canvas.hertzen.com/dist/html2canvas.js"></script>
         <style type="text/css">
+            table {
+              caption-side: bottom;
+            }
             #panel > div {
                 margin-bottom: .5em;
             }
@@ -52,7 +55,7 @@
             #results_wrapper {
                 border: 1px solid #0000006e;
                 background-color: #ddd;
-                width: 11em;
+                width: 10em;
                 display: inline-block;
                 vertical-align: top;
             }
@@ -117,8 +120,10 @@
     <body> 
         <div id="panel">
             <div>
-                <!-- {"locations":{"73000":{"top":117,"left":310},"73001":{"top":120,"left":731},"73002":{"top":301,"left":773},"73003":{"top":471,"left":727},"73004":{"top":329,"left":309},"73005":{"top":326,"left":497}},"moves":[{"from":73000,"x":10,"y":2,"to":73001,"to_x":1,"to_y":2},{"from":73001,"x":4,"y":6,"to":73002,"to_x":3,"to_y":1},{"from":73002,"x":4,"y":6,"to":73003,"to_x":7,"to_y":1},{"from":73000,"x":3,"y":6,"to":73004,"to_x":4,"to_y":1},{"from":73004,"x":10,"y":2,"to":73005,"to_x":1,"to_y":2}]} -->
                 Тянуть за левый верхний угол, смена айди локации - двойное нажатие по полю заголовка с ним, односторонний переход - закончить создание кликом на заголовок, сам в себя - то же самое, но на себя.
+            </div>
+            <div>
+                Название локации меняется через смену ID, формат должен быть "ID локации %название%", напр. "73000 %Камышовые заросли%".
             </div>
             <div>
                 Окошко для импорта: <input type="text" id="import_input"> <button id="import">Импортировать</button>
@@ -207,7 +212,6 @@
                 line.dataset.y2 = data_y2;
             }
             $('#lines').append(line);
-            // from_x1_y1_to_x2_y2
         }
         function addResults(id, x, y, to_id, to_x, to_y) {
             pushResults(id, x, y, to_id);
@@ -233,7 +237,7 @@
         }
         function loadMap(object) {
             for (const loc_id in object.locations) {
-                addLocation(loc_id, object.locations[loc_id].top, object.locations[loc_id].left);
+                addLocation(loc_id, object.locations[loc_id].top, object.locations[loc_id].left, object.locations[loc_id].name);
                 //$max_left = , $max_top = 
                 if ($max_left === undefined || $max_left.position().left < object.locations[loc_id].left) {
                     $max_left = $('.location[data-id='+loc_id+']');
@@ -260,8 +264,8 @@
                 }
             }
         }
-        function addLocation(loc, top = 0, left = 0) {
-            let elem = `<table class="location ui-draggable" data-id="${loc}" style="position:absolute;top:${top}px;left:${left}px;"><thead><th colspan=2 class="location-handle"></th><th colspan="7" class="location-name-th">${loc}</th><th class="location-delete">&times;</th></thead><tbody>`;
+        function addLocation(loc, top = 0, left = 0, name = loc) {
+            let elem = `<table class="location ui-draggable" data-id="${loc}" style="position:absolute;top:${top}px;left:${left}px;"><caption>${name}</caption><thead><th colspan=2 class="location-handle"></th><th colspan="7" class="location-name-th">${loc}</th><th class="location-delete">&times;</th></thead><tbody>`;
                 for (let i = 0; i < 6; i++) {
                     let row = '<tr>';
                     for (let j = 0; j < 10; j++) {
@@ -272,7 +276,7 @@
                 }
                 elem += `</tbody></table>`;
                 let $elem = $('#map').append(elem);
-                export_obj.locations[loc] = {top: top, left: left};
+                export_obj.locations[loc] = {top: top, left: left, name: name + ''};
                 refreshExport();
                 $('.location[data-id='+loc+']').draggable(draggable_options);
         }
@@ -289,7 +293,10 @@
             },
             stop: function( event, ui ) {
                 $(this).css('z-index', '');
-                export_obj.locations[$(this).attr('data-id')] = $(this).position();
+                let id = $(this).attr('data-id'),
+                    pos = $(this).position();
+                export_obj.locations[id].top = pos.top;
+                export_obj.locations[id].left = pos.left;
                 refreshExport();
             },
             drag: function(event, ui) {
@@ -389,58 +396,71 @@
                 return;
             }
             let id = $(this).text();
+            let name = $(this).closest('table').find('caption').text();
             $(this).html(`<input type="text" id="input" size=7 value=${id} data-old-value=${id}><button id="input_submit">✓</button>`);
+            $('#input').val(`${id} %${name}%`).attr('data-old-value',`${id} %${name}%`);
         });
 
         $('body').on('click', '#input_submit', function(e) {
+            const re = /(\d+) %([^%]+)%/i;
             let $input = $('#input'),
-                id_val = $input.val(), id = parseInt(id_val),
-                old_id = $input.attr('data-old-value');
-            if (/\D/g.test(id_val) ||isNaN(id) || ($('.location[data-id='+id+']').length && id != old_id)) {
-                alert('Некорректный ID или локация с таким ID уже существует на карте');
+                val = $input.val(),
+                match = val.match(re), 
+                id = +(match[1]),
+                name = match[2],
+                old_val = $input.attr('data-old-value'),
+                old_match = old_val.match(re),
+                old_id = +(old_match[1]),
+                old_name = old_match[2];
+            if (match === null || isNaN(id) || ($('.location[data-id='+id+']').length && id != old_id)) {
+                alert('Некорректный формат (должен быть "ID %название%") или локация с таким ID уже существует на карте');
                 id = old_id;
-            } else if (id != old_id) {
-                $('line[data-from='+old_id+']').attr('data-from', id); // я не знаю что пошло не так
-                $('line[data-to='+old_id+']').attr('data-to', id);
-                $(this).closest('.location').attr('data-id', id);
-                let $move_wrapper = $('.move-wrapper[data-from='+old_id+']')
-                , x = $move_wrapper.attr('data-x')
-                , y = $move_wrapper.attr('data-y')
-                , to = $move_wrapper.attr('data-to');
-                let text = $move_wrapper.find('.move').text();
-                $('.move-wrapper[data-from='+old_id+'] > .move').each(function() {
-                    $(this).text($(this).text().replace(/\d+-/ig, id+'-'));
-                });
-                $('.move-wrapper[data-from='+old_id+']').attr('data-from', id);
-                $('.move-wrapper[data-to='+old_id+'] > .move').each(function() {
-                    $(this).text($(this).text().replace(/=> \d+/ig, '=> '+id));
-                });
-                $('.move-wrapper[data-to='+old_id+']').attr('data-to', id);
-                _.forEach(results, function(result) {
-                    if (result.from == old_id) {
-                        result.string = result.string.replace(/\d+-/ig, id+'-');
-                        result.from = id;
-                    }
-                    if (result.to == old_id) {
-                        result.string = result.string.replace(/=> \d+/ig, '=> '+id);
-                        result.to = id;
-                    }
-                });
-                _.forEach(export_obj.moves, function(result) {
-                    if (result.from == old_id) {
-                        result.from = id;
-                    }
-                    if (result.to == old_id) {
-                        result.to = id;
-                    }
-                });
-                sortResults();
-
-                let old = export_obj.locations[old_id];
-                export_obj.locations[id] = {top: old.top, left: old.left};
-                delete export_obj.locations[old_id];
+            } else if (id != old_id || name != old_name) {
+                if (id != old_id) {
+                    $('line[data-from='+old_id+']').attr('data-from', id);
+                    $('line[data-to='+old_id+']').attr('data-to', id);
+                    $(this).closest('.location').attr('data-id', id);
+                    let $move_wrapper = $('.move-wrapper[data-from='+old_id+']')
+                    , x = $move_wrapper.attr('data-x')
+                    , y = $move_wrapper.attr('data-y')
+                    , to = $move_wrapper.attr('data-to');
+                    let text = $move_wrapper.find('.move').text();
+                    $('.move-wrapper[data-from='+old_id+'] > .move').each(function() {
+                        $(this).text($(this).text().replace(/\d+-/ig, id+'-'));
+                    });
+                    $('.move-wrapper[data-from='+old_id+']').attr('data-from', id);
+                    $('.move-wrapper[data-to='+old_id+'] > .move').each(function() {
+                        $(this).text($(this).text().replace(/=> \d+/ig, '=> '+id));
+                    });
+                    $('.move-wrapper[data-to='+old_id+']').attr('data-to', id);
+                    _.forEach(results, function(result) {
+                        if (result.from == old_id) {
+                            result.string = result.string.replace(/\d+-/ig, id+'-');
+                            result.from = id;
+                        }
+                        if (result.to == old_id) {
+                            result.string = result.string.replace(/=> \d+/ig, '=> '+id);
+                            result.to = id;
+                        }
+                    });
+                    _.forEach(export_obj.moves, function(result) {
+                        if (result.from == old_id) {
+                            result.from = id;
+                        }
+                        if (result.to == old_id) {
+                            result.to = id;
+                        }
+                    });
+                    sortResults();
+                    let old = export_obj.locations[old_id];
+                    export_obj.locations[id] = {top: old.top, left: old.left, name: name};
+                    delete export_obj.locations[old_id];
+                } else {
+                    export_obj.locations[id].name = name;
+                }
                 refreshExport();
             }
+            $(this).closest('table').find('caption').text(name);
             $(this).closest('.location-name-th').text(id);
         });
         $('#location_add').click(function() {
