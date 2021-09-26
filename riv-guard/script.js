@@ -102,7 +102,8 @@ $(document).ready(function() {
 
 		for (const string_i in comments) {
 			var string = comments[string_i];
-			if (!string.length || string == 'Участники'
+			if (!string.length
+				|| ['Участники', 'Ответить | Цитировать', 'Ответить', 'Цитировать'].includes(string)
 				|| /^Собирающий/.test(string)
 				|| /^Нет\.?/i.test(string)
 				|| /^Самые активные/i.test(string)) {
@@ -152,7 +153,7 @@ $(document).ready(function() {
 				pd_date.setMinutes(0);
 				pd_date.setSeconds(0);
 				if (comment_date - pd_date < 0) {
-					error(`Вероятно, ошибка в дате на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}`);
+					error(`Вероятно, ошибка в дате на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}. Дата комментария меньше даты отчёта`);
 				}
 				if (comment_date - pd_date > 1000 * 60 * 60 * 24 * 3) {
 					error(`Опять ${comment_author} отписал ${Math.floor((comment_date - pd_date) / (1000 * 60 * 60 * 24))} лет спустя в комменте #${comment_num}`);
@@ -190,7 +191,8 @@ $(document).ready(function() {
 						day: pd_date.getDate(),
 						hour: pd_date.getHours(),
 						type: places[doz_type],
-						cat: +id
+						cat: +id,
+						comment_num: comment_num
 					});
 				}
 			} else if (is_doz && /^(Нарушения|Освобожд)/u.test(string)) {
@@ -208,7 +210,8 @@ $(document).ready(function() {
 						day: pd_date.getDate(),
 						hour: pd_date.getHours(),
 						type: del_type,
-						cat: +id
+						cat: +id,
+						comment_num: comment_num
 					});
 				}
 			} else if (!is_doz && /^Дата и время:/u.test(string)) {
@@ -249,7 +252,8 @@ $(document).ready(function() {
 						day: pd_date.getDate(),
 						hour: pd_date.getHours(),
 						type: patr_type,
-						cat: +id
+						cat: +id,
+						comment_num: comment_num
 					});
 				}
 			} else if (!is_doz && /^Ведущий:/u.test(string)) {
@@ -264,7 +268,8 @@ $(document).ready(function() {
 					day: pd_date.getDate(),
 					hour: pd_date.getHours(),
 					type: patr_type,
-					cat: +leader
+					cat: +leader,
+					comment_num: comment_num
 				});
 			} else if (string.indexOf('медаль') != -1) {
 				let medal = string.replace(/\D+/g, '');
@@ -311,7 +316,9 @@ $(document).ready(function() {
 				const thisdoz = doz[doz_i];
 				let doubles = _.filter(count.doz, {year: cur.year, month: cur.month, day: cur.day, hour: cur.hour, cat: thisdoz.cat});
 				if (doubles.length > 1 && !hush.includes(thisdoz.cat)) {
-					error('Дубль дозора...' + JSON.stringify(doubles));
+					let comments = [];
+					for (const doub_i in doubles) { comments.push(doubles[doub_i].comment_num); }
+					error(`Дубль дозора, комментарии номерами #${comments.join(', #')}. Массив дублей:\n` + JSON.stringify(doubles));
 					hush.push(thisdoz.cat);
 				}
 			}
@@ -335,7 +342,9 @@ $(document).ready(function() {
 				const thispatr = patr[patr_i];
 				let doubles = _.filter(count.patr, {year: cur.year, month: cur.month, day: cur.day, hour: cur.hour, cat: thispatr.cat});
 				if (doubles.length > 1 && !hush.includes(thispatr.cat)) {
-					error('Дубль патруля...' + JSON.stringify(doubles));
+					let comments = [];
+					for (const doub_i in doubles) { comments.push(doubles[doub_i].comment_num); }
+					error(`Дубль патруля, комментарии номерами #${comments.join(', #')}. Массив дублей:\n` + JSON.stringify(doubles));
 					hush.push(thispatr.cat);
 				}
 			}
@@ -351,7 +360,9 @@ $(document).ready(function() {
 			const cur = count.totals[totals_i];
 			let doubles = _.filter(count.totals, {year: cur.year, month: cur.month, day: cur.day, hour: cur.hour, cat: cur.cat});
 			if (doubles.length > 1 && !hush.includes(cur.cat)) {
-				error('Дубль чего-то там...' + JSON.stringify(doubles));
+				let comments = [];
+				for (const doub_i in doubles) { comments.push(doubles[doub_i].comment_num); }
+				error(`Дубль чего-то там, комментарии номерами #${comments.join(', #')}. Массив дублей:\n` + JSON.stringify(doubles));
 				hush.push(cur.cat);
 			}
 		}
@@ -463,7 +474,7 @@ $(document).ready(function() {
 function format(array, mask) {
 	let string = '', new_array = [];
 	for (let i in array) {
-		new_array.push(mask.replace(/%ID%/g, array[i]));
+		new_array.push(mask.replace(/%ID%/g, array[i]))
 	}
-	return new_array;
+	return new_array
 }
