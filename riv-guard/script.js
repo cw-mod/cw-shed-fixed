@@ -412,6 +412,30 @@ $(document).ready(function() {
 			val += count.medals.war.join('\n');
 			val += '\n\n';
 		}
+		count.medals.patr_and_doz = [];
+		for (let i = 0; i < count.medals.patr.length; i++) {
+			let thispatr = count.medals.patr[i];
+			if (count.medals.doz.includes(thispatr)) {
+				count.medals.patr_and_doz.push(thispatr);
+			}
+		}
+		for (let i = 0; i < count.medals.patr_and_doz.length; i++) {
+			let thismed = count.medals.patr_and_doz[i];
+			let index = count.medals.patr.indexOf(thismed);
+			if (index > -1) {
+				count.medals.patr.splice(index, 1);
+			}
+			index = count.medals.doz.indexOf(thismed);
+			if (index > -1) {
+				count.medals.doz.splice(index, 1);
+			}
+			
+		}
+		if (count.medals.patr_and_doz.length) {
+			val += 'Идущие на медаль за активное участие в патрулях и дозорах:\n';
+			val += count.medals.patr_and_doz.join('\n');
+			val += '\n\n';
+		}
 		if (count.medals.patr.length) {
 			val += 'Идущие на медаль за активное участие в патрулях:\n';
 			val += count.medals.patr.join('\n');
