@@ -98,7 +98,7 @@ $(document).ready(function() {
             "Активный 2": "02",
             "Активный 3": "03"
         };
-		var comments = $('#comments').val().split('\n'), comment_date, pd_date, is_doz = false, patr_type, comment_num, comment_author;
+		var comments = $('#comments').val().split('\n'), comment_date, pd_date = new Date(), is_doz = false, patr_type, comment_num, comment_author;
 
 		for (const string_i in comments) {
 			var string = comments[string_i];
@@ -273,9 +273,7 @@ $(document).ready(function() {
 				});
 			} else if (string.indexOf('медаль') != -1) {
 				let medal = string.replace(/\D+/g, '');
-				let medal_type = `Медаль за активное участие в патрулях`;
 				if (string.indexOf('жизни') != -1) {
-					medal_type = `Медаль за активное участие в жизни племени`;
 					comment_date.setMinutes(0);
 					comment_date.setSeconds(0);
 					let end_date = new Date(comment_date);
@@ -298,6 +296,17 @@ $(document).ready(function() {
 			} else if (string.indexOf('таблицу воителей') != -1) {
 				let add = string.replace(/\D+/g, '');
 					count.medals.war.push(+add);
+			} else if (string.indexOf('практику на ДИ') != -1) {
+				let medal = string.replace(/\D+/g, '');
+				comment_date.setMinutes(0);
+				comment_date.setSeconds(0);
+				count.medals.di[+medal] = {
+					start_patr: 0,
+					start_doz: 0,
+					from_year: comment_date.getFullYear(),
+					from_month: comment_date.getMonth(),
+					from_day: comment_date.getDate(),
+				};
 			} else {
 				return error(`Непонятно что происходит на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}`);
 			}
@@ -385,6 +394,14 @@ $(document).ready(function() {
 					count.medals.mzauvzhp[doz.cat].start_doz--;
 				}
 			}
+			if (count.medals.di[doz.cat]) {
+				const mzcat = count.medals.di[doz.cat];
+				if (mzcat.from_year > doz.year
+					|| mzcat.from_year == doz.year && mzcat.from_month > doz.month
+					|| mzcat.from_year == doz.year && mzcat.from_month == doz.month && mzcat.from_day > doz.day) {
+					count.medals.di[doz.cat].start_doz--;
+				}
+			}
 		}
 		for (const patr_i in count.patr) {
 			const patr = count.patr[patr_i];
@@ -400,6 +417,14 @@ $(document).ready(function() {
 					count.medals.mzauvzhp[patr.cat].start_patr--;
 				}
 			}
+			if (count.medals.di[patr.cat]) {
+				const mzcat = count.medals.di[patr.cat];
+				if (mzcat.from_year > patr.year
+					|| mzcat.from_year == patr.year && mzcat.from_month > patr.month
+					|| mzcat.from_year == patr.year && mzcat.from_month == patr.month && mzcat.from_day > patr.day) {
+					count.medals.di[patr.cat].start_patr--;
+				}
+			}
 		}
 		var val = '';
 		if (count.medals.war.length) {
@@ -409,8 +434,11 @@ $(document).ready(function() {
 		}
 		if (Object.keys(count.medals.di).length) {
 			val += 'Идущие на практику на ДИ:\n';
-			val += count.medals.war.join('\n');
-			val += '\n\n';
+			for (const cat in count.medals.di) {
+				const cur = count.medals.di[cat];
+				val += `${addLeadZero(cur.from_day)}.${addLeadZero(cur.from_month+1)}	${cat}	${cur.start_patr}	${cur.start_doz}\n`;
+			}
+			val += '\n';
 		}
 		count.medals.patr_and_doz = [];
 		for (let i = 0; i < count.medals.patr.length; i++) {
