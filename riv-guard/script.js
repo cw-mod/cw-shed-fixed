@@ -141,6 +141,9 @@ $(document).ready(function() {
 			} else if (/^Дата:/u.test(string)) { // Дозор
 				pd_date = new Date();
 				let re = string.match(/^Дата: ?(\d+)\.(\d+)\.?(\d+)?/u);
+				if (re === null) {
+					error(`Вероятно, ошибка в дате на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}. Регулярочка под "Дата: дд.мм" не сработала.`);
+				}
 				pd_date.setDate(1);
 				pd_date.setMonth(+(re[2]) - 1);
 				pd_date.setDate(re[1]);
