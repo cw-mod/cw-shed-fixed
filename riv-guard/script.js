@@ -155,6 +155,9 @@ $(document).ready(function() {
 				pd_date.setHours(re[1]);
 				pd_date.setMinutes(0);
 				pd_date.setSeconds(0);
+				if (comment_date.getFullYear() + 1 == pd_date.getFullYear()) { // поправочка на нг
+					pd_date.setFullYear(comment_date.getFullYear());
+				}
 				if (comment_date - pd_date < 0) {
 					error(`Вероятно, ошибка в дате на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}. Дата комментария меньше даты отчёта`);
 				}
@@ -229,6 +232,9 @@ $(document).ready(function() {
 				pd_date.setHours(tmptime[1]);
 				pd_date.setMinutes(0);
 				pd_date.setSeconds(0);
+				if (comment_date.getFullYear() + 1 == pd_date.getFullYear()) { // поправочка на нг
+					pd_date.setFullYear(comment_date.getFullYear());
+				}
 				if (comment_date - pd_date < 0) {
 					return error(`Вероятно, ошибка в дате на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}`);
 				}
