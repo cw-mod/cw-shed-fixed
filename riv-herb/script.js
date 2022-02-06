@@ -136,7 +136,7 @@ $(document).ready(function() {
 				if (!re || !re[1]) {
 					return error(`Что-то не так с типом травника в комменте #${comment_num}. Строчка выглядит как "${string}".`);
 				}
-				patr_type = re[1].trim();
+				patr_type = re[1].trim().toLowerCase();
 				if (!['веточник', 'травник', 'мховник'].includes(patr_type)) {
 					error(`Что-то не так с типом травника в комменте #${comment_num}. Строчка выглядит как "${string}".`);
 				} else {
