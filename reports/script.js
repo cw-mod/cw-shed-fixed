@@ -174,14 +174,14 @@ $(document).ready(function(){
                 txt += "[b]Вид:[/b] ";
                 txt += ($("input[name='hunt_type']:checked").val()=="0") ? "утренняя" : "вечерняя";
                 txt += ";<br>";
-                txt += (isNaN(lead_id)) ? addErr("Ошибка: некорректный ID ведущего.") : "[b]Ведущий:[/b] "+masking("[cat%ID] (%ID) [5]", lead_id)+";<br>";
+                txt += (isNaN(lead_id)) ? addErr("Ошибка: некорректный ID ведущего.") : "[b]Ведущий:[/b] "+masking("[cat%ID] [%ID] (5)", lead_id)+";<br>";
                 if ($("#patr_id").val().length) {
-                    par_list = toMaskedArr($("#patr_id").val().trim(), "[cat%ID] (%ID) [5]");
+                    par_list = toMaskedArr($("#patr_id").val().trim(), "[cat%ID] [%ID] (5)");
                     if (par_list.arr.length) {txt += `[b]Участники:[/b] ${par_list.arr.join(", ")};<br>`;}
                     if (par_list.mul_id_err) {txt += addErr("Ошибка в одном или нескольких ID; некорректные ID убраны из отчёта.");}
                 } else {txt += "[b]Участники:[/b] -.<br>";}
                 if ($("#patr_extra_id").val().length) {
-                    par_list = toMaskedArr($("#patr_extra_id").val().trim(), "[cat%ID] (%ID)");
+                    par_list = toMaskedArr($("#patr_extra_id").val().trim(), "[cat%ID] [%ID]");
                     if (par_list.arr.length) {txt += `[b]Таскающие:[/b] ${par_list.arr.join(", ")};<br>`;}
                     if (par_list.mul_id_err) {txt += addErr("Ошибка в одном или нескольких ID; некорректные ID убраны из отчёта.");}
                 } else {txt += "[b]Таскающие:[/b] -.";}
