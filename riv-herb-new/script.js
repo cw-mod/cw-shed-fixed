@@ -207,6 +207,21 @@ $(document).ready(function() {
 			}
 		}
 		count.sort(function(a, b) {return b.points - a.points});
+
+		let first = count[0], first_gr = [first.id], i = 1, second = count[i], second_gr = [];
+		while (second && first.points == second.points) {
+			first_gr.push(second.id);
+			second = count[++i];
+		}
+		if (second) {
+			second_gr.push(second.id);
+		}
+		let third = count[++i];
+		while (third && second.points == third.points) {
+			second_gr.push(third.id);
+			third = count[++i];
+		}
+		
 		let val = `Подсчёт баллов [${addLeadZero(date.getDate())}.${addLeadZero(date.getMonth()+1)}]:\n`;
 		for (const i in count) {
 			const cat = count[i];
@@ -233,21 +248,7 @@ $(document).ready(function() {
 			val += `${cat.id}	${cat.herbs}\n`;
 		};
 
-		val += `\n\nАктивисты:`;
-		let first = count[0], first_gr = [first.id], i = 1, second = count[i], second_gr = [];
-		while (second && first.points == second.points) {
-			first_gr.push(second.id);
-			second = count[++i];
-		}
-		if (second) {
-			second_gr.push(second.id);
-		}
-		let third = count[++i];
-		while (third && second.points == third.points) {
-			second_gr.push(third.id);
-			third = count[++i];
-		}
-		
+		val += `\n\nАктивисты:`;		
 		val += `\nI группа: ${(format(first_gr, '[cat%ID%] [%ID%]')).join(', ')};`;
 		val += `\nII группа: ` + (second_gr.length ? (format(second_gr, '[cat%ID%] [%ID%]')).join(', ') : '-') + `.`;
 		$('#output').val(val);
