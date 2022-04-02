@@ -245,7 +245,9 @@ $(document).ready(function() {
 		val += `\n\nПодсчёт трав [${addLeadZero(date.getDate())}.${addLeadZero(date.getMonth()+1)}]:\n`;
 		for (const i in count) {
 			const cat = count[i];
-			val += `${cat.id}	${cat.herbs}\n`;
+			if (cat.herbs > 0) {
+				val += `${cat.id}	${cat.herbs}\n`;
+			}
 		};
 
 		val += `\n\nАктивисты:`;		
