@@ -157,7 +157,8 @@ $(document).ready(function() {
 				patr_date.setMonth(+(re[2]) - 1);
 				patr_date.setDate(re[1]);
 				if (re[3]) {
-					patr_date.setFullYear(re[3]);
+					const year = +((re[3].length == 2) ? "20" + re[3] : re[3]);
+					patr_date.setFullYear(year);
 				}
 			} else if (/^Ведущий/u.test(string)) {
 				let leader = string.split(':')[1];
