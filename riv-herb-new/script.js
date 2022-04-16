@@ -158,7 +158,6 @@ $(document).ready(function() {
 				patr_date.setDate(re[1]);
 				if (re[3]) {
 					const year = +((re[3].length == 2) ? "20" + re[3] : re[3]);
-					console.log('re3',re[3],'year',year);
 					patr_date.setFullYear(year);
 				}
 			} else if (/^Ведущий/u.test(string)) {
