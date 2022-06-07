@@ -8,11 +8,11 @@
         <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
         <script src="https://html2canvas.hertzen.com/dist/html2canvas.js"></script>
         <style type="text/css">
-            caption {
-                white-space: break-spaces;
-            }
             table {
               caption-side: bottom;
+            }
+            caption {
+                white-space: break-spaces;
             }
             #panel > div {
                 margin-bottom: .5em;
@@ -27,7 +27,7 @@
             .location, .location td, .location th {
                 border: 1px solid #b35a0bba;
             }
-            .location  {
+            .location {
                 width: max-content;
                 border-collapse: collapse;
             }
@@ -76,8 +76,13 @@
             #status {
                 display: inline-block;
             }
-            .location .cell {
+            .location > tbody {
                 background-color: #fff4da;
+            }
+            .location-with-bg > tbody {
+                /*background-size: cover;*/
+                background-size: 150px 115px;
+                background-position: center;
             }
             .location .cell:hover:not(.cell-self, .cell-twoside, .cell-oneside), .location .cell-selected {
                 background-color: #ffdfab;
@@ -141,6 +146,10 @@
                 <input id="location_id" type="text" placeholder="ID" value="1">
                 <button id="location_add">Добавить локацию</button>
                 <button id="download">Сохранить карту как PNG</button>
+<!--                 <button id="move_left">←</button>
+                <button id="move_up">↑</button>
+                <button id="move_right">→</button>
+                <button id="move_down">↓</button> -->
                 <div id="status"></div>
             </div>
         </div>
@@ -242,8 +251,7 @@
         }
         function loadMap(object) {
             for (const loc_id in object.locations) {
-                addLocation(loc_id, object.locations[loc_id].top, object.locations[loc_id].left, object.locations[loc_id].name);
-                //$max_left = , $max_top = 
+                addLocation(loc_id, object.locations[loc_id].top, object.locations[loc_id].left, object.locations[loc_id].name, object.locations[loc_id].bg);
                 if ($max_left === undefined || $max_left.position().left < object.locations[loc_id].left) {
                     $max_left = $('.location[data-id='+loc_id+']');
                 }
@@ -253,8 +261,10 @@
                 let $map = $('#map'), $lines = $('#lines'),
                     width = $max_left.offset().left - $map.offset().left + loc_width,
                     height = $max_top.offset().top - $map.offset().top + loc_height;
-                $map.css('width', width).css('height', height);
-                $lines.attr('width', width).attr('height', height);
+                if (width > 0 && height > 0) {
+                    $map.css('width', width + 200).css('height', height + 200);
+                    $lines.attr('width', width).attr('height', height);
+                }
             }
             // $max_top
             for (const move of object.moves) {
@@ -269,8 +279,10 @@
                 }
             }
         }
-        function addLocation(loc, top = 0, left = 0, name = loc) {
-            let elem = `<table class="location ui-draggable" data-id="${loc}" style="position:absolute;top:${top}px;left:${left}px;"><caption>${name}</caption><thead><th colspan=2 class="location-handle"></th><th colspan="7" class="location-name-th">${loc}</th><th class="location-delete">&times;</th></thead><tbody>`;
+        function addLocation(loc, top = 0, left = 0, name = loc, bg = -1) {
+            const bgClass = (bg === -1) ? "" : "location-with-bg";
+            const bgStyle = (bg === -1) ? "" : `style="background-image: url('https://catwar.su/cw3/spacoj/${bg}.jpg')"`;
+            let elem = `<table class="location ${bgClass} ui-draggable" data-id="${loc}" style="position:absolute;top:${top}px;left:${left}px;"><caption>${name}</caption><thead><th colspan=2 class="location-handle"></th><th colspan="7" class="location-name-th">${loc}</th><th class="location-delete">&times;</th></thead><tbody ${bgStyle}>`;
                 for (let i = 0; i < 6; i++) {
                     let row = '<tr>';
                     for (let j = 0; j < 10; j++) {
@@ -281,7 +293,7 @@
                 }
                 elem += `</tbody></table>`;
                 let $elem = $('#map').append(elem);
-                export_obj.locations[loc] = {top: top, left: left, name: name + ''};
+                export_obj.locations[loc] = {top: top, left: left, name: name + '', bg: bg};
                 refreshExport();
                 $('.location[data-id='+loc+']').draggable(draggable_options);
         }
@@ -371,7 +383,7 @@
                 }
                 let width = $max_left.offset().left - $map.offset().left + loc_width,
                     height = $max_top.offset().top - $map.offset().top + loc_height;
-                $map.css('width', width).css('height', height);
+                $map.css('width', width + 200).css('height', height + 200);
                 $lines.attr('width', width).attr('height', height);
             }
         };
