@@ -51,7 +51,7 @@
 #layer_new {
 	width: 200px;
 	margin-bottom: 5px;
-	margin-left: 10px;
+	margin-left: 15px;
 	margin-top: 3px;
 }
 #layer_new .ui-state-default, #layer_new .ui-widget-content .ui-state-default, #layer_new .ui-widget-header .ui-state-default {
