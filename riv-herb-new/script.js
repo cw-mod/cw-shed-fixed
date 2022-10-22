@@ -226,7 +226,7 @@ $(document).ready(function() {
 		let val = `Подсчёт баллов [${addLeadZero(date.getDate())}.${addLeadZero(date.getMonth()+1)}]:\n`;
 		for (const i in count) {
 			const cat = count[i];
-			val += `${cat.id}	${cat.points}\n`;
+			val += `${cat.id}	${cat.points.replace('.', ',')}\n`;
 		};
 
 		count = [];
@@ -247,7 +247,7 @@ $(document).ready(function() {
 		for (const i in count) {
 			const cat = count[i];
 			if (cat.herbs > 0) {
-				val += `${cat.id}	${cat.herbs}\n`;
+				val += `${cat.id}	${cat.herbs.replace('.', ',')}\n`;
 			}
 		};
 
