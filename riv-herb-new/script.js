@@ -201,9 +201,10 @@ $(document).ready(function() {
 				const now = cur.cats[c_i];
 				const instance = _.find(count, {id: now.id});
 				if (!instance) {
-					count.push({id: now.id, points});
+					count.push({id: now.id, points, count: 1});
 				} else {
 					instance.points += points;
+					instance.count++;
 				}
 			}
 		}
@@ -249,6 +250,13 @@ $(document).ready(function() {
 			if (cat.herbs > 0) {
 				val += `${cat.id}	${cat.herbs.toString().replace('.',',')}\n`;
 			}
+		};
+		
+
+		val += `\n\nПодсчёт травников на ДИ [${addLeadZero(date.getDate())}.${addLeadZero(date.getMonth()+1)}]:\n`;
+		for (const i in count) {
+			const cat = count[i];
+			val += `${cat.id}	${cat.count.toString().replace('.',',')}\n`;
 		};
 
 		val += `\n\nАктивисты:`;		
