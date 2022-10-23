@@ -230,6 +230,12 @@ $(document).ready(function() {
 			val += `${cat.id}	${cat.points.toString().replace('.',',')}\n`;
 		};
 
+		val += `\n\nПодсчёт травников на ДИ [${addLeadZero(date.getDate())}.${addLeadZero(date.getMonth()+1)}]:\n`;
+		for (const i in count) {
+			const cat = count[i];
+			val += `${cat.id}	${cat.count.toString().replace('.',',')}\n`;
+		};
+		
 		count = [];
 		for (const i in patr) {
 			const cur = patr[i];
@@ -252,13 +258,6 @@ $(document).ready(function() {
 			}
 		};
 		
-
-		val += `\n\nПодсчёт травников на ДИ [${addLeadZero(date.getDate())}.${addLeadZero(date.getMonth()+1)}]:\n`;
-		for (const i in count) {
-			const cat = count[i];
-			val += `${cat.id}	${cat.count.toString().replace('.',',')}\n`;
-		};
-
 		val += `\n\nАктивисты:`;		
 		val += `\nI группа: ${(format(first_gr, '[cat%ID%] [%ID%]')).join(', ')};`;
 		val += `\nII группа: ` + (second_gr.length ? (format(second_gr, '[cat%ID%] [%ID%]')).join(', ') : '-') + `.`;
