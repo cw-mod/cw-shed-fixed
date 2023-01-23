@@ -16,13 +16,13 @@ function dt_format(date) {
 function addCat(patr_arr, cat, date, type, mark_filled = false) {
 	const instance = _.find(patr_arr, {year: date.getFullYear(), month: date.getMonth(), day: date.getDate(), type: type});
 	const date_str = `${addLeadZero(date.getDate())}.${addLeadZero(date.getMonth() + 1)}.${date.getFullYear()} (${type})`;
-	let entry = cat.trim().match(/[А-яЁё ]+ \[(\d+)\] \((\d+)\)/i);
+	let entry = cat.trim().match(/[А-яЁё ]+ \[([\d\.,]+)\] \((\d+)\)/i);
 	if (!entry) {
 		return true;
 	}
 	cat = {
 		id: +(entry[1]),
-		herbs: +(entry[2])
+		herbs: +(entry[2].replace(",", "."))
 	};
 	if (!instance) {
 		error(`Попытался запихнуть ${cat.id} в патруль ${date_str}, но подходящий патруль не был найден. Некорректная дата комментария, наверное слишком поздно или слишком рано отпись.`);
@@ -230,11 +230,11 @@ $(document).ready(function() {
 			val += `${cat.id}	${cat.points.toString().replace('.',',')}\n`;
 		};
 
-		val += `\n\nПодсчёт травников на ДИ [${addLeadZero(date.getDate())}.${addLeadZero(date.getMonth()+1)}]:\n`;
-		for (const i in count) {
-			const cat = count[i];
-			val += `${cat.id}	${cat.count.toString().replace('.',',')}\n`;
-		};
+// 		val += `\n\nПодсчёт травников на ДИ [${addLeadZero(date.getDate())}.${addLeadZero(date.getMonth()+1)}]:\n`;
+// 		for (const i in count) {
+// 			const cat = count[i];
+// 			val += `${cat.id}	${cat.count.toString().replace('.',',')}\n`;
+// 		};
 		
 		count = [];
 		for (const i in patr) {
