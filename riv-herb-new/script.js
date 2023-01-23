@@ -16,7 +16,7 @@ function dt_format(date) {
 function addCat(patr_arr, cat, date, type, mark_filled = false) {
 	const instance = _.find(patr_arr, {year: date.getFullYear(), month: date.getMonth(), day: date.getDate(), type: type});
 	const date_str = `${addLeadZero(date.getDate())}.${addLeadZero(date.getMonth() + 1)}.${date.getFullYear()} (${type})`;
-	let entry = cat.trim().match(/[А-яЁё ]+ \[([\d\.,]+)\] \((\d+)\)/i);
+	let entry = cat.trim().match(/[А-яЁё ]+ \[(\d+)\] \(([\d\.,]+)\)/i);
 	if (!entry) {
 		return true;
 	}
