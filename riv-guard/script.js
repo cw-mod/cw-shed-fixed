@@ -39,7 +39,7 @@ $(document).ready(function() {
 				day: lastWeek.getDate(),
 				hour: lastWeek.getHours()
 			});
-			if ([11, 15, 18, 21].includes(lastWeek.getHours())) {
+			if ([9, 11, 15, 18, 21, 23].includes(lastWeek.getHours())) {
 				present_patr.push({
 					year: lastWeek.getFullYear(),
 					month: lastWeek.getMonth(),
