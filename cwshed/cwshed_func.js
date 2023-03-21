@@ -1,11 +1,10 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.24
+// @version      1.25
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2023, Посланник Снов (https://catwar.su/cat930302)
 // @license      MIT; https://opensource.org/licenses/MIT
-// @updateURL    https://openuserjs.org/meta/ReiReiRei/CW_Shed.meta.js
 // @match        *://catwar.su/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
@@ -16,7 +15,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.24';
+  const version = '1.25';
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
@@ -345,26 +344,30 @@
             const catName = link.text();
             const cat_id = /\d+/.exec(link.attr('href'))[0];
             const defects = {};
+            let el_composited, el_costume, size;
             el.children().each(function (e) {
                 const bgImg = $(this).css('background-image');
+                size = $(this).css('background-size');
                 const isDefects = bgImg.indexOf('defects') > -1;
-                if (isDefects) {
+                if (bgImg.indexOf('defects') > -1) {
                     const data = /cats\/-?\d+\/defects\/([a-z]+).*(\d+)\.png/.exec(bgImg)
                     if (data) {
                         const name = data[1], val = +(data[2]);
                         defects[name] = val;
                     }
+                } else if (bgImg.indexOf('composited') > -1) {
+                    el_composited = $(this);
+                } else if (bgImg.indexOf('costume') > -1 && el_costume === undefined) {
+                    el_costume = $(this);
                 }
             });
             let image = "none";
-            const hasGenerated = !(el.css('background-image') == "none");
-            if (hasGenerated) {
-                image = /(composited\/[\da-f]{16})\.png/.exec(el.css('background-image'))[1];
-            } else {
-                el = el.children().first();
-                image = /(cats\/-?\d+\/costume\/\d+)\.png/.exec(el.css('background-image'))[1]
+            const hasGenerated = (el_composited !== undefined);
+            if (hasGenerated) { // take composited
+                image = /(composited\/[\da-f]{16})\.png/.exec(el_composited.css('background-image'))[1];
+            } else if (el_costume !== undefined) { // take FIRST COSTUME
+                image = /(cats\/-?\d+\/costume\/\d+)\.png/.exec(el_costume.css('background-image'))[1];
             }
-            const size = el.css('background-size');
             const pol = !!(/Его запах/.exec(cat.html()));
             cws_catsInfo[cat_id] = {
                 "name" : catName,
@@ -928,7 +931,7 @@
                   return wh_act;
               }
           }
-          
+
         });
         return wh_act;
       }
@@ -1816,14 +1819,14 @@ transition: 0.2s;-webkit-transition: 0.2s;-o-transition: 0.2s;-moz-transition: 0
       'on_css_hideTooltip': `<style id="cwsstyle_on_css_hideTooltip">.cat:hover .cat_tooltip {display:none;}</style>`,
       'on_css_daylight': `<style id="cwsstyle_on_css_daylight">#cages_div {opacity: 1 !important;}</style>`,
       'on_css_defects': `<style id="cwsstyle_on_css_defects">div[style*="/defects/disease/"] {background-color: #eeff4640;padding-top: 16px;}
-div[style*="/defects/trauma/"] {background-color: #46ffef40;padding-top: 16px;}
-div[style*="/defects/drown/"] {background-color: #68ff4640;padding-top: 16px;}
-div[style*="/defects/wound/"] {background-color: #4646ff40;padding-top: 16px;}
-div[style*="/defects/poisoning/"] {background-color: #ff464640;padding-top: 16px;}</style>`,
+div[style*="/defects/trauma/"] {background-color: #46ffef40 !important;padding-top: 16px;}
+div[style*="/defects/drown/"] {background-color: #68ff4640 !important;padding-top: 16px;}
+div[style*="/defects/wound/"] {background-color: #4646ff40 !important;padding-top: 16px;}
+div[style*="/defects/poisoning/"] {background-color: #ff464640 !important;padding-top: 16px;}</style>`,
       'on_css_defects_dirt': `<style id="cwsstyle_on_css_defects_dirt">
 div[style*="/defects/dirt/3.png"], div[style*="/defects/dirt/base/1/3.png"],
 div[style*="/defects/dirt/base/2/3.png"], div[style*="/defects/dirt/4.png"],
-div[style*="/defects/dirt/base/1/4.png"], div[style*="/defects/dirt/base/2/4.png"] {background-color: #9446ff40;padding-top: 16px;}</style>`,
+div[style*="/defects/dirt/base/1/4.png"], div[style*="/defects/dirt/base/2/4.png"] {background-color: #9446ff40 !important;padding-top: 16px;}</style>`,
     };
     $.each(css_texts, function (index, value) {
       if (globals[index]) {
@@ -2556,6 +2559,7 @@ ${my_id_div}
   <select id="cws_clean_grp">
     <option>I группа</option>
     <option>II группа</option>
+    <option>III группа</option>
   </select>
 </div>
 <hr>
@@ -2591,7 +2595,7 @@ ${my_id_div}
               "старшую воительницу": "ОВ",
             };
             const places_from = {
-              "Поляна для сна": "Поляна для сна",
+              "Поляна для сна": "Лагерь",
               "Камышовая поляна": "Лагерь",
               "Мшистая полянка": "Лагерь",
               "Тенистая поляна": "Лагерь",
@@ -2676,8 +2680,7 @@ ${my_id_div}
                     "place": place
                   };
                 }
-              }
-              else { // Опускание: 6 должность, 7 айди, 8 локация
+              } else { // Опускание: 6 должность, 7 айди, 8 локация
                 let id = value[7];
                 if (current_cats[id] !== undefined) {
                   let title_grp = current_cats[id].title_grp,
@@ -2700,7 +2703,9 @@ ${my_id_div}
             let my_id_mask = (isNaN(my_id)) ? 'Некорректный ID' : masking(my_id, '[cat%ID%] [%ID%]');
             let report = `1. ${my_id_mask}.\n2. ${group}.\n3. `;
             $.each(good_cats, function (place, groups) {
-              if (group == "II группа") {
+              if (group == "III группа") {
+                  // TODO: something?
+              } else if (group == "II группа") {
                   report += `[b]${place}:[/b] `;
                   let list = [];
                   let list_blocked = [];
