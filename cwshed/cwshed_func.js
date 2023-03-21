@@ -2583,6 +2583,7 @@ ${my_id_div}
           $('#r03_clean1').on('click', function () {
             let expr_pickup = new RegExp('(Подняла? ([А-яЁё ]+) по имени [А-яЁё ]+ \\((\\d+)\\) (\\[[А-яЁё ]+\\]) в локации «([А-яЁё ]+)»\\.|Опустила? на землю ([А-яЁё ]+) по имени [А-яЁё ]+ \\((\\d+)\\) в локации «([А-яЁё ]+)»\\.)', "ig");
             let text = $('#r03_clean_text').val();
+            let group = $('#cws_clean_grp').val();
             let match_pickup = Array.from(text.matchAll(expr_pickup));
             let good_cats = {};
             let current_cats = [];
@@ -2671,10 +2672,11 @@ ${my_id_div}
                 let id = value[3],
                   title_grp = titles[value[2]],
                   place = value[5];
-                place = (places_from[place]) ? places_from[place] : place;
-                if (jQuery.inArray(value[4], bad_statuses) !== -1) {
+                if (bad_statuses.includes(value[4])
+                    || group == "II группа" && ["Плакучая ива", "Галечный берег"].includes(place)) {
                   title_grp = "Заблокированные";
                 }
+                place = (places_from[place]) ? places_from[place] : place;
                 if (place !== undefined && (value[4] == "[ Спит ]" || title_grp == "Заблокированные")) {
                   current_cats[id] = {
                     "title_grp": title_grp,
@@ -2700,42 +2702,49 @@ ${my_id_div}
               }
             });
             let my_id = parseInt($('#cws_blog_myid').val());
-            let group = $('#cws_clean_grp').val();
             let my_id_mask = (isNaN(my_id)) ? 'Некорректный ID' : masking(my_id, '[cat%ID%] [%ID%]');
-            let report = `1. ${my_id_mask}.\n2. ${group}.\n3. `;
-            $.each(good_cats, function (place, groups) {
-              if (group == "III группа") {
-                  // TODO: something?
-              } else if (group == "II группа") {
-                  report += `[b]${place}:[/b] `;
-                  let list = [];
-                  let list_blocked = [];
-                  $.each(groups, function (victim_group, arr) {
-                      if (victim_group == "Заблокированные") {
-                          list_blocked = list_blocked.concat(arr);
-                      } else {
-                          list = list.concat(arr);
-                      }
-                  });
-                  report += `${list.join(' ')}\n`;
-                  if (list_blocked.length) {
-                      report += `[u]${list_blocked.join(' ')}[/u]\n`;
-                  }
-              } else {
-                  report += `[b]${place}:[/b]\n`;
-                  $.each(groups, function (victim_group, arr) {
-                      if (arr.length) {
-                          if (victim_group == "Заблокированные") {
-                              report += `[u]${arr.join(' ')}[/u]\n`;
-                          } else {
-                              report += `${victim_group}: ${arr.join(' ')}\n`;
-                          }
-                      }
-                  });
-              }
-            });
-            report += (group == "II группа") ? `4. [ СКРИН С МОДЕЛЬКОЙ КОТА (ДЛЯ II ГРУППЫ) ]\n5. ` : `4. `;
-            report += `[header=${my_id}]История[/header][block=${my_id}]${text}[/block]`;
+            let report = `1. ${my_id_mask}.\n2. ${group}.\n`;
+            if (group == "III группа") {
+                report += `3. [b]Л:[/b]  — предупрежден(-ы)\n[b]ВЛ:[/b]  — предупрежден(-ы)`;
+            } else {
+                report += `3. `;
+                $.each(good_cats, function (place, groups) {
+                    if (group == "II группа") {
+                        report += `[b]${place}:[/b] `;
+                        let list = [];
+                        let list_blocked = [];
+                        $.each(groups, function (victim_group, arr) {
+                            if (victim_group == "Заблокированные") {
+                                list_blocked = list_blocked.concat(arr);
+                            } else {
+                                list = list.concat(arr);
+                            }
+                        });
+                        report += `${list.join(' ')}\n`;
+                        if (list_blocked.length) {
+                            report += `[u]${list_blocked.join(' ')}[/u]\n`;
+                        }
+                    } else {
+                        report += `[b]${place}:[/b]\n`;
+                        $.each(groups, function (victim_group, arr) {
+                            if (arr.length) {
+                                if (victim_group == "Заблокированные") {
+                                    report += `[u]${arr.join(' ')}[/u]\n`;
+                                } else {
+                                    report += `${victim_group}: ${arr.join(' ')}\n`;
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+            if (group == "I группа") {
+                report += `4. `;
+                report += `[header=${my_id}]История[/header][block=${my_id}]${text}[/block]`;
+            } else if (group == "II группа") {
+                report += `4. [ СКРИН С МОДЕЛЬКОЙ КОТА (ДЛЯ II ГРУППЫ) ]\n5. `;
+                report += `[header=${my_id}]История[/header][block=${my_id}]${text}[/block]`;
+            }
             $('#comment').val(report).scrollintoview();
           });
         } else if (blogID == 24395) { // хранители трав
