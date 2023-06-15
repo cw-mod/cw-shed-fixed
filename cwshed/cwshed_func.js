@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.26
+// @version      1.27
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2023, Посланник Снов (https://catwar.su/cat930302)
@@ -16,7 +16,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.26';
+  const version = '1.27';
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
@@ -1819,7 +1819,7 @@ transition: 0.2s;-webkit-transition: 0.2s;-o-transition: 0.2s;-moz-transition: 0
       'on_css_newloading': `<style id="cwsstyle_on_css_newloading">[src*="/img/loading.gif"] {content: url(http://d.zaix.ru/hgx3.gif);}</style>`,
       'on_css_hideTooltip': `<style id="cwsstyle_on_css_hideTooltip">.cat:hover .cat_tooltip {display:none;}</style>`,
       'on_css_daylight': `<style id="cwsstyle_on_css_daylight">#cages_div {opacity: 1 !important;}</style>`,
-      'on_css_defects': `<style id="cwsstyle_on_css_defects">div[style*="/defects/disease/"] {background-color: #eeff4640;padding-top: 16px;}
+      'on_css_defects': `<style id="cwsstyle_on_css_defects">div[style*="/defects/disease/"] {background-color: #eeff4640 !important;padding-top: 16px;}
 div[style*="/defects/trauma/"] {background-color: #46ffef40 !important;padding-top: 16px;}
 div[style*="/defects/drown/"] {background-color: #68ff4640 !important;padding-top: 16px;}
 div[style*="/defects/wound/"] {background-color: #4646ff40 !important;padding-top: 16px;}
