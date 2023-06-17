@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.27
+// @version      1.28
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2023, Посланник Снов (https://catwar.su/cat930302)
@@ -16,7 +16,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.27';
+  const version = '1.28';
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
@@ -50,6 +50,8 @@
 , 'on_cuMovesNote' : true // Окно заметок для ВТ
 , 'on_settLink' : true // Ссылка на настройки в игровой
 , 'on_extraInfo' : false // Доп. инфо о котиках
+, 'on_deletionWarning' : false // Предупреждение об удалении
+, 'on_historyCleanWarning' : false // Предупреждение о чистке истории TODO
  //Громкость звуков
 , 'sound_notifEaten' : 0.2 // Звук, когда тебя подняли
 , 'sound_notifBeaten' : 0.2 // Звук, когда тебя атакуют
@@ -270,6 +272,7 @@
   }
   const pageurl = window.location.href;
   const isCW3 = (/^https:\/\/\w?\.?catwar.su\/cw3(?!(\/kns|\/jagd))/.test(pageurl));
+  const isSite = !(/^https:\/\/\w?\.?catwar.su\/cw3(\/kns|\/jagd)?.*/.test(pageurl));
   const isDM = (/^https:\/\/\w?\.?catwar.su\/ls/.test(pageurl));
   const isHunt = (/^https:\/\/\w?\.?catwar.su\/cw3\/jagd/.test(pageurl));
   const isSett = (/^https:\/\/\w?\.?catwar.su\/settings/.test(pageurl));
@@ -280,6 +283,7 @@
 
   try {
     if (isCW3) cw3();
+    if (isSite) site();
     if (isDM) dm();
     if (isSett) sett();
     if (isHunt) hunt();
@@ -307,12 +311,71 @@
               }`);
   }
 
+    function site() { // Весь сайт, кроме Игровой и её разделов
+        if (globals.on_deletionWarning) {
+            const el = $('.other_cats_list').first();
+            if (el.length) {
+                el.children().each(function (e) {
+                    const href = $(this).attr('href');
+                    const data = /login2\?id=(\d+)/.exec(href);
+                    let response = '[???]';
+                    if (data && data[1]) {
+                        response = '';
+                        const id = +data[1];
+                        let cat_data = getSettings(`reg_${id}`);
+                        if (cat_data) {
+                            cat_data = JSON.parse(cat_data);
+                            let date = new Date();
+                            date.setTime(date.getTime() + (date.getTimezoneOffset() + 180) * 60 * 1000);
+                            let diff = Math.floor(date.getTime() / 1000) - cat_data.regTime;
+                            diff = Math.floor(diff / 86400); // days alive
+                            let count = 45; // Время жизни
+                            if (diff > 365) {
+                                count = 120;
+                            }
+                            let lastOnline = new Date();
+                            lastOnline.setTime(cat_data.lastOnline * 1000);
+                            let inactive = Math.ceil((date - lastOnline) / (86400 * 1000));
+                            let ttl = count - inactive;
+                            if (ttl < 7) {
+                                response = `<span style='color:red;font-weight:bold;' title='Персонаж удалится через ${ttl} дней из-за незахода'>[!!!]</span>`;
+                            }
+                        }
+                    }
+                    const text = $(this).text();
+                    $(this).html(`${text} ${response}`);
+                });
+            }
+        }
+    }
   function cw3() { //Игровая
     if (globals.on_settLink) {
       $('.small').first().append(` | <a href="/settings">Настройки модов</a>`); //Настройки мода
     }
     if (no(globals.on_links)) {
         return;
+    }
+    if (globals.on_historyCleanWarning) {
+      $(document).ready(function () {
+          const istElem = $('#ist');
+          addCSS(`#history_clean { display: none; }`);
+          $('<a href="#" id="cws_history_clean">Очистить историю</a>').insertAfter('#history_block > #ist + br');
+          if (istElem.text() == 'История очищена.') {
+              $('#cws_history_clean').css('display', 'none');
+          }
+          $('body').on('click', '#cws_history_clean', function(e) {
+              e.preventDefault();
+              if (confirm('Точно очистить историю?')) {
+                  $('#history_clean')[0].click();
+              }
+          });
+          var observer = new MutationObserver(function(mutationsList, observer) {
+              const ist = $('#ist').text();
+              $('#cws_history_clean').css('display', (istElem.text() == 'История очищена.' ? 'none' : 'inline'));
+          });
+          observer.observe(window.document.getElementById('ist'), {characterData: false, childList: true, attributes: false}); // Я без понятия что это, в observer не шарю, что-то нашлось на stackoverflow работает и хрен с ним
+
+      });
     }
     if (globals.on_extraInfo) {
 		$.fn.reveal=function(options){var defaults={animation:'fadeAndPop',animationspeed:300,closeonbackgroundclick:true,dismissmodalclass:'close-reveal-modal'};
@@ -678,8 +741,6 @@
                   $.each(matchAll, function (index, value) {
                     let replacer = value[1] || value[2] || value[3] || value[4]; //То, что было найдено (4 местоположения key, 4 варианта регулярки)
                     text = text.replace(value[0], value[0].replace(replacer, '<span class="myname">&shy;' + replacer + '&shy;</span>'));
-                    //console.log("Замечена кличка, добавлено в текст:");
-                    //console.log(text);
                     has_nickname = true;
                   });
                 }
@@ -737,99 +798,14 @@
           let $e = $('#cws_chat_msg');
           if ($e.scrollTop() + $e.height() >= $e[0].scrollHeight - 45) { // прокручено до конца
             scroll = false;
-            //console.log('Прокручено до конца страницы');
-            //console.log('scrollTop : ' + $e.scrollTop());
-            //console.log('height : ' + $e.height());
-            //console.log('scrollHeight : ' + $e[0].scrollHeight);
           }
           else {
             scroll = true;
-            //console.log('Прокручено на середину');
-            //console.log('scrollTop : ' + $e.scrollTop());
-            //console.log('height : ' + $e.height());
-            //console.log('scrollHeight : ' + $e[0].scrollHeight);
           }
         });
       }
 
     }
-    /*
-        if ((globals.on_chatMention || globals.on_nickHighlight) && 0) {
-          let myname_count = 0;
-          $(document).ready(function () {
-            $("#chat_msg").on('DOMNodeInserted', function (e) {
-              if (e.target.children !== undefined && e.target.children.length == 2) {
-                if (globals.on_nickHighlight) {
-                  $('#chat_msg .chat_text > span:first-child').each(function () {
-                    let html = $(this).html();
-                    let changed = false;
-                    $.each(globals.nickListArray, function (index, key) {
-                      let expr = new RegExp('^(' + key + ')[^А-ЯЁёA-Za-z0-9]|[^А-ЯЁёA-Za-z0-9>](' + key + ')[^А-ЯЁёA-Za-z0-9<]|[^А-ЯЁёA-Za-z0-9](' + key + ')$|^(' + key + ')$', "ig");
-                      if (html.match(expr)) { //есть имя и оно ещё не внутри тега
-                        changed = true;
-                        let matchAll = html.matchAll(expr);
-                        matchAll = Array.from(matchAll); // теперь массив
-                        $.each(matchAll, function (index, value) {
-                          let replacer = value[1] || value[2] || value[3] || value[4]; //То, что было найдено
-                          html = html.replace(value[0], value[0].replace(replacer, '<span class=myname>' + replacer + '</span>'));
-                        });
-                      }
-                    });
-                    if (changed) $(this).html(html);
-                  });
-                }
-                if (globals.on_chatMention) {
-                  //console.log("Количество упоминаний имени: " + myname_count);
-                  //console.log("Количество сообщений в чате: " + $('.chat_text').length);
-                  if (myname_count < $('.myname').length) {
-                    myname_count = $('.myname').length;
-                    console.log("Количество упоминаний имени теперь: " + myname_count);
-                    let caller = $('.myname').first().closest('tr').find('td:last-child a:first-child').attr('href') || 0;
-                    caller = parseInt(caller.replace(/\D/g, ''));
-                    let is_bot = $('.myname').first().closest('tr').find('i').length;
-                    console.log("Айди зовущего " + caller);
-                    //console.log("Это бот? " + is_bot);
-                    if (jQuery.inArray(caller, globals.cm_blocked) == -1 && !is_bot) { //ЕСЛИ НЕ В МАССИВЕ ИГНОРИРУЕМЫХ и не бот
-                      console.log("Услышано имя: " + $(this).find('.chat_text > span').html());
-                      playAudio(sounds.chat_mention, globals.sound_chatMention);
-                    }
-                  }
-                }
-              }
-            });
-          });
-        }
-        if (globals.on_idChat && 0) { //Включена опция
-          let i_chat = 0;
-          //let chat_titles = {};
-          let myname_count = $('.myname').length;
-          $(document).ready(function () { // ДОБАВЛЕНИЕ АЙДИ ПОСЛЕ ИМЕН В ЧАТЕ ИГРОВОЙ
-            $("#chat_msg").on('DOMNodeInserted', function (e) {
-              if (e.target.children !== undefined && e.target.children.length == 2) {
-                if (i_chat != $('#chat_msg > span').length) {
-                  $('#chat_msg > span').each(function () {
-                      let nobr_id = $(this).find('a[href*="/cat"]').attr('href').slice(4)
-                      , id = "[" + nobr_id + "]";
-                    if (!$(this).find('.mod_id').length && !$(this).hasClass('mod_id')) { //Если надписи еще нет (второе для ботов, т.к. там b ник + span кому говорит .nick:not([style*='italic'])
-                      $(`<span class="mod_id_wrap"> <i class=mod_id>${id}</i></span>`).insertAfter($(this).find('.nick:not([style*="italic"])'));
-                      //$(`<span class="mod_id_wrap"> <i class=mod_id>${id}</i> <i class=mod_title>${title}</i></span>`).insertAfter($(this).find('.nick:not([style*="italic"])'));
-                      //только на последнее сообщение / сгенерированные при загрузке стр/локи / не "молчаливый" бот
-                    }
-                    else if ($(this).find('.mod_id').html() !== (id)) {
-                      if ($(this).find('.nick[style*="italic"]').length) { //не "молчаливый" бот
-                        id = "";
-                      }
-                      $(this).find('.mod_id').html(id);
-                      //$(this).find('.mod_title').html(title);
-                    }
-                  });
-                }
-                i_chat = $('#chat_msg > span').length; //Убирает дубли, потому что система добавления нового сообщения на варе очень хорошая
-              }
-            });
-          });
-        }
-          */
     if (globals.on_idItemMouth) {
       let item_names_json = {};
       $(document).ready(function () {
@@ -1872,6 +1848,22 @@ ${globals.on_treeTechies?`<div><input id="on_treeTechies" type="checkbox" checke
           let id = $('#pr table tr:first-child td:last-child a').attr('href').replace('cat', '');
           setSettings('thine', id);
       });
+      if (globals.on_deletionWarning) {
+          const id = +($('#id_icon').parent().parent().children().last().text());
+          const moons = +($('#age_icon').parent().parent().children().last().text().replace(/[^\d\.]/ig, ''));
+          const age = Math.floor(moons * 4 * 86400 * 1000);
+          let date = new Date();
+          date.setTime(date.getTime() + (date.getTimezoneOffset() + 180) * 60 * 1000 - age - 86400 * 1000);
+          // Текущая дата по московскому времени минус возраст и минус дополнительные сутки из-за того, что регистрация в ночное время
+          // может калькулировать возраст по лунам на день позже
+          const dateNow = new Date();
+          dateNow.setTime(dateNow.getTime() + (dateNow.getTimezoneOffset() + 180) * 60 * 1000);
+          const obj = {};
+          setSettings(`reg_${id}`, JSON.stringify({
+              regTime: Math.floor(date.getTime() / 1000),
+              lastOnline: Math.floor(dateNow.getTime() / 1000)
+          }));
+      }
     if (!globals.charListArray || !globals.charListArray.length) { //Если массив ни разу не заполнялся
       $(document).ready(function () {
         let autoCCArr = [];
@@ -3158,11 +3150,14 @@ margin-top:5px;
     <div><input class="cwa-chk" id="on_idDM" type="checkbox"${globals.on_idDM?' checked':''}><label for="on_idDM">Включить отображение ID в личных сообщениях</label></div>
     <div><input class="cwa-chk" id="on_idCatMouth" type="checkbox"${globals.on_idCatMouth?' checked':''}><label for="on_idCatMouth">Включить отображение ID котов, находящихся во рту</label></div>
     <div><input class="cwa-chk" id="on_idItemMouth" type="checkbox"${globals.on_idItemMouth?' checked':''}><label for="on_idItemMouth">Включить отображение ID (неуникальных) и названий предметов, находящихся во рту</label></div>
-
     <div><input class="cwa-chk" id="on_paramInfo" type="checkbox"${globals.on_paramInfo?' checked':''}><label for="on_paramInfo">Информация о параметре при нажатии на иконку</label></div>
+    <div><input class="cwa-chk" id="on_deletionWarning" type="checkbox"${globals.on_deletionWarning?' checked':''}><label for="on_deletionWarning">Информация о дате удаления персонажей в левом верхнем углу</label>
+    <br><small>Учитывает только возраст персонажа и <u>дату последнего Вашего захода этим персонажем на этом устройстве на страницу "Мой кот"</u>. Не считает летний период, поэтому летом персонажам возрастом меньше года будет спамить
+    про удаление, если заход был почти 45 дней назад. Не считает, если Вы зашли на персонажа с телефона, а сейчас сидите с компьютера.</small></div>
     <div><input class="cwa-chk" id="on_cuMovesNote" type="checkbox"${globals.on_cuMovesNote?' checked':''}><label for="on_cuMovesNote">[ВТ] Заметки на странице добавления/удаления переходов</label></div>
 <h3>Чат</h3>
-    <div><input class="cwa-chk group-switch" id="on_customChat" group-header="custom-chat" type="checkbox"${globals.on_customChat?' checked':''}><label for="on_customChat">Использовать новый чат Игровой (выглядит так же, но нужен для корректной работы опций ниже)</label></div>
+    <div><input class="cwa-chk group-switch" id="on_customChat" group-header="custom-chat" type="checkbox"${globals.on_customChat?' checked':''}><label for="on_customChat">Использовать новый чат Игровой (выглядит так же, но нужен для корректной
+    работы опций ниже)</label></div>
     <block class="bl_in">
         <div><input class="cwa-chk" id="on_idChat" group="custom-chat"${chat_group_dis} type="checkbox"${globals.on_idChat?' checked':''}><label for="on_idChat">Отображать ID в чате</label></div>
         <div><input class="cwa-chk" id="on_chatReverse" group="custom-chat"${chat_group_dis} type="checkbox"${globals.on_chatReverse?' checked':''}><label for="on_chatReverse">"Перевернуть" чат, чтобы он шёл сверху вниз</label></div>
@@ -3615,7 +3610,8 @@ ${nickArray}
 <hr>
 <div><input class="cwa-chk group-switch" id="on_charInline" group-header="char-change" type="checkbox"${globals.on_charInline?' checked':''}><label for="on_charInline">Переход на других персонажей в одну строчку рядом с Мой кот / Чат / ЛС</label></div>
 <div><input class="cwa-chk group-switch" id="on_charHide" group-header="char-change" type="checkbox"${globals.on_charHide?' checked':''}><label for="on_charHide">Скрыть переход на других персонажей в Игровой</label></div>
-
+<hr>
+<div><input class="cwa-chk" id="on_historyCleanWarning" type="checkbox"${globals.on_historyCleanWarning?' checked':''}><label for="on_historyCleanWarning">Запрашивать подтверждение действия при чистке истории</label></div>
 <hr>
 <div><input class="cwa-chk group-switch" id="on_treeTechies" group-header="tree-techies" type="checkbox"${globals.on_treeTechies?' checked':''}><label for="on_treeTechies">Расчерчивание поля в отдельном окошке при каче ЛУ</label></div>
 <block class="bl_in">
