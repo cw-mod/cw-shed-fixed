@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.29
+// @version      1.30
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2023, Посланник Снов (https://catwar.su/cat930302)
@@ -16,7 +16,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.29';
+  const version = '1.30';
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
@@ -183,8 +183,6 @@
 , 'css_theme' : 'theme_classic' // тема
 , 'css_cp_pattern' : true // узор в навыках и параметрах
 , 'css_cp_colors' : ['#ac23bf', '#d860ea', '#5e1268', '#6f2f79', '#dfab04', '#f0d142', '#845406', '#886921', '#28afd0', '#2bedee', '#165f75', '#157a7d', '#51d74c', '#89df4b', '#327327', '#54842d', '#d22c28', '#ee8761', '#841921', '#913733', '#a65b32', '#f09662', '#62351c', '#804c2d', '#379034', '#51bb39', '#1b4d1b', '#336b24'] // цвета
-	  
-, 'notif_la' : false // Скрыть уведомление номер один
   };
   const globals = {}; //Настройки
   for (var key in defaults) {
@@ -351,20 +349,6 @@
         }
     }
   function cw3() { //Игровая
-	$(document).ready(function () {
-	  let hr = setTimeout(function () {
-	      clearTimeout(hr);
-	      if ($('#la_show_cats').length > 0 && !globals.notif_la) {
-		  $("#main_table").prepend(`<div style='background-color: white !important; color: black !important;'>
-		  Вы используете скрипт kb_track от Кышбрысь, отслеживающий и передающий автору скрипта Ваше племя, должность, имя и ID при каждом заходе в Игровую (а ещё нарушающий ОПИ3 автоматическими переходами и не только).
-		  Будьте бдительны и кушайте кашу<br>
-		  (с) автор CWShed<br>
-		  <a href='#' style='color: blue !important;' onClick='$(this).parent().remove()'><b>Скрыть</b></a>
-		  <a href='#' style='color: blue !important;' onClick="$(this).parent().remove();window.localStorage.setItem('cws_sett_notif_la', true);"><b>Больше не показывать</b></a></div>`);
-		  console.log(`Пожалуйста, если берёте каркас моего мода за основу своего, хотя бы не нарушайте им ОПИ. И я (Посланник Снов), и Хво (автор Варомода) задолбали Почемугрива своими вопросами про легитимность своих модов, поэтому когда какая-то крайне неприличная личность пытается срезать пути и этого не делать, то мне как-то ну неприятно становится. Ну пипец. Не надо так.`);
-	      }
-	  }, 3000);
-      });
     if (globals.on_settLink) {
       $('.small').first().append(` | <a href="/settings">Настройки модов</a>`); //Настройки мода
     }
