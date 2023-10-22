@@ -65,7 +65,8 @@ $(document).ready(function() {
 				"doz" : [],
 				"war" : [],
 				"mzauvzhp" : {},
-				"di" : {}
+				"di" : {},
+				"name" : {},
 			},
 			"patr" : [],
 			"doz" : [],
@@ -322,6 +323,17 @@ $(document).ready(function() {
 					from_month: comment_date.getMonth(),
 					from_day: comment_date.getDate(),
 				};
+			} else if (string.indexOf('практику на имя') != -1) {
+				let medal = string.replace(/\D+/g, '');
+				comment_date.setMinutes(0);
+				comment_date.setSeconds(0);
+				count.medals.name[+medal] = {
+					start_patr: 0,
+					start_doz: 0,
+					from_year: comment_date.getFullYear(),
+					from_month: comment_date.getMonth(),
+					from_day: comment_date.getDate(),
+				};
 			} else {
 				return error(`Непонятно что происходит на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}`);
 			}
@@ -417,6 +429,14 @@ $(document).ready(function() {
 					count.medals.di[doz.cat].start_doz--;
 				}
 			}
+			if (count.medals.name[doz.cat]) {
+				const mzcat = count.medals.name[doz.cat];
+				if (mzcat.from_year > doz.year
+					|| mzcat.from_year == doz.year && mzcat.from_month > doz.month
+					|| mzcat.from_year == doz.year && mzcat.from_month == doz.month && mzcat.from_day > doz.day) {
+					count.medals.name[doz.cat].start_doz--;
+				}
+			}
 		}
 		for (const patr_i in count.patr) {
 			const patr = count.patr[patr_i];
@@ -440,6 +460,14 @@ $(document).ready(function() {
 					count.medals.di[patr.cat].start_patr--;
 				}
 			}
+			if (count.medals.name[patr.cat]) {
+				const mzcat = count.medals.name[patr.cat];
+				if (mzcat.from_year > patr.year
+					|| mzcat.from_year == patr.year && mzcat.from_month > patr.month
+					|| mzcat.from_year == patr.year && mzcat.from_month == patr.month && mzcat.from_day > patr.day) {
+					count.medals.name[patr.cat].start_patr--;
+				}
+			}
 		}
 		var val = '';
 		if (count.medals.war.length) {
@@ -451,6 +479,14 @@ $(document).ready(function() {
 			val += 'Идущие на практику на ДИ:\n';
 			for (const cat in count.medals.di) {
 				const cur = count.medals.di[cat];
+				val += `${addLeadZero(cur.from_day)}.${addLeadZero(cur.from_month+1)}	${cat}	${cur.start_patr}	${cur.start_doz}\n`;
+			}
+			val += '\n';
+		}
+		if (Object.keys(count.medals.name).length) {
+			val += 'Идущие на практику на имя:\n';
+			for (const cat in count.medals.name) {
+				const cur = count.medals.name[cat];
 				val += `${addLeadZero(cur.from_day)}.${addLeadZero(cur.from_month+1)}	${cat}	${cur.start_patr}	${cur.start_doz}\n`;
 			}
 			val += '\n';
