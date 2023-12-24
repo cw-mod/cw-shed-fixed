@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.30
+// @version      1.31
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2023, Посланник Снов (https://catwar.su/cat930302)
@@ -16,7 +16,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.30';
+  const version = '1.31';
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
@@ -183,6 +183,7 @@
 , 'css_theme' : 'theme_classic' // тема
 , 'css_cp_pattern' : true // узор в навыках и параметрах
 , 'css_cp_colors' : ['#ac23bf', '#d860ea', '#5e1268', '#6f2f79', '#dfab04', '#f0d142', '#845406', '#886921', '#28afd0', '#2bedee', '#165f75', '#157a7d', '#51d74c', '#89df4b', '#327327', '#54842d', '#d22c28', '#ee8761', '#841921', '#913733', '#a65b32', '#f09662', '#62351c', '#804c2d', '#379034', '#51bb39', '#1b4d1b', '#336b24'] // цвета
+, 'on_css_hideChat' : false // скрыть чат
   };
   const globals = {}; //Настройки
   for (var key in defaults) {
@@ -1804,13 +1805,14 @@ div[style*="/defects/poisoning/"] {background-color: #ff464640 !important;paddin
 div[style*="/defects/dirt/3.png"], div[style*="/defects/dirt/base/1/3.png"],
 div[style*="/defects/dirt/base/2/3.png"], div[style*="/defects/dirt/4.png"],
 div[style*="/defects/dirt/base/1/4.png"], div[style*="/defects/dirt/base/2/4.png"] {background-color: #9446ff40 !important;padding-top: 16px;}</style>`,
+        'on_css_hideChat': `<style id="cwsstyle_on_css_hideChat">#tr_chat {display: none;}</style>`
     };
     $.each(css_texts, function (index, value) {
       if (globals[index]) {
         $('head').append(css_texts[index]);
       }
     });
-    //Быстрые настройки - TODO
+
     if (globals.on_css_quicksettings) {
       addCSS(`#cws_quick_settings_block {user-select:none;}`);
       $('#family').append(`<h2><a href="#" id="cws_quick_settings" class="toggle">Настройки CW:S</a></h2>
@@ -1818,10 +1820,11 @@ div[style*="/defects/dirt/base/1/4.png"], div[style*="/defects/dirt/base/2/4.png
 ${globals.on_treeTechies?`<div><input id="on_treeTechies" type="checkbox" checked><label for="on_treeTechies">Показывать окно минного поля</label></div>`:''}
 <div><input class="cwa-chk" id="on_css_cellshade" type="checkbox"${globals.on_css_cellshade?' checked':''}><label for="on_css_cellshade">Сетка ячеек локации</label></div>
 <div><input class="cwa-chk" id="on_css_hideTooltip" type="checkbox"${globals.on_css_hideTooltip?' checked':''}><label for="on_css_hideTooltip">Скрыть всплывающее при наведении на кота окошко</label></div>
+<div><input class="cwa-chk" id="on_css_hideChat" type="checkbox"${globals.on_css_hideChat?' checked':''}><label for="on_css_hideChat">Скрыть чат</label></div>
+<div><input class="cwa-chk" id="on_css_removesky" type="checkbox"${globals.on_css_removesky?' checked':''}><label for="on_css_removesky">Скрыть небо</label></div>
 <div><input class="cwa-chk" id="on_csslocation" type="checkbox"${globals.on_csslocation?' checked':''}><label for="on_csslocation">Статичный фон на каждой локации</label></div>
 <div><input class="cwa-chk" id="on_css_maxopacity" type="checkbox"${globals.on_css_maxopacity?' checked':''}><label for="on_css_maxopacity">Все коты непрозрачные</label></div>
 <div><input class="cwa-chk" id="on_css_defects" type="checkbox"${globals.on_css_defects?' checked':''}><label for="on_css_defects">Подсвечивать дефекты</label></div>
-<div><input class="cwa-chk" id="on_css_removesky" type="checkbox"${globals.on_css_removesky?' checked':''}><label for="on_css_removesky">Убрать небо</label></div>
 <div><input class="cwa-chk" id="on_css_oldicons" type="checkbox"${globals.on_css_oldicons?' checked':''}><label for="on_css_oldicons">Старые иконки действий</label></div>
 <div><input class="cwa-chk" id="on_css_highlightmove" type="checkbox"${globals.on_css_highlightmove?' checked':''}><label for="on_css_highlightmove">Подсветка переходов при наведении</label></div>
 
@@ -1897,23 +1900,27 @@ ${globals.on_treeTechies?`<div><input id="on_treeTechies" type="checkbox" checke
         inner = `Ачивка <b>"{name}"</b>
 <span style="font-size: 0.9em"><br>Тип: <i>{type}</i><br>
 <span style="white-space:pre-wrap">{condition}</span>`;
-      let $achievement = $((isDesktop ? '#branch' : '#site_table') + ' > .parsed tbody > tr img[src*="images.vfl.ru"], ' + (isDesktop ? '#branch' : '#site_table') + ' > .parsed > img[src*="images.vfl.ru"]'),
+        const top_el_id = isDesktop ? '#branch' : '#site_table';
+      let $achievement = $(`${top_el_id} > .parsed tbody > tr img[src*="images.vfl.ru"], `
+                           + `${top_el_id} > .parsed > img[src*="images.vfl.ru"]`
+                          + `${top_el_id} > .parsed tbody > tr img[src*="i.ibb.co"], `
+                           + `${top_el_id} > .parsed > img[src*="i.ibb.co"]`),
         $body = $('body'),
         old_code = "";
       $(document).ready(function () {
         $achievement.last().after(elem);
         $achievement.each(function (index) { // Добавить титул к каждой ачивке
-          let code = $(this).attr('src').match(/images.vfl.ru\/ii\/(\d+\/[\d\w]+\/\d+_?m?)\.png/);
+          let code = $(this).attr('src').match(/(images\.vfl\.ru\/ii\/(\d+\/[\d\w]+\/\d+_?m?)\.png|i\.ibb\.co\/([\d\w]+\/[\d\w_]+)\.png)/);
           if (code !== null) {
-            code = code[1];
+            code = code[2] || code[3];
             let name = (achievements[code] === undefined) ? "" : achievements[code].name;
             $(this).prop('title', name);
           }
         });
         $achievement.on('click', function () { // инфоблок
-          let code = $(this).attr('src').match(/images.vfl.ru\/ii\/(\d+\/[\d\w]+\/\d+_?m?)\.png/);
+          let code = $(this).attr('src').match(/(images\.vfl\.ru\/ii\/(\d+\/[\d\w]+\/\d+_?m?)\.png|i\.ibb\.co\/([\d\w]+\/[\d\w_]+)\.png)/);
           if (code !== null) {
-            code = code[1];
+            code = code[2] || code[3];
             if (code == old_code && $('#cws_achievement').css('display') != 'none') {
               $('#cws_achievement').hide(200);
             }
@@ -2832,9 +2839,18 @@ ${my_id_div}
 ${my_id_div}
 <hr>
 <p class="view-title">Патруль</p>
+<div>
 Вид:
   <input type="radio" class="cws-input" name="r03_patr_mar" id="m_1" required-switch value="утренняя" ${type=="утренняя"?"checked":""}><label for="m_1">утренняя</label>
   <input type="radio" class="cws-input" name="r03_patr_mar" id="m_2" required-switch value="вечерняя" ${type=="вечерняя"?"checked":""}><label for="m_2">вечерняя</label>
+</div>
+<div>
+    Место охоты:
+  <input type="radio" class="cws-input" name="r03_patr_loc" id="l_1" required-switch value="шелестящий тростник"><label for="l_1">шелестящий тростник</label>
+  <input type="radio" class="cws-input" name="r03_patr_loc" id="l_2" required-switch value="пруд ужей"><label for="l_2">пруд ужей</label>
+  <input type="radio" class="cws-input" name="r03_patr_loc" id="l_3" required-switch value="галечный берег"><label for="l_3">галечный берег</label>
+  <input type="radio" class="cws-input" name="r03_patr_loc" id="l_4" required-switch value="редколесье"><label for="l_4">редколесье</label>
+</div>
 <table>
     <tr><td>Дата начала:</td><td><input type="date" class="cws-input" id="r03_patr_date" required value="${patr_date_str}"></td><td></td></tr>
 </table>
@@ -2856,6 +2872,8 @@ ${my_id_div}
             myid = (isNaN(myid)) ? 'Некорректный ID ведущего' : masking(myid, '[cat%ID%] [%ID%]');
             let mar = $('.cws-input[name=r03_patr_mar]:checked').val();
             mar = mar || 'Не выбран вид';
+            let loc = $('.cws-input[name=r03_patr_loc]:checked').val();
+            loc = loc || 'Не выбрана локация';
             let str_hunters = strToArr($('#cws_patr_hunters').val()),
                 str_carriers = strToArr($('#cws_patr_carriers').val()),
                 id_hunters = [],
@@ -2888,6 +2906,7 @@ ${my_id_div}
             date.year = date.year.slice(2, 4);
             let txt = `[b][u]Дата[/u]:[/b] ${date.day}.${date.month}.${date.year};
 [b]Вид:[/b] ${mar};
+[b]Место охоты:[/b] ${loc};
 [b]Ведущий:[/b] ${myid} (5);
 [b]Участники:[/b] ${id_hunters.length ? id_hunters.join(', ') : "-"};
 [b]Таскающие:[/b] ${id_carriers.length ? id_carriers.join(', ') : "-"};`;
@@ -3450,8 +3469,9 @@ ${nickArray}
 
 <div><input class="cwa-chk" id="on_css_newloading" type="checkbox"${globals.on_css_newloading?' checked':''}><label for="on_css_newloading">Замена гифки загрузки на «...»</label></div>
 <div><input class="cwa-chk" id="on_css_hideTooltip" type="checkbox"${globals.on_css_hideTooltip?' checked':''}><label for="on_css_hideTooltip">Скрыть всплывающее при наведении на кота окошко</label></div>
+<div><input class="cwa-chk" id="on_css_hideChat" type="checkbox"${globals.on_css_hideChatp?' checked':''}><label for="on_css_hideChat">Скрыть чат</label></div>
+<div><input class="cwa-chk" id="on_css_removesky" type="checkbox"${globals.on_css_removesky?' checked':''}><label for="on_css_removesky">Скрыть небо</label></div>
 <div><input class="cwa-chk" id="on_css_daylight" type="checkbox"${globals.on_css_daylight?' checked':''}><label for="on_css_daylight">Всегда день в Игровой</label></div>
-<div><input class="cwa-chk" id="on_css_removesky" type="checkbox"${globals.on_css_removesky?' checked':''}><label for="on_css_removesky">Убрать небо</label></div>
 <div><input class="cwa-chk" id="on_css_oldicons" type="checkbox"${globals.on_css_oldicons?' checked':''}><label for="on_css_oldicons">Старые иконки действий</label></div>
 <div><input class="cwa-chk" id="on_css_cellshade" type="checkbox"${globals.on_css_cellshade?' checked':''}><label for="on_css_cellshade">Сетка ячеек локации</label></div>
 <div><input class="cwa-chk" id="on_css_defects" type="checkbox"${globals.on_css_defects?' checked':''}><label for="on_css_defects">Подсвечивать дефекты игроков (кроме клещей и блох)</label></div>
