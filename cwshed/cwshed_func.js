@@ -5,6 +5,7 @@
 // @author       ReiReiRei
 // @copyright    2020-2023, Посланник Снов (https://catwar.su/cat930302)
 // @license      MIT; https://opensource.org/licenses/MIT
+// @updateURL    https://abstract-class-shed.github.io/cwshed/CW_Shed.meta.js
 // @match        *://catwar.su/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
