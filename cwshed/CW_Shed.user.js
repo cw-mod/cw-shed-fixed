@@ -1901,10 +1901,10 @@ ${globals.on_treeTechies?`<div><input id="on_treeTechies" type="checkbox" checke
 <span style="font-size: 0.9em"><br>Тип: <i>{type}</i><br>
 <span style="white-space:pre-wrap">{condition}</span>`;
         const top_el_id = isDesktop ? '#branch' : '#site_table';
-      let $achievement = $(`${top_el_id} > .parsed tbody > tr img[src*="images.vfl.ru"], `
-                           + `${top_el_id} > .parsed > img[src*="images.vfl.ru"], `
-                          + `${top_el_id} > .parsed tbody > tr img[src*="i.ibb.co"], `
-                           + `${top_el_id} > .parsed > img[src*="i.ibb.co"]`),
+      let $achievement = $(`${top_el_id} > .parsed:first tbody > tr img[src*="images.vfl.ru"], `
+                           + `${top_el_id} > .parsed:first > img[src*="images.vfl.ru"], `
+                          + `${top_el_id} > .parsed:first tbody > tr img[src*="i.ibb.co"], `
+                           + `${top_el_id} > .parsed:first > img[src*="i.ibb.co"]`),
         $body = $('body'),
         old_code = "";
         const linkRegex = /(images\.vfl\.ru\/ii\/(\d+\/[\d\w]+\/\d+_?m?)\.png|i\.ibb\.co\/([\d\w]+\/[\d\w_-]+)\.png)/;
