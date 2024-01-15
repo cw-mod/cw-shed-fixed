@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.31
+// @version      1.32
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2023, Посланник Снов (https://catwar.su/cat930302)
 // @license      MIT; https://opensource.org/licenses/MIT
-// @updateURL    https://openuserjs.org/meta/ReiReiRei/CW_Shed.meta.js
+// @updateURL    https://abstract-class-shed.github.io/cwshed/CW_Shed.user.js
 // @match        *://catwar.su/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
@@ -16,7 +16,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.31';
+  const version = '1.32';
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
@@ -1902,15 +1902,16 @@ ${globals.on_treeTechies?`<div><input id="on_treeTechies" type="checkbox" checke
 <span style="white-space:pre-wrap">{condition}</span>`;
         const top_el_id = isDesktop ? '#branch' : '#site_table';
       let $achievement = $(`${top_el_id} > .parsed tbody > tr img[src*="images.vfl.ru"], `
-                           + `${top_el_id} > .parsed > img[src*="images.vfl.ru"]`
+                           + `${top_el_id} > .parsed > img[src*="images.vfl.ru"], `
                           + `${top_el_id} > .parsed tbody > tr img[src*="i.ibb.co"], `
                            + `${top_el_id} > .parsed > img[src*="i.ibb.co"]`),
         $body = $('body'),
         old_code = "";
+        const linkRegex = /(images\.vfl\.ru\/ii\/(\d+\/[\d\w]+\/\d+_?m?)\.png|i\.ibb\.co\/([\d\w]+\/[\d\w_-]+)\.png)/;
       $(document).ready(function () {
         $achievement.last().after(elem);
         $achievement.each(function (index) { // Добавить титул к каждой ачивке
-          let code = $(this).attr('src').match(/(images\.vfl\.ru\/ii\/(\d+\/[\d\w]+\/\d+_?m?)\.png|i\.ibb\.co\/([\d\w]+\/[\d\w_]+)\.png)/);
+          let code = $(this).attr('src').match(linkRegex);
           if (code !== null) {
             code = code[2] || code[3];
             let name = (achievements[code] === undefined) ? "" : achievements[code].name;
@@ -1918,7 +1919,7 @@ ${globals.on_treeTechies?`<div><input id="on_treeTechies" type="checkbox" checke
           }
         });
         $achievement.on('click', function () { // инфоблок
-          let code = $(this).attr('src').match(/(images\.vfl\.ru\/ii\/(\d+\/[\d\w]+\/\d+_?m?)\.png|i\.ibb\.co\/([\d\w]+\/[\d\w_]+)\.png)/);
+          let code = $(this).attr('src').match(linkRegex);
           if (code !== null) {
             code = code[2] || code[3];
             if (code == old_code && $('#cws_achievement').css('display') != 'none') {
