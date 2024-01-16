@@ -3,7 +3,7 @@
 // @version      1.32
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
-// @copyright    2020-2023, Посланник Снов (https://catwar.su/cat930302)
+// @copyright    2020-2024, Тис (https://catwar.su/cat406811)
 // @license      MIT; https://opensource.org/licenses/MIT
 // @updateURL    https://abstract-class-shed.github.io/cwshed/CW_Shed.meta.js
 // @match        *://catwar.su/*
