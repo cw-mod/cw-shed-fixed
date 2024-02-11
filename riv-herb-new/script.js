@@ -167,7 +167,7 @@ $(document).ready(function() {
 					return error(`Ошибка в ведущем на ${string_i} (коммент #${comment_num}), строчка выглядит как ${string}. Регулярочка под "Имя [айди] (травы)" не сработала.`);
 				}
 			} else if (/^Участники/u.test(string)) {
-				let cats = string.replace(String.fromCharCode(173), "").trim().split(',');
+				let cats = string.replace(String.fromCharCode(173), "").replace(/\((\d+),(\d+)\)/g, '($1.$2)').trim().split(',');
 				for (const i in cats) {
 					const cat = cats[i];
 					const haveErr = addCat(patr, cat, patr_date, patr_type, (cats.length == +i + 1));
