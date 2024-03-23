@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>test</title><style type="text/css">
+body {
+	color: #111;
+	background-color: #FFDEAD;
+	font-size: 14px;
+	font-family: Verdana;
+	margin: 15px;
+}
+a {
+	color: #111;
+}
+
+#smell .symbole {
+  background-position-y: 0; }
+
+#thirst .symbole {
+  background-position-y: -15px; }
+
+#dream .symbole {
+  background-position-y: -30px; }
+
+#need .symbole {
+  background-position-y: -45px; }
+
+#hunger .symbole {
+  background-position-y: -60px; }
+
+#heal .symbole {
+  background-position-y: -75px; }
+
+#health .symbole {
+  background-position-y: -90px; }
+
+#dig .symbole {
+  background-position-y: -105px; }
+
+#clean .symbole {
+  background-position-y: -120px; }
+
+#swim .symbole {
+  background-position-y: -135px; }
+
+#might .symbole {
+  background-position-y: -150px; }
+
+#power .symbole {
+  background-position-y: -165px; }
+
+#pet_faith .symbole {
+  background-position-y: -180px; }
+
+#tree .symbole {
+  background-position-y: -195px; }
+
+#observ .symbole {
+  background-position-y: -210px; }
+
+.parameter {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 2px;
+  justify-content: left;
+  flex-direction: row;
+  height: 17px; }
+
+.parameter-header {
+  margin-top: .5em;
+  margin-bottom: .3em; }
+
+.level {
+  font-weight: bold;
+  width: 15px; }
+
+.bar {
+  display: flex;
+  align-items: center;
+  width: 150px;
+  border: 1px solid black;
+  height: 15px;
+  font-size: 11px;
+  position: relative;
+  border-radius: 3px; }
+
+.bar-fill, .bar-data {
+  position: absolute;
+  height: 15px;
+  width: 100%; }
+
+.bar-fill {
+  transition: width 1s ease-in-out;
+  -moz-transition: width 1s ease-in-out;
+  -webkit-transition: width 1s ease-in-out;
+  -o-transition: width 1s ease-in-out; }
+
+.symbole {
+  width: 17px;
+  height: 15px;
+  background-image: url("icons.png");
+  background-repeat: no-repeat;
+  background-position-x: 0;
+  padding: 0;
+  margin: 0; }
+
+#weight .symbole {
+  background-image: url("weight.png"); }
+
+#weight {
+  font-weight: bold;
+  height: 15px; }
+
+#conditions .bar-fill {
+  background: #5fc055; }
+
+#conditions .bar {
+  background: #f56460; }
+
+#needs .bar-fill {
+  background: #f56460; }
+
+#needs .bar {
+  background: #ddd; }
+
+#skills .bar-fill {
+  background: #5fc055; }
+
+#skills .bar {
+  background: #ddd; }
+#r_parent {
+	margin-top: 15px;
+	font-weight: bold;
+}
+</style>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script></head><body>
+		<div id="parameters_block">
+			<div id="conditions">
+				<h3 class="parameter-header">Состояние</h3>
+				<div id="health" class="parameter">
+					<div class="symbole"></div>
+					<div class="bar">
+						<div class="bar-fill" style="width: 69%;"></div>
+						<div class="bar-data">Здоровье: <span>69</span>%</div>
+					</div>
+				</div>
+				<div id="dream" class="parameter">
+					<div class="symbole"></div>
+					<div class="bar">
+						<div class="bar-fill" style="width: 97%;"></div>
+						<div class="bar-data">Энергия: <span>97</span>%</div>
+					</div>
+				</div>
+				<div id="clean" class="parameter">
+					<div class="symbole"></div>
+					<div class="bar">
+						<div class="bar-fill" style="width: 92%;"></div>
+						<div class="bar-data">Чистота: <span>92</span>%</div>
+					</div>
+				</div>
+				<div id="weight" class="parameter">
+					<div class="symbole"></div> <div><span>1</span> / <span>4</span></div>
+				</div>
+			</div>
+			<div id="needs">
+				<h3 class="parameter-header">Потребности</h3>
+				<div id="hunger" class="parameter">
+					<div class="symbole"></div>
+					<div class="bar">
+						<div class="bar-fill" style="width: 79%;"></div>
+						<div class="bar-data">Голод: <span>79</span>%</div>
+					</div>
+				</div>
+				<div id="thirst" class="parameter">
+					<div class="symbole"></div>
+					<div class="bar">
+						<div class="bar-fill" style="width: 9%;"></div>
+						<div class="bar-data">Жажда: <span>9</span>%</div>
+					</div>
+				</div>
+				<div id="need" class="parameter">
+					<div class="symbole"></div>
+					<div class="bar">
+						<div class="bar-fill" style="width: 14%;"></div>
+						<div class="bar-data">Нужда: <span>14</span>%</div>
+					</div>
+				</div>
+			</div>
+			<div id="skills">
+				<h3 class="parameter-header">Навыки</h3>
+				<div id="smell" class="parameter">
+					<div class="symbole"></div>
+					<div class="bar bar-skill"><div class="bar-fill" style="width: 100%;"></div></div>
+					<div class="level">9</div>
+				</div>
+				<div id="dig" class="parameter">
+					<div class="symbole"></div>
+					<div class="bar bar-skill"><div class="bar-fill" style="width: 27%;"></div></div>
+					<div class="level">6</div>
+				</div>
+				<div id="heal" class="parameter">
+					<div class="symbole"></div>
+					<div class="bar bar-skill"><div class="bar-fill" style="width: 55%;"></div></div>
+					<div class="level">7</div>
+				</div>
+				<div id="might" class="parameter">
+					<div class="symbole"></div>
+					<div class="bar bar-skill"><div class="bar-fill" style="width: 97%;"></div></div>
+					<div class="level">8</div>
+				</div>
+				<div id="tree" class="parameter">
+					<div class="symbole"></div>
+					<div class="bar bar-skill"><div class="bar-fill" style="width: 78%;"></div></div>
+					<div class="level">6</div>
+				</div>
+				<div id="observ" class="parameter">
+					<div class="symbole"></div>
+					<div class="bar bar-skill"><div class="bar-fill" style="width: 100%;"></div></div>
+					<div class="level">9</div>
+				</div>
+			</div>
+		</div>
+<div id="r_parent"><a href="#" id="randomize">Тык кнопочку</a></div>
+
+<script>
+	$("#randomize").click(function(e) {
+		$('.bar').each(function() {
+			const num = Math.round(Math.random() * 100);
+			$(this).find('.bar-fill').css("width", num+"%");
+			$(this).find('.bar-data span').text(num);
+		});
+	})
+</script>
+</body></html>
