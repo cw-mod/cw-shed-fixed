@@ -224,75 +224,79 @@ a {
 					<div class="level">8</div>
 				</div>
 				<div id="tree" class="parameter">
-					<div class="symbole"></div>
 					<div class="bar bar-skill"><div class="bar-fill" style="width: 78%;"></div></div>
 					<div class="level">6</div>
 				</div>
 				<div id="observ" class="parameter">
-					<div class="symbole"></div>
 					<div class="bar bar-skill"><div class="bar-fill" style="width: 100%;"></div></div>
 					<div class="level">9</div>
 				</div>
 			</div>
 		</div>
 <div id="r_parent"><a href="#" id="randomize">Тык кнопочку</a></div>
-<div class="progress">
-	<div class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 56%">
-	</div>
-	<div>Энергия: 56%</div>
-</div>
+<div class="progress"><div class="progress-bar" style="width: 56%"></div></div>
+<div class="progress2"><div class="progress-bar2" style="width: 56%"></div></div>
 <style type="text/css">
-.progress {
-	height: 20px;
-	margin-bottom: 20px;
-	overflow: hidden;
-	background-color: #f5f5f5;
-	border-radius: 4px;
-	-webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,.1);
-	box-shadow: inset 0 1px 2px rgba(0,0,0,.1);
-    color: #613528;
-    font-family: "OpenSans", Helvetica, Tahoma, Arial, sans-serif;
-    -webkit-text-size-adjust: 100%;
+.progress2 { /*.bar*/
+	background: #FEF3DC;
+	line-height: 15px;
+	padding: 0;
+  display: flex;
+  align-items: center;
+  width: 150px;
+  border: 1px solid black;
+  height: 15px;
+  font-size: 11px;
+  position: relative;
+  border-radius: 3px;
+}
+.progress-bar2 { /*.bar-fill*/
+	background: #9D7552;
+  position: absolute;
+  height: 15px;
+  width: 100%;
+	margin: 0;
+	padding: 0;
+	line-height: 15px;
 }
 .progress {
+	background: #FEF3DC;
+	overflow: hidden;
+	border-radius: 4px;
+/*	margin-bottom: 20px;*/
+	font-family: Verdana;
+	height: 20px;
+/*	-webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,.1);*/
+/*	box-shadow: inset 0 1px 2px rgba(0,0,0,.1);*/
+	-webkit-text-size-adjust: 100%;
 	position: relative;
 	height: 17px;
 	margin-bottom: 8px;
-	background: #FEF3DC;
-  box-sizing: border-box;
-    font-size: 12px;
+	box-sizing: border-box;
+	font-size: 12px;
+	width: 150px;
 }
 
 .progress-bar {
-    -webkit-text-size-adjust: 100%;
-    line-height: 15px;
-    font-family: "OpenSans", Helvetica, Tahoma, Arial, sans-serif;
-  box-sizing: border-box;
-    float: left;
-    width: 0;
-    height: 100%;
-    font-size: 12px;
-    /* line-height: 20px; */
-    color: #fff;
-    text-align: center;
-    background-color: #428bca;
-    -webkit-box-shadow: inset 0 -1px 0 rgba(0,0,0,.15);
-    box-shadow: inset 0 -1px 0 rgba(0,0,0,.15);
-    -webkit-transition: width .6s ease;
-    -o-transition: width .6s ease;
-    transition: width .6s ease;
-}
-.progress-bar-warning {
-    background: #9D7552;
+	background: #9D7552;
+	-webkit-text-size-adjust: 100%;
+	line-height: 15px;
+	font-family: Verdana;
+	box-sizing: border-box;
+	float: left;
+	width: 0;
+	height: 100%;
+	font-size: 12px;
+	text-align: center;
 }
 .progress div {
-    width: 100%;
-    position: absolute;
-    text-align: center;
-    color: #000;
-    margin: 0;
-    padding: 0;
-    font-size: 11px;
+	width: 100%;
+	position: absolute;
+	text-align: center;
+	color: #000;
+	margin: 0;
+	padding: 0;
+	font-size: 11px;
 }
 </style>
 <script>
