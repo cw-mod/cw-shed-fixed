@@ -234,17 +234,21 @@ a {
 			</div>
 		</div>
 <div id="r_parent"><a href="#" id="randomize">Тык кнопочку</a></div>
-<div class="progress"><div class="progress-bar" style="width: 56%"></div></div>
+<div class="progress"><div class="progress-bar" style="width: 33%"></div></div>
 <div class="progress"><div class="progress-bar" style="width: 22%"></div></div>
 <div class="progress"><div class="progress-bar" style="width: 13%"></div></div>
 <div class="progress"><div class="progress-bar" style="width: 88%"></div></div>
-<div class="progress2"><div class="progress-bar2" style="width: 56%"></div></div>
+<div class="progress2"><div class="progress-bar2" style="width: 33%"></div></div>
 <div class="progress2"><div class="progress-bar2" style="width: 22%"></div></div>
 <div class="progress2"><div class="progress-bar2" style="width: 13%"></div></div>
 <div class="progress2"><div class="progress-bar2" style="width: 88%"></div></div>
 <style type="text/css">
 .progress2 { /*.bar*/
 	background: #FEF3DC;
+	overflow: hidden;
+  border-radius: 3px;
+	font-family: Verdana;
+
 	line-height: 15px;
 	padding: 0;
   display: flex;
@@ -254,26 +258,14 @@ a {
   height: 15px;
   font-size: 11px;
   position: relative;
-  border-radius: 3px;
-}
-.progress-bar2 { /*.bar-fill*/
-	background: #9D7552;
-  position: absolute;
-  height: 15px;
-  width: 100%;
-	margin: 0;
-	padding: 0;
-	line-height: 15px;
 }
 .progress {
 	background: #FEF3DC;
 	overflow: hidden;
 	border-radius: 4px;
-/*	margin-bottom: 20px;*/
 	font-family: Verdana;
+	
 	height: 20px;
-/*	-webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,.1);*/
-/*	box-shadow: inset 0 1px 2px rgba(0,0,0,.1);*/
 	-webkit-text-size-adjust: 100%;
 	position: relative;
 	height: 17px;
@@ -283,25 +275,35 @@ a {
 	width: 150px;
 }
 
-.progress-bar {
+.progress-bar2 { /*.bar-fill*/
 	background: #9D7552;
-	-webkit-text-size-adjust: 100%;
-	line-height: 15px;
-	font-family: Verdana;
-	box-sizing: border-box;
-	float: left;
-	width: 0;
-	height: 100%;
-	font-size: 12px;
-	text-align: center;
-}
-.progress div {
-	width: 100%;
-	position: absolute;
-	text-align: center;
-	color: #000;
+  position: absolute;
 	margin: 0;
 	padding: 0;
+	line-height: 15px;
+  width: 0;
+  height: 100%;
+	font-family: Verdana;
+
+/*  height: 15px;*/
+/*  width: 100%;*/
+}
+.progress-bar {
+	background: #9D7552;
+	position: absolute;
+	margin: 0;
+	padding: 0;
+	line-height: 15px;
+	width: 0;
+	height: 100%;
+	font-family: Verdana;
+
+	-webkit-text-size-adjust: 100%;
+	box-sizing: border-box;
+	float: left;
+	text-align: center;
+	width: 100%;
+	color: #000;
 	font-size: 11px;
 }
 </style>
