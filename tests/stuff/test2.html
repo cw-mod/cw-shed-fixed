@@ -234,11 +234,11 @@ a {
 			</div>
 		</div>
 <div id="r_parent"><a href="#" id="randomize">Тык кнопочку</a></div>
-<div class="progress"><div class="progress-bar" style="width: 66%"></div></div>
+<div class="progress"><div class="progress-bar" style="width: 33%"></div></div>
 <div class="progress"><div class="progress-bar" style="width: 22%"></div></div>
 <div class="progress"><div class="progress-bar" style="width: 13%"></div></div>
 <div class="progress"><div class="progress-bar" style="width: 88%"></div></div>
-<div class="progress2"><div class="progress-bar2" style="width: 66%"></div></div>
+<div class="progress2"><div class="progress-bar2" style="width: 33%"></div></div>
 <div class="progress2"><div class="progress-bar2" style="width: 22%"></div></div>
 <div class="progress2"><div class="progress-bar2" style="width: 13%"></div></div>
 <div class="progress2"><div class="progress-bar2" style="width: 88%"></div></div>
@@ -246,37 +246,36 @@ a {
 .progress2 { /*.bar*/
 	background: #FEF3DC;
 	overflow: hidden;
-  border-radius: 3px;
 	font-family: Verdana;
 	margin-bottom: 8px;
-
-	line-height: 15px;
-	padding: 0;
-  display: flex;
-  align-items: center;
   width: 150px;
-  border: 1px solid black;
-  height: 15px;
-  font-size: 11px;
   position: relative;
+  height: 15px; /*!!!*/
+  border-radius: 3px; /*!!!*/
+
+/*	line-height: 15px;*/
+	padding: 0;
+/*  display: flex;*/
+/*  align-items: center;*/
+/*  border: 1px solid black;*/
+  font-size: 11px;
 }
 .progress {
 	background: #FEF3DC;
 	overflow: hidden;
-	border-radius: 4px;
 	font-family: Verdana;
 	margin-bottom: 8px;
-
-	height: 20px;
-	-webkit-text-size-adjust: 100%;
+	width: 150px;
 	position: relative;
-	height: 17px;
+	height: 17px; /*!!!*/
+	border-radius: 4px; /*!!!*/
+
+	-webkit-text-size-adjust: 100%;
 	box-sizing: border-box;
 	font-size: 12px;
-	width: 150px;
 }
 
-.progress-bar2 { /*.bar-fill*/
+.progress-bar2 {
 	background: #9D7552;
   position: absolute;
 	margin: 0;
@@ -286,7 +285,7 @@ a {
   height: 100%;
 	font-family: Verdana;
 
-	-webkit-text-size-adjust: 100%; /*added this*/
+	-webkit-text-size-adjust: 100%;
 	box-sizing: border-box;
 	float: left;
 	width: 100%;
