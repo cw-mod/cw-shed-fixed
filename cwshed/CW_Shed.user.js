@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.33
+// @version      1.34
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2024, Тис (https://catwar.su/cat406811)
@@ -16,7 +16,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.33';
+  const version = '1.34';
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
@@ -2420,8 +2420,9 @@ ${my_id_div}
                 "РД": "Расколотое дерево",
                 "ЛР": "Лесной ручеёк",
                 "ВЛ": "Валежник",
-                "ДБ": "Дубрава",
                 "ИТ": "Илистая тропа",
+                "ОС": "Одинокий склон",
+                "НК": "Нагретые камни",
                 "ДБ": "Дубрава",
                 "МЗ": "Мшистые земли",
                 "ГТ": "Главный туннель",
