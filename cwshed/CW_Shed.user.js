@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.34
+// @version      1.35
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2024, Тис (https://catwar.su/cat406811)
@@ -16,7 +16,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.34';
+  const version = '1.35';
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
@@ -1242,7 +1242,7 @@ input:checked + .cws-team {
             if (href !== undefined) {
               let cat_id = href.replace(/\D/g, '');
               if (titles[cat_id] === undefined) {
-                let title = $(this).find('.cat_tooltip > small > i').html();
+                let title = $(this).find('.cat_tooltip > div > small > i').last().html();
                 titles[cat_id] = title;
               }
               let status = $(this).find('.online').text(); // [ На удалении ]
