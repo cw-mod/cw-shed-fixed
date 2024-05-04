@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.35
+// @version      1.36
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2024, Тис (https://catwar.su/cat406811)
@@ -16,7 +16,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.35';
+  const version = '1.36';
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
@@ -1240,13 +1240,15 @@ input:checked + .cws-team {
           $("#cages").on('DOMNodeRemoved', '.catWithArrow', function () {
             let href = $(this).find('.cat_tooltip > u > a').attr('href');
             if (href !== undefined) {
-              let cat_id = href.replace(/\D/g, '');
+            let cat_id = href.replace(/\D/g, '');
               if (titles[cat_id] === undefined) {
-                let title = $(this).find('.cat_tooltip > div > small > i').last().html();
-                titles[cat_id] = title;
+                let titleElem = $(this).html().match(/<div><small><i>([^<]+)<\/i><\/small><\/div>/ui);
+                if (titleElem !== null && titleElem[1]) {
+                    titles[cat_id] = titleElem[1];
+                }
               }
-              let status = $(this).find('.online').text(); // [ На удалении ]
-              let is_punished = $(this).find('div[style*="costume/295."]').length; // Подстилки?
+              let status = $this.find('.online').text(); // [ На удалении ]
+              let is_punished = $this.find('div[style*="costume/295."]').length; // Подстилки?
               if (is_punished) {
                 status = "[ В подстилках ]";
               }
