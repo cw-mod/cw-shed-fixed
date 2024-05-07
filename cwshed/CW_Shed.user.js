@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.37
+// @version      1.38
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2024, Тис (https://catwar.su/cat406811)
@@ -16,7 +16,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.37';
+  const version = '1.38';
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
@@ -52,6 +52,7 @@
 , 'on_extraInfo' : false // Доп. инфо о котиках
 , 'on_deletionWarning' : false // Предупреждение об удалении
 , 'on_historyCleanWarning' : false // Предупреждение о чистке истории TODO
+, 'on_css_alternativeDivideGUI' : false // Альтернативный интерфейс разделения травы
  //Громкость звуков
 , 'sound_notifEaten' : 0.2 // Звук, когда тебя подняли
 , 'sound_notifBeaten' : 0.2 // Звук, когда тебя атакуют
@@ -377,6 +378,20 @@
           observer.observe(window.document.getElementById('ist'), {characterData: false, childList: true, attributes: false}); // Я без понятия что это, в observer не шарю, что-то нашлось на stackoverflow работает и хрен с ним
 
       });
+    }
+    if (globals.on_css_alternativeDivideGUI) {
+        $("body").on('click', '#reveal_info li:has(.select_teil)', function () {
+            $(this).find('.select_teil')[0].click();
+        });
+        addCSS(`#reveal_info > ul:has(.select_teil) { display: flex; flex-flow: row wrap; margin: 0; padding: 0; }
+#reveal_info > ul:has(.select_teil) > li { display: block; width: 70px; height: calc(70px + 1.25em); position: relative; background-repeat: no-repeat; margin: 0 0 .2em .5em; cursor: pointer; }
+#reveal_info > ul:has(.select_teil) > li > a { display: block; position: absolute; text-decoration: none; width: 70px; bottom: 0; text-align: center; }
+#reveal_info > ul:has(.select_teil) > li:nth-child(1) { background-image: url(/cw3/things/120.png); }
+#reveal_info > ul:has(.select_teil) > li:nth-child(2) { background-image: url(/cw3/things/121.png); }
+#reveal_info > ul:has(.select_teil) > li:nth-child(3) { background-image: url(/cw3/things/122.png); }
+#reveal_info > ul:has(.select_teil) > li:nth-child(4) { background-image: url(/cw3/things/123.png); }
+#reveal_info > ul:has(.select_teil) > li:nth-child(5) { background-image: url(/cw3/things/124.png); }
+#reveal_info > ul:has(.select_teil) > li:nth-child(6) { background-image: url(/cw3/things/125.png); }`);
     }
     if (globals.on_extraInfo) {
 		$.fn.reveal=function(options){var defaults={animation:'fadeAndPop',animationspeed:300,closeonbackgroundclick:true,dismissmodalclass:'close-reveal-modal'};
@@ -3484,6 +3499,7 @@ ${nickArray}
 </div>
 -->
 
+<div><input class="cwa-chk" id="on_css_alternativeDivideGUI" type="checkbox"${globals.on_css_alternativeDivideGUI?' checked':''}><label for="on_css_alternativeDivideGUI">Замена списка частей трав при их разделении на картинки</label></div>
 <div><input class="cwa-chk" id="on_css_newloading" type="checkbox"${globals.on_css_newloading?' checked':''}><label for="on_css_newloading">Замена гифки загрузки на «...»</label></div>
 <div><input class="cwa-chk" id="on_css_hideTooltip" type="checkbox"${globals.on_css_hideTooltip?' checked':''}><label for="on_css_hideTooltip">Скрыть всплывающее при наведении на кота окошко</label></div>
 <div><input class="cwa-chk" id="on_css_hideChat" type="checkbox"${globals.on_css_hideChatp?' checked':''}><label for="on_css_hideChat">Скрыть чат</label></div>
@@ -3650,6 +3666,7 @@ ${nickArray}
 <hr>
 <div><input class="cwa-chk" id="on_historyCleanWarning" type="checkbox"${globals.on_historyCleanWarning?' checked':''}><label for="on_historyCleanWarning">Запрашивать подтверждение действия при чистке истории</label></div>
 <hr>
+
 <div><input class="cwa-chk group-switch" id="on_treeTechies" group-header="tree-techies" type="checkbox"${globals.on_treeTechies?' checked':''}><label for="on_treeTechies">Расчерчивание поля в отдельном окошке при каче ЛУ</label></div>
 <block class="bl_in">
 <div><input class="cwa-chk" group="tree-techies"${tt_dis} id="tt_folded" type="checkbox"${globals.tt_folded?' checked':''}><label for="tt_folded">Изначально сворачивать окошко</label></div>
