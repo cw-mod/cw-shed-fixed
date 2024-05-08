@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.38
+// @version      1.39
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2024, Тис (https://catwar.su/cat406811)
@@ -16,7 +16,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.38';
+  const version = '1.39';
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
@@ -2663,10 +2663,10 @@ ${my_id_div}
               "Расколотое дерево": "Лес",
               "Граница между Ветром и Рекой": "Лес",
               "Граница между Тенями и Рекой": "Лес",
-              //"Пруд ужей": "Лес",
-              //"Нагретые камни": "Лес",
-              //"Одинокий склон": "Лес",
-              //"Дубрава": "Лес",
+              "Пруд ужей": "Лес",
+              "Нагретые камни": "Лес",
+              "Одинокий склон": "Лес",
+              "Дубрава": "Лес",
 
               "Лягушатник": "Лес",
               "Мелководье": "Лес",
@@ -2718,18 +2718,18 @@ ${my_id_div}
               } else { // Опускание: 6 должность, 7 айди, 8 локация
                 let id = value[7];
                 if (current_cats[id] !== undefined) {
-                  let title_grp = current_cats[id].title_grp,
-                    place = current_cats[id].place;
-                  if (good_cats[place] === undefined) {
-                    good_cats[place] = {};
-                    good_cats[place]["ОВ"] = [];
-                    good_cats[place]["Котята"] = [];
-                    good_cats[place]["Заблокированные"] = [];
-                  }
-                    if (good_cats[place][title_grp]) {
-                        good_cats[place][title_grp].push(id);
-                    }
-                  current_cats[id] = undefined;
+			let title_grp = current_cats[id].title_grp,
+				place = current_cats[id].place;
+			if (good_cats[place] === undefined) {
+				good_cats[place] = {};
+				good_cats[place]["ОВ"] = [];
+				good_cats[place]["Котята"] = [];
+				good_cats[place]["Заблокированные"] = [];
+			}
+			if (good_cats[place][title_grp]) {
+				good_cats[place][title_grp].push(id);
+			}
+			current_cats[id] = undefined;
                 }
               }
             });
@@ -2737,7 +2737,7 @@ ${my_id_div}
             let my_id_mask = (isNaN(my_id)) ? 'Некорректный ID' : masking(my_id, '[cat%ID%] [%ID%]');
             let report = `1. ${my_id_mask}.\n2. ${group}.\n`;
             if (group == "III группа") {
-                report += `3. [b]Л:[/b]  — предупрежден(-ы)\n[b]ВЛ:[/b]  — предупрежден(-ы)`;
+                report += `3. [b]Л:[/b]  — предупрежден(-ы)\n[b]КЗ:[/b]  — предупрежден(-ы)`;
             } else {
                 report += `3. `;
                 $.each(good_cats, function (place, groups) {
@@ -2770,12 +2770,8 @@ ${my_id_div}
                     }
                 });
             }
-            if (group == "I группа") {
-                report += `4. `;
-                report += `[header=${my_id}]История[/header][block=${my_id}]${text}[/block]`;
-            } else if (group == "II группа") {
-                report += `4. [ СКРИН С МОДЕЛЬКОЙ КОТА (ДЛЯ II ГРУППЫ) ]\n5. `;
-                report += `[header=${my_id}]История[/header][block=${my_id}]${text}[/block]`;
+            if (group == "I группа" || group == "II группа") {
+                report += `4. [header=${my_id}]История[/header][block=${my_id}]${text}[/block]`;
             }
             $('#comment').val(report).scrollintoview();
           });
