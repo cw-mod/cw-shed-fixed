@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.39
+// @version      1.40
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2024, Тис (https://catwar.su/cat406811)
@@ -16,7 +16,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.39';
+  const version = '1.40';
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
@@ -201,7 +201,6 @@
       }
     }
   }
-  //console.log(globals);
   const sounds = {};
   sounds.new_message = 'https://catwar.su/new_message.mp3';
   sounds.action_notif = 'https://abstract-class-shed.github.io/cwshed/action_end.mp3';
@@ -210,20 +209,16 @@
   sounds.tt_refresh = 'https://abstract-class-shed.github.io/cwshed/refresh.wav'; //изменить потом
   sounds.block_start = 'https://abstract-class-shed.github.io/cwshed/lock.mp3';
   sounds.block_end = 'https://abstract-class-shed.github.io/cwshed/unlock.mp3';
+  const audioGlobal = new Audio();
+  audioGlobal.autoplay = false;
+  audioGlobal.loop = false;
 
   function playAudio(src, vlm) {
-    let audio = new Audio();
+    //console.log('playAudio fired, src', src,'vlm', vlm);
+    let audio = audioGlobal;
     audio.src = src;
     audio.volume = vlm;
-	audio.autoplay = true;
-	audio.loop = false;
-      if (!$('#app > #cws_audio').length) {
-          $("#app").append('<div id="cws_audio"></div>');
-      } else {
-          $("#cws_audio > audio").remove();
-      }
-      $("#cws_audio").append(audio);
-    //audio.play();
+    audio.play();
   }
 
   function getSettings(key) { //Получение настроек
@@ -1699,7 +1694,7 @@ height: 25px;
         return str.trim();
       }
       $('body').on('click', '#dream_table .symbole', function () {
-        let green = $('#dream td:first-child').attr('style').replace(/\D/g, '');
+        let green = $('#dream td:first-child').attr('style').replace(/[^\d\.]/g, '');
         let moving = ($('#dream td:first-child').attr('style').indexOf('overflow') !== -1);
         if (!moving) {
           let perc = Math.round(green / 150 * 10000) / 100;
@@ -1707,7 +1702,7 @@ height: 25px;
         }
       });
       $('body').on('click', '#hunger_table .symbole', function () {
-        let green = $('#hunger td:first-child').attr('style').replace(/\D/g, '');
+        let green = $('#hunger td:first-child').attr('style').replace(/[^\d\.]/g, '');
         let moving = ($('#hunger td:first-child').attr('style').indexOf('overflow') !== -1);
         if (!moving) {
           let perc = Math.round(green / 150 * 10000) / 100;
@@ -1715,7 +1710,7 @@ height: 25px;
         }
       });
       $('body').on('click', '#thirst_table .symbole', function () {
-        let green = $('#thirst td:first-child').attr('style').replace(/\D/g, '');
+        let green = $('#thirst td:first-child').attr('style').replace(/[^\d\.]/g, '');
         let moving = ($('#thirst td:first-child').attr('style').indexOf('overflow') !== -1);
         if (!moving) {
           let perc = Math.round(green / 150 * 10000) / 100;
@@ -1723,7 +1718,7 @@ height: 25px;
         }
       });
       $('body').on('click', '#need_table .symbole', function () {
-        let green = $('#need td:first-child').attr('style').replace(/\D/g, '');
+        let green = $('#need td:first-child').attr('style').replace(/[^\d\.]/g, '');
         let moving = ($('#need td:first-child').attr('style').indexOf('overflow') !== -1);
         if (!moving) {
           let min = (150 - green) / 2;
@@ -1732,7 +1727,7 @@ height: 25px;
         }
       });
       $('body').on('click', '#clean_table .symbole', function () {
-        let green = $('#clean td:first-child').attr('style').replace(/\D/g, '');
+        let green = $('#clean td:first-child').attr('style').replace(/[^\d\.]/g, '');
         let moving = ($('#clean td:first-child').attr('style').indexOf('overflow') !== -1);
         if (!moving) {
           let fleas = (green < 75) ? true : false;
@@ -1746,7 +1741,7 @@ height: 25px;
       let healthText = '',
         hr;
       $('body').on('click', '#health_table .symbole', function () {
-        let green = $('#health td:first-child').attr('style').replace(/\D/g, '');
+        let green = $('#health td:first-child').attr('style').replace(/[^\d\.]/g, '');
         let perc = Math.round(green / 150 * 10000) / 100;
         healthText = "Здоровье: " + perc + "% (" + green + "px)";
         hr = setTimeout(function () {
@@ -2179,14 +2174,6 @@ height: 2.3em;
   }
 
   function blog() {
-    /*TEST*/
-    /*
-          $(document).ready(function() {
-              $('body').on('click', '.comment-delete', function(e) {
-                  e.preventDefault()
-                  console.log($(this).parent().text());
-              });
-          });*/
     if (globals.on_reports) {
       $(document).ready(function () {
         addCSS(`.inp-button {background-color: #333;color: #fff;border: 1px solid #000;font-family: Verdana;font-size: .9em;}`);
