@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.40
+// @version      1.41
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2024, Тис (https://catwar.su/cat406811)
@@ -16,7 +16,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.40';
+  const version = '1.41';
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
@@ -214,7 +214,6 @@
   audioGlobal.loop = false;
 
   function playAudio(src, vlm) {
-    //console.log('playAudio fired, src', src,'vlm', vlm);
     let audio = audioGlobal;
     audio.src = src;
     audio.volume = vlm;
@@ -604,7 +603,6 @@
     if (globals.on_oldDialogue) {
       $(document).ready(function () {
         $("body").on('DOMNodeInserted', '#text', function () {
-          console.log('size of select : ' + $(this).attr('size'));
           $(this).attr('size', 1);
         });
       });
@@ -931,7 +929,6 @@
         if ($('#sek').text().length) { //Если текст #sek существует
           let time = $('#sek').text();
           action = which_action($("#block_mess").html());
-          //console.log('action sound: '+action.snd+'; action text: '+action.txt);
           if (time == '7 с' || time == '6 с') move_ok = true; //Действие длится хотя бы 7 секунд -С МОМЕНТА ОТКРЫТИЯ ИГРОВОЙ-
           if (action.txt !== null) $('title').text(time + " / " + action.txt); //Сменить титульник, если текст на это действие включен
           let datenow = new Date();
@@ -1340,7 +1337,6 @@ input:checked + .cws-team {
           last_note = $($("#ist").html().split('.')).get(-2); //Последняя запись в истории
           if (last_note !== undefined) {
             if (/Услышала? оглушительн/.test(last_note) && !note_first) {
-              //console.log("Обновилась лазательная локация");
               playAudio(sounds.tt_refresh, globals.sound_ttRefresh);
             }
             note_first = false; //История была уже прочитана 1 раз, и страница не только что загрузилась
@@ -1970,22 +1966,6 @@ ${globals.on_treeTechies?`<div><input id="on_treeTechies" type="checkbox" checke
         });
       });
     }
-    if (0) {
-      //const pageurl = window.location.href;
-      function add_templates() {
-        if ((/^https:\/\/\w?\.?catwar.su\/ls\?new$/.test(window.location.href))) { // on load
-          console.log('you should add these');
-          const templates = '<hr><h4>Шаблоны</h4><hr><div id="cws_ls_templates">kekw</div>';
-          $('#write_div').append(templates);
-        }
-      }
-      add_templates(); // on load
-      $('#main').bind("DOMSubtreeModified", function () {
-        if (!$('#cws_ls_templates').length) {
-          add_templates(); // on click
-        }
-      });
-    }
   }
 
   function hunt() {
@@ -2456,7 +2436,6 @@ ${my_id_div}
               som_text = som_text.replace(/\. *\n|, *\n|; *\n/ig, '\n');
               som_text = som_text.replace(/\n(\d):/ig, '\n0$1:');
               som_text = som_text.replace(/^(\d):/ig, '0$1:');
-              console.log(som_text);
               $.each(places, function (short_name, full_name) {
                 pattern = new RegExp('\n*' + short_name + ': *([^\n]+)', "i");
                 if (found = som_text.match(pattern)) {
@@ -2893,15 +2872,21 @@ ${my_id_div}
                 str_carriers = strToArr($('#cws_patr_carriers').val()),
                 id_hunters = [],
                 id_carriers = [],
-                not_found = [];
-            let name_error = false;
+                not_found = [],
+                not_clan = [];
+            let name_error = false, clan_error = false;
             str_hunters.forEach((element) => {
               let entry = element.trim().match(/([А-яЁё ]+) ?\(?(\d+)?\)?/i),
                   name = entry[1],
                   hunt = entry[2] || 5,
-                  tmp = nameToID(name);
+                  tmp = nameToIDFiltered(name, "Речное племя");
               if (parseInt(tmp)) {
-                id_hunters.push(`${name} [${tmp}] (${hunt})`);
+                  if (tmp != -1) {
+                      id_hunters.push(`${name} [${tmp}] (${hunt})`);
+                  } else {
+                      clan_error = true;
+                      not_clan.push(name);
+                  }
               } else {
                 name_error = true;
                 not_found.push(name);
@@ -2909,9 +2894,14 @@ ${my_id_div}
             });
             str_carriers.forEach((element) => {
               let name = element.trim(),
-                  tmp = nameToID(name);
+                  tmp = nameToIDFiltered(name, "Речное племя");
               if (parseInt(tmp)) {
-                id_carriers.push(`${name} [${tmp}]`);
+                  if (tmp != -1) {
+                      id_carriers.push(`${name} [${tmp}]`);
+                  } else {
+                      clan_error = true;
+                      not_clan.push(name);
+                  }
               } else {
                 name_error = true;
                 not_found.push(name);
@@ -2927,6 +2917,9 @@ ${my_id_div}
 [b]Таскающие:[/b] ${id_carriers.length ? id_carriers.join(', ') : "-"};`;
             if (name_error) {
               txt += `\n! ! ! В отчёте ошибка со следующими именами (не были найдены или не соответствуют формату): ${not_found.join(', ')}. Проверьте его перед тем, как отправить.`
+            }
+            if (clan_error) {
+              txt += `\n! ! ! В отчёте ошибка со следующими котиками (они не находятся в вашем племени, зачем вы их сюда пишете?): ${not_clan.join(', ')}. Проверьте его перед тем, как отправить.`
             }
             let val = $('#comment').val();
             if (val) {
@@ -3795,9 +3788,7 @@ Y: <input type=number id="tt_window_top" class="cws-number" min=0 max=9999 value
     $body.on('change', '.tt-folders-enabled', function () {
       let ischkd = $(this).prop('checked');
       let folder_num = parseInt($(this).data('id'));
-      //console.log(globals.tt_foldersenabledArray)
       globals.tt_foldersenabledArray[folder_num] = ischkd;
-      //console.log(globals.tt_foldersenabledArray)
       setSettings('tt_foldersenabledArray', JSON.stringify(globals.tt_foldersenabledArray));
     });
     $body.on('change paste focusout keyup', '.tt-page-name', function () {
@@ -4005,15 +3996,40 @@ Y: <input type=number id="tt_window_top" class="cws-number" min=0 max=9999 value
     return (a.length == 1 && a[0] == '') ? [] : a;
   }
 
+  function nameToIDFiltered(name, clan, async = false) {
+    let result = nameToID(name, async);
+    let resultFiltered = result;
+    if (!isNaN(result)) {
+        let isClan = false;
+        $.ajax({
+            type: "POST",
+            url: "cat" + result,
+            async,
+            xhrFields: {withCredentials: true}, crossDomain: true,
+            success: function (data) {
+                const hasTitle = data.match(/<\/big> — <i>[^<]+<\/i> \[ /i);
+                if (!hasTitle) { // Нет титула - не племя
+                    resultFiltered = -1;
+                    return;
+                }
+                const hasClanName = data.match(/<td><img src="img\/icon_clan\.png" title="Племя"><\/td><td><b>([А-Яа-яЁё ]+)<\/b><\/td>/i);
+                if (hasClanName && hasClanName[1] != clan) { // Есть титул - проверить название племени.
+                    resultFiltered = -1;
+                    return;
+                }
+            }
+        });
+        false;
+    }
+    return resultFiltered;
+  }
   function nameToID(name, async = false) {
     let result;
     $.ajax({
       type: "POST",
       url: "/ajax/top_cat",
-      data: {
-        name: name
-      },
-      async: async,
+      data: {name},
+      async,
       success: function (data) {
         const id = parseInt(data, 10);
         result = (isNaN(id)) ? name : id;
