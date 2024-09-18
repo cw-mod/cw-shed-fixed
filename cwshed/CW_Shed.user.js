@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.42
+// @version      1.43
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2024, Тис (https://catwar.su/cat406811)
@@ -16,7 +16,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.41';
+  const version = '1.43';
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
@@ -178,7 +178,7 @@
 , 'on_css_alternativeDivideGUI' : false // Альтернативный интерфейс разделения травы
 , 'on_css_itemHighlight' : false // Альтернативный интерфейс разделения травы
 
-, 'css_itemHighlightArray' : [13,15,17,19,20,21,22,23,25,26,78,106,108,109,110,111,112,115,116,119,126,565,566,655,3993,4010,4011] // предметы, которые нужно подсвечивать в Игровой
+, 'css_itemHighlightArray' : ['13','15','17','19','20','21','22','23','25','26','78','106','108','109','110','111','112','115','116','119','126','565','566','655','3993','4010','4011'] // предметы, которые нужно подсвечивать в Игровой
 , 'css_itemHighlightColor' : '#eeeeee' // предметы, которые нужно подсвечивать в Игровой
 , 'css_bgpicURL' : 'https://catwar.su/cw3/spacoj/0.jpg' // картинка на заднем плане игровой
 , 'css_huntbgpicURL' : 'https://catwar.su/cw3/jagd_img/bg1.png' // картинка на заднем плане игровой
@@ -1762,40 +1762,42 @@ height: 25px;
     for (let i = 0; i < globals.css_itemHighlightArray.length; i++) {
         globals.css_itemHighlightArray[i] = globals.css_itemHighlightArray[i].trim();
     }
-    var itemHighlightObserver = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutationRecord) {
-            let style = (mutationRecord.target.attributes.style.value || '').split(';');
-            let styleInsert = ['.cage_items {position: relative;}'];
-            let styleBody = `content: '';position: absolute;width: 100%;height: 100%;-webkit-filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});
+    var checkItemHighlightCage = function(style_value) {
+        let style = (style_value || '').split(';');
+        const styleBody = `content: '';position: absolute;width: 100%;height: 100%;-webkit-filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});
             -moz-filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});-ms-filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});
             -o-filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});`;
-            for (let i = 0; i < style.length; i++) {
-                let now = style[i].split(':');
-                if (now.length == 2 && now[0] == 'background') {
-                    let nowItems = now[1].split(',');
-                    let nowItemsGenerated = [];
-                    let nowUniqueKey = 'cws_itemHighlight';
-                    for (let j = 0; j < nowItems.length; j++) {
-                        let nowItem = nowItems[j];
-                        let nowItemType = ((nowItem.match(/things\/(\d+)\.png/u) || ['', 0])[1]) + '';
-                        nowUniqueKey += '_' + nowItemType;
-                        if (globals.css_itemHighlightArray.includes(nowItemType)) {
-                            nowItemsGenerated.push(nowItem);
-                        }
+        for (let i = 0; i < style.length; i++) {
+            let now = style[i].split(':');
+            if (now.length == 2 && now[0] == 'background') {
+                let nowItems = now[1].split(',');
+                let nowItemsGenerated = [];
+                let nowUniqueKey = 'cws_itemHighlight';
+                for (let j = 0; j < nowItems.length; j++) {
+                    let nowItem = nowItems[j];
+                    let nowItemType = ((nowItem.match(/things\/(\d+)\.png/u) || ['', 0])[1]) + '';
+                    nowUniqueKey += '_' + nowItemType;
+                    if (globals.css_itemHighlightArray.includes(nowItemType)) {
+                        nowItemsGenerated.push(nowItem);
                     }
-                    if (nowItemsGenerated.length) {
-                        if (!$('#' + nowUniqueKey).length) {
-                            if (globals.on_css_itemHighlight_data == undefined) {
-                                globals.on_css_itemHighlight_data = '';
-                            }
-                            const data = `<style id=${nowUniqueKey} class="on_css_itemHighlight">.cage_items[style*='${style[i]}']:before {
-                            ${styleBody}background: ${nowItemsGenerated.join(', ')};}</style>`;
-                            globals.on_css_itemHighlight_data += data;
-                            $('head').append(data);
+                }
+                if (nowItemsGenerated.length) {
+                    if (!$('#' + nowUniqueKey).length) {
+                        if (globals.on_css_itemHighlight_data == undefined) {
+                            globals.on_css_itemHighlight_data = '';
                         }
+                        const data = `<style id=${nowUniqueKey} class="on_css_itemHighlight">.cage_items[style*='${style[i]}']:before {
+                            ${styleBody}background: ${nowItemsGenerated.join(', ')};}</style>`;
+                        globals.on_css_itemHighlight_data += data;
+                        $('head').append(data);
                     }
                 }
             }
+        }
+    }
+    var itemHighlightObserver = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutationRecord) {
+            checkItemHighlightCage(mutationRecord.target.attributes.style.value);
         });
     });
     if (globals.on_css_itemHighlight) {
@@ -1906,6 +1908,9 @@ ${globals.on_treeTechies?`<div><input id="on_treeTechies" type="checkbox" checke
                   for (let target of document.getElementsByClassName('cage_items')) {
                       itemHighlightObserver.observe(target, { attributes : true, attributeFilter : ['style'] });
                   }
+                  $('.cage_items').each(function() {
+                      checkItemHighlightCage($(this).attr('style'));
+                  });
               }
           } else {
               $('#cwsstyle_' + id + ', .' + id).remove();
