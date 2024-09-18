@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.41
+// @version      1.42
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2024, Тис (https://catwar.su/cat406811)
@@ -52,7 +52,7 @@
 , 'on_extraInfo' : false // Доп. инфо о котиках
 , 'on_deletionWarning' : false // Предупреждение об удалении
 , 'on_historyCleanWarning' : false // Предупреждение о чистке истории TODO
-, 'on_css_alternativeDivideGUI' : false // Альтернативный интерфейс разделения травы
+, 'on_localTimer' : 0 // Отображение системного времени в игровой (0 - выключен, 1 - локальное, 2 - московское)
  //Громкость звуков
 , 'sound_notifEaten' : 0.2 // Звук, когда тебя подняли
 , 'sound_notifBeaten' : 0.2 // Звук, когда тебя атакуют
@@ -173,9 +173,13 @@
 , 'on_css_bghuntpic' : false // картинка на заднем фоне охоты
 , 'on_css_highlightmove' : false // подсветка переходов при наведении
 , 'on_css_maxopacity' : false // непрозрачные мертвецы
-, 'on_css_newloading' : false // замена гифки загрузки
 , 'on_css_hideTooltip' : false // скрыть табличку (для кача лу)
 , 'on_css_daylight' : false // всегда день
+, 'on_css_alternativeDivideGUI' : false // Альтернативный интерфейс разделения травы
+, 'on_css_itemHighlight' : false // Альтернативный интерфейс разделения травы
+
+, 'css_itemHighlightArray' : [13,15,17,19,20,21,22,23,25,26,78,106,108,109,110,111,112,115,116,119,126,565,566,655,3993,4010,4011] // предметы, которые нужно подсвечивать в Игровой
+, 'css_itemHighlightColor' : '#eeeeee' // предметы, которые нужно подсвечивать в Игровой
 , 'css_bgpicURL' : 'https://catwar.su/cw3/spacoj/0.jpg' // картинка на заднем плане игровой
 , 'css_huntbgpicURL' : 'https://catwar.su/cw3/jagd_img/bg1.png' // картинка на заднем плане игровой
 , 'css_locURL' : 'https://catwar.su/cw3/spacoj/170.jpg' // на какой фон заменять
@@ -194,7 +198,13 @@
     }
     else {
       if (Array.isArray(defaults[key])) {
-        globals[key] = JSON.parse(settings);
+          try {
+              globals[key] = JSON.parse(settings);
+          } catch(e) {
+              console.log('CWShed: Ошибка при загрузке настройки ' + key)
+              console.log(settings)
+              console.error(e)
+          }
       }
       else {
         globals[key] = settings;
@@ -642,12 +652,32 @@
     if (globals.on_charInline) {
       addCSS(`.other_cats_list + br {display: none;}.other_cats_list::after {content: " ||";}.other_cats_list {border: none;}`);
     }
+    if (+globals.on_localTimer) {
+        const getTimeStr = function() {
+            const date = new Date();
+            if (+globals.on_localTimer == 2) {
+                date.setTime(date.getTime() + (date.getTimezoneOffset() + 180) * 60 * 1000);
+            }
+            return date.toLocaleTimeString() + "&nbsp;&nbsp;&nbsp;"
+            + ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'][date.getDay()] + ', '
+            + date.getDate() + ' ' + ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'][date.getMonth()];
+        }
+        if (isDesktop) {
+            addCSS(`#cws_localTimer {color: #d7d7d7;background-color: #00000096;padding: 0 1em;font-size: 12px;line-height:2.2}#tr_tos > td {display: flex;justify-content: space-between;}`);
+        } else {
+            addCSS(`#cws_localTimer {color: #d7d7d7;background-color: #00000096;padding: 0 1em 0.3em 1em;font-size: 12px}`);
+        }
+        $('#tr_tos > td').append('<div id="cws_localTimer">' + getTimeStr() + '</div>');
+        setInterval(function () {
+            $('#cws_localTimer').html(getTimeStr());
+        }, 1000);
+    }
     if (globals.on_charHide) {
       addCSS(`.other_cats_list {display: none;}.other_cats_list + br {display: none;}`);
     }
     if (globals.on_newDM) {
       let newDM = 0;
-      $('body').on('DOMSubtreeModified', '#newls', function () {
+      $('body').on('DOMSubtreeModified', '#newls', function () { // deprecated, todo: remove/update
         let newDMtmp = $(this).html();
         if (newDMtmp !== undefined) {
           newDMtmp = (newDMtmp === '') ? 0 : parseInt(newDMtmp.replace(/\D/gi, ''));
@@ -660,7 +690,7 @@
     }
     if (globals.on_newChat) {
       let newChat = 0;
-      $('body').on('DOMSubtreeModified', '#newchat', function () {
+      $('body').on('DOMSubtreeModified', '#newchat', function () { // deprecated, todo: remove/update
         let newChattmp = $(this).html();
         if (newChattmp !== undefined) {
           newChattmp = (newChattmp === '') ? 0 : parseInt(newChattmp.replace(/\D/gi, ''));
@@ -679,34 +709,9 @@
       else {
         addCSS('#cws_chat_msg {width: 100% !important;} .chat_text {line-break: anywhere;}');
       }
-      addCSS(`#chat_msg {display: none;}
-#cws_chat_msg {
-  overflow: auto;
-  height: 275px;
-}
-.cws_chat_wrapper {
-  display: -webkit-flex;
-    padding: 0 .25em;
-  display: flex;
-}
-.cws_chat_msg {
-  -webkit-flex: auto;
-  flex: auto;
-  -webkit-flex-direction: row;
-  flex-direction: row;
-}
-.cws_chat_report {
-  width: 42px;
-}
-.cws_chat_report {
-  -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-     -khtml-user-select: none; /* Konqueror HTML */
-       -moz-user-select: none; /* Old versions of Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
-                                  supported by Chrome, Edge, Opera and Firefox */
-}`);
+      addCSS(`#chat_msg {display: none;}#cws_chat_msg {overflow: auto;height: 275px;}.cws_chat_wrapper{display: -webkit-flex;padding: 0 .25em;display: flex;}
+      .cws_chat_msg {-webkit-flex: auto;flex: auto;-webkit-flex-direction: row;flex-direction: row;}.cws_chat_report {width: 42px;}.cws_chat_report {-webkit-touch-callout: none;
+      -webkit-user-select: none;-khtml-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;}`);
       // варомод (почему вы просите добавить совместимость меня, когда совместимость проще добавить тому кто сделал эту компактную игровую?)
       const hvo_settings = JSON.parse(window.localStorage.getItem('cwmod_settings') || '{}');
       if (hvo_settings.cw3_compact) {
@@ -720,7 +725,7 @@
       }
       let scroll = false; // была прокрутка до предыдущих сообщений
       const chatTarget = document.getElementById('chat_msg');
-      const chatObserver = new MutationObserver(function (mutationsList, observer) { // привет я даун а как тебе живеца
+      const chatObserver = new MutationObserver(function (mutationsList, observer) {
         let name_heard = false;
         let last_mutation = mutationsList[mutationsList.length - 1].target;
         let msg_new = last_mutation.children.length;
@@ -1754,6 +1759,51 @@ height: 25px;
         }
       });
     }
+    for (let i = 0; i < globals.css_itemHighlightArray.length; i++) {
+        globals.css_itemHighlightArray[i] = globals.css_itemHighlightArray[i].trim();
+    }
+    var itemHighlightObserver = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutationRecord) {
+            console.log(mutationRecord.target.attributes.style.value);
+            let style = (mutationRecord.target.attributes.style.value || '').split(';');
+            let styleInsert = ['.cage_items {position: relative;}'];
+            let styleBody = `content: '';position: absolute;width: 100%;height: 100%;-webkit-filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});
+            -moz-filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});-ms-filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});
+            -o-filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});`;
+            for (let i = 0; i < style.length; i++) {
+                let now = style[i].split(':');
+                if (now.length == 2 && now[0] == 'background') {
+                    let nowItems = now[1].split(',');
+                    let nowItemsGenerated = [];
+                    let nowUniqueKey = 'cws_itemHighlight';
+                    for (let j = 0; j < nowItems.length; j++) {
+                        let nowItem = nowItems[j];
+                        let nowItemType = ((nowItem.match(/things\/(\d+)\.png/u) || ['', 0])[1]) + '';
+                        nowUniqueKey += '_' + nowItemType;
+                        if (globals.css_itemHighlightArray.includes(nowItemType)) {
+                            nowItemsGenerated.push(nowItem);
+                        }
+                    }
+                    if (nowItemsGenerated.length) {
+                        if (!$('#' + nowUniqueKey).length) {
+                            if (globals.on_css_itemHighlight_data == undefined) {
+                                globals.on_css_itemHighlight_data = '';
+                            }
+                            const data = `<style id=${nowUniqueKey} class="on_css_itemHighlight">.cage_items[style*='${style[i]}']:before {
+                            ${styleBody}background: ${nowItemsGenerated.join(', ')};}</style>`;
+                            globals.on_css_itemHighlight_data += data;
+                            $('head').append(data);
+                        }
+                    }
+                }
+            }
+        });
+    });
+    if (globals.on_css_itemHighlight) {
+        for (let target of document.getElementsByClassName('cage_items')) {
+            itemHighlightObserver.observe(target, { attributes : true, attributeFilter : ['style'] });
+        }
+    }
     const css_texts = {
       'on_csslocation': `<style id="cwsstyle_on_csslocation">div[style*="spacoj"] {background-image: url("${globals.css_locURL}") !important;}</style>`,
       'on_css_cellshade': `<style id="cwsstyle_on_css_cellshade">.cage {box-shadow: inset 0px ${globals.css_cellshadeOpacity}px 0px ${globals.css_cellshadeOpacity}px ${globals.css_cellshadeColor};}</style>`,
@@ -1801,7 +1851,6 @@ filter: drop-shadow(0px 0px 6px #ffffffcf);
 transition: 0.2s;-webkit-transition: 0.2s;-o-transition: 0.2s;-moz-transition: 0.2s;
 }.move_parent {transition: 0.3s;}</style>`,
       'on_css_maxopacity': `<style id="cwsstyle_on_css_maxopacity">.cat > div {opacity:1 !important;}</style>`,
-      'on_css_newloading': `<style id="cwsstyle_on_css_newloading">[src*="/img/loading.gif"] {content: url(http://d.zaix.ru/hgx3.gif);}</style>`,
       'on_css_hideTooltip': `<style id="cwsstyle_on_css_hideTooltip">.cat:hover .cat_tooltip {display:none;}</style>`,
       'on_css_daylight': `<style id="cwsstyle_on_css_daylight">#cages_div {opacity: 1 !important;}</style>`,
       'on_css_defects': `<style id="cwsstyle_on_css_defects">div[style*="/defects/disease/"] {background-color: #eeff4640 !important;padding-top: 16px;}
@@ -1813,11 +1862,15 @@ div[style*="/defects/poisoning/"] {background-color: #ff464640 !important;paddin
 div[style*="/defects/dirt/3.png"], div[style*="/defects/dirt/base/1/3.png"],
 div[style*="/defects/dirt/base/2/3.png"], div[style*="/defects/dirt/4.png"],
 div[style*="/defects/dirt/base/1/4.png"], div[style*="/defects/dirt/base/2/4.png"] {background-color: #9446ff40 !important;padding-top: 16px;}</style>`,
-        'on_css_hideChat': `<style id="cwsstyle_on_css_hideChat">#tr_chat {display: none;}</style>`
+        'on_css_hideChat': `<style id="cwsstyle_on_css_hideChat">#tr_chat {display: none;}</style>`,
+        'on_css_itemHighlight' : `<style id="cwsstyle_on_css_itemHighlight">.cage_items {position: relative;}</style>`,
     };
     $.each(css_texts, function (index, value) {
       if (globals[index]) {
         $('head').append(css_texts[index]);
+        if (globals[index + '_data']) {
+          $('head').append(globals[index + '_data']);
+        }
       }
     });
 
@@ -1835,21 +1888,33 @@ ${globals.on_treeTechies?`<div><input id="on_treeTechies" type="checkbox" checke
 <div><input class="cwa-chk" id="on_css_defects" type="checkbox"${globals.on_css_defects?' checked':''}><label for="on_css_defects">Подсвечивать дефекты</label></div>
 <div><input class="cwa-chk" id="on_css_oldicons" type="checkbox"${globals.on_css_oldicons?' checked':''}><label for="on_css_oldicons">Старые иконки действий</label></div>
 <div><input class="cwa-chk" id="on_css_highlightmove" type="checkbox"${globals.on_css_highlightmove?' checked':''}><label for="on_css_highlightmove">Подсветка переходов при наведении</label></div>
+<div><input class="cwa-chk" id="on_css_itemHighlight" type="checkbox"${globals.on_css_itemHighlight?' checked':''}><label for="on_css_itemHighlight">Подсветка предметов на поле Игровой</label></div>
 
 </div>`);
       $('body').on('change', '#on_treeTechies', function () {
         $('#cws_treeTechies').toggleClass('hidden');
       });
       $('body').on('change', '.cwa-chk', function () {
-        let id = $(this).attr('id');
-        let ischkd = $(this).prop('checked');
-        if (ischkd) {
-          $('head').append(css_texts[id]);
-        }
-        else {
-          $('#cwsstyle_' + id).remove();
-        }
-        setSettings(id, ischkd);
+          let id = $(this).attr('id');
+          let ischkd = $(this).prop('checked');
+          if (ischkd) {
+              $('head').append(css_texts[id]);
+              if (globals[id + '_data']) {
+                  $('head').append(globals[id + '_data']);
+              }
+              if (id == 'on_css_itemHighlight') {
+                  itemHighlightObserver.disconnect();
+                  for (let target of document.getElementsByClassName('cage_items')) {
+                      itemHighlightObserver.observe(target, { attributes : true, attributeFilter : ['style'] });
+                  }
+              }
+          } else {
+              $('#cwsstyle_' + id + ', .' + id).remove();
+              if (id == 'on_css_itemHighlight') {
+                  itemHighlightObserver.disconnect();
+              }
+          }
+          setSettings(id, ischkd);
       });
     }
   }
@@ -3462,7 +3527,7 @@ ${nickArray}
     <span class="cat"><div style="background-image:url('https://abstract-class-shed.github.io/pic/catmodel-1.png');" class="d"></div></span></div>
 </div>
 </div>
-<h3>Стили [by <a href="cat892248" target="_blank">Сущность Порядка</a>]</h3>
+<h3>Стили</h3>
 <div><input class="cwa-chk" id="on_css_quicksettings" type="checkbox"${globals.on_css_quicksettings?' checked':''}><label for="on_css_quicksettings">Быстрая настройка самых необходимых стилей из Игровой (блок под Родственными связями)</label></div>
 <!--
 <div>
@@ -3476,15 +3541,22 @@ ${nickArray}
 -->
 
 <div><input class="cwa-chk" id="on_css_alternativeDivideGUI" type="checkbox"${globals.on_css_alternativeDivideGUI?' checked':''}><label for="on_css_alternativeDivideGUI">Замена списка частей трав при их разделении на картинки</label></div>
-<div><input class="cwa-chk" id="on_css_newloading" type="checkbox"${globals.on_css_newloading?' checked':''}><label for="on_css_newloading">Замена гифки загрузки на «...»</label></div>
 <div><input class="cwa-chk" id="on_css_hideTooltip" type="checkbox"${globals.on_css_hideTooltip?' checked':''}><label for="on_css_hideTooltip">Скрыть всплывающее при наведении на кота окошко</label></div>
 <div><input class="cwa-chk" id="on_css_hideChat" type="checkbox"${globals.on_css_hideChatp?' checked':''}><label for="on_css_hideChat">Скрыть чат</label></div>
 <div><input class="cwa-chk" id="on_css_removesky" type="checkbox"${globals.on_css_removesky?' checked':''}><label for="on_css_removesky">Скрыть небо</label></div>
 <div><input class="cwa-chk" id="on_css_daylight" type="checkbox"${globals.on_css_daylight?' checked':''}><label for="on_css_daylight">Всегда день в Игровой</label></div>
 <div><input class="cwa-chk" id="on_css_oldicons" type="checkbox"${globals.on_css_oldicons?' checked':''}><label for="on_css_oldicons">Старые иконки действий</label></div>
-<div><input class="cwa-chk" id="on_css_cellshade" type="checkbox"${globals.on_css_cellshade?' checked':''}><label for="on_css_cellshade">Сетка ячеек локации</label></div>
 <div><input class="cwa-chk" id="on_css_defects" type="checkbox"${globals.on_css_defects?' checked':''}><label for="on_css_defects">Подсвечивать дефекты игроков (кроме клещей и блох)</label></div>
 <div><input class="cwa-chk" id="on_css_defects_dirt" type="checkbox"${globals.on_css_defects_dirt?' checked':''}><label for="on_css_defects_dirt">Подсвечивать клещей и блох игроков</label></div>
+<div><input class="cwa-chk" id="on_css_itemHighlight" type="checkbox"${globals.on_css_itemHighlight?' checked':''}><label for="on_css_itemHighlight">Подсвечивать предметы на поле Игровой</label></div>
+<div><block class="bl_in">
+<table>
+<tr><td>Цвет:</td>
+<td><input type="color" class="css-itemHighlight color-pick" id="css_itemHighlightColor" value="${globals.css_itemHighlightColor}"></td></tr>
+</table>
+<label for="css_itemHighlightArray">ID типов предметов через запятую:</label> <input type=text id="css_itemHighlightArray" value=${globals.css_itemHighlightArray}> <button class="cwa-apply" data-id="css_itemHighlightArray">Запомнить</button>
+</div>
+<div><input class="cwa-chk" id="on_css_cellshade" type="checkbox"${globals.on_css_cellshade?' checked':''}><label for="on_css_cellshade">Сетка ячеек локации</label></div>
 <div><block class="bl_in">
 <table>
 <tr><td>Цвет:</td>
@@ -3641,6 +3713,14 @@ ${nickArray}
 <div><input class="cwa-chk group-switch" id="on_charHide" group-header="char-change" type="checkbox"${globals.on_charHide?' checked':''}><label for="on_charHide">Скрыть переход на других персонажей в Игровой</label></div>
 <hr>
 <div><input class="cwa-chk" id="on_historyCleanWarning" type="checkbox"${globals.on_historyCleanWarning?' checked':''}><label for="on_historyCleanWarning">Запрашивать подтверждение действия при чистке истории</label></div>
+<hr>
+<div>Отображение системного времени в Игровой:
+    <select class="cwa-chk" id="on_localTimer">
+        <option value=0 ${globals.on_localTimer==0?' selected':''}>отключено</option>
+        <option value=1 ${globals.on_localTimer==1?' selected':''}>включено (локальное время)</option>
+        <option value=2 ${globals.on_localTimer==2?' selected':''}>включено (МСК время)</option>
+    </select>
+</div>
 <hr>
 
 <div><input class="cwa-chk group-switch" id="on_treeTechies" group-header="tree-techies" type="checkbox"${globals.on_treeTechies?' checked':''}><label for="on_treeTechies">Расчерчивание поля в отдельном окошке при каче ЛУ</label></div>
@@ -3837,7 +3917,7 @@ Y: <input type=number id="tt_window_top" class="cws-number" min=0 max=9999 value
       setSettings('nickListArray', JSON.stringify(nickArr));
     });
     $body.on('submit', '#CCForm', function (e) {
-      e.preventDefault(); /* 4111 */
+      e.preventDefault();
       let CCArr = [];
       $('#CCList > tr').each(function () {
         let id = $(this).find('.cc-id').val();
@@ -3896,11 +3976,32 @@ Y: <input type=number id="tt_window_top" class="cws-number" min=0 max=9999 value
       globals[id] = volume;
     });
     $body.on('change', '.cwa-chk', function () {
-      let id = $(this).attr('id');
+      const id = $(this).attr('id');
+      const nodeName = $(this).prop('nodeName');
       let ischkd = $(this).prop('checked');
+      if (nodeName == 'SELECT') {
+          ischkd = $(this).val();
+      }
       setSettings(id, ischkd);
       globals[id] = ischkd;
     });
+      $('body').on('click', '.cwa-apply', function() {
+        let id = $(this).data('id');
+        let value = $('#' + id).val();
+        if (Array.isArray(defaults[id])) {
+            value = value.split(',').map(v => v.trim());
+            try {
+                setSettings(id, JSON.stringify(value));
+                globals[id] = value;
+                $('#' + id).val(value.join(','));
+            } catch(e) {
+                alert('Сохранение невозможно: введён список неправильного формата');
+            }
+        } else {
+            setSettings(id, value);
+            globals[id] = value;
+        }
+      });
     $body.on('change paste focusout keyup', '.cws-number', function () {
       let val = parseInt($(this).val());
       if (val >= $(this).attr('min') && val <= $(this).attr('max')) {
