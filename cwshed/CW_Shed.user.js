@@ -1764,7 +1764,6 @@ height: 25px;
     }
     var itemHighlightObserver = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutationRecord) {
-            console.log(mutationRecord.target.attributes.style.value);
             let style = (mutationRecord.target.attributes.style.value || '').split(';');
             let styleInsert = ['.cage_items {position: relative;}'];
             let styleBody = `content: '';position: absolute;width: 100%;height: 100%;-webkit-filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});
