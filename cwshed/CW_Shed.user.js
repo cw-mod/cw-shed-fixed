@@ -183,8 +183,8 @@
 , 'css_itemHighlightArray' : ['13','15','17','19','20','21','22','23','25','26','78','106','108','109','110','111','112','115','116','119','126','565','566','655','3993','4010','4011'] // предметы, которые нужно подсвечивать в Игровой
 , 'css_itemHighlightColor' : '#eeeeee' // предметы, которые нужно подсвечивать в Игровой
 , 'css_bgpicURL' : 'https://catwar.' + domain + '/cw3/spacoj/0.jpg' // картинка на заднем плане игровой
-, 'css_huntbgpicURL' : 'https://catwar.su' + domain + '/cw3/jagd_img/bg1.png' // картинка на заднем плане игровой
-, 'css_locURL' : 'https://catwar.su' + domain + '/cw3/spacoj/170.jpg' // на какой фон заменять
+, 'css_huntbgpicURL' : 'https://catwar.' + domain + '/cw3/jagd_img/bg1.png' // картинка на заднем плане игровой
+, 'css_locURL' : 'https://catwar.' + domain + '/cw3/spacoj/170.jpg' // на какой фон заменять
 , 'css_cellshadeColor' : '#ffffff' // сетка цвет
 , 'css_cellshadeOpacity' : 0.1 // сетка прозрачность
 , 'css_theme' : 'theme_classic' // тема
@@ -3592,7 +3592,7 @@ ${nickArray}
 
 <div><input class="cwa-chk" id="on_css_bgpic" type="checkbox"${globals.on_css_bgpic?' checked':''}><label for="on_css_bgpic">Картинка на заднем плане Игровой</label></div>
 <block class="bl_in">
-<input type=text class="css-pic-text" id="css_bgpicURL" default="/cw3/spacoj/0.jpg" value=${globals.css_bgpicURL}>
+<input type=text class="css-pic-text" id="css_bgpicURL" default="https://catwar.${domain}/cw3/spacoj/0.jpg" value=${globals.css_bgpicURL}>
 <div><button class="css-pic-url-apply" data-id="css_bgpicURL">Применить</button><button class="css-pic-url-reset" data-id="css_bgpicURL">Сбросить</button></div>
 <div class="css-pic-url-example" data-id="css_bgpicURL" style="background-image:url('${globals.css_bgpicURL}');"></div>
 </block>
@@ -3600,13 +3600,13 @@ ${nickArray}
 -->
 <div><input class="cwa-chk" id="on_css_bghuntpic" type="checkbox"${globals.on_css_bghuntpic?' checked':''}><label for="on_css_bghuntpic">Статичный фон на охоте:</label></div>
 <block class="bl_in">
-<input type=text class="css-pic-text" id="css_huntbgpicURL" default="/cw3/jagd_img/bg1.png" value=${globals.css_huntbgpicURL}>
+<input type=text class="css-pic-text" id="css_huntbgpicURL" default="https://catwar.${domain}/cw3/jagd_img/bg1.png" value=${globals.css_huntbgpicURL}>
 <div><button class="css-pic-url-apply" data-id="css_huntbgpicURL">Применить</button><button class="css-pic-url-reset" data-id="css_huntbgpicURL">Сбросить</button></div>
 <div class="css-pic-url-example" data-id="css_huntbgpicURL" style="background-image:url('${globals.css_huntbgpicURL}');"></div>
 </block>
 <div><input class="cwa-chk" id="on_csslocation" type="checkbox"${globals.on_csslocation?' checked':''}><label for="on_csslocation">Статичный фон на каждой локации:</label></div>
 <block class="bl_in">
-<input type=text class="css-pic-text" id="css_locURL" default="/cw3/spacoj/170.jpg" value=${globals.css_locURL}>
+<input type=text class="css-pic-text" id="css_locURL" default="https://catwar.${domain}/cw3/spacoj/170.jpg" value=${globals.css_locURL}>
 <div><button class="css-pic-url-apply" data-id="css_locURL">Применить</button><button class="css-pic-url-reset" data-id="css_locURL">Сбросить</button></div>
 <div class="css-pic-url-example" data-id="css_locURL" style="background-image:url('${globals.css_locURL}');"></div>
 </block>
