@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.44
+// @version      1.45
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2024, Тис (https://catwar.net/cat406811)
 // @license      MIT; https://opensource.org/licenses/MIT
 // @updateURL    https://abstract-class-shed.github.io/cwshed/CW_Shed.meta.js
 // @match        *://catwar.net/*
+// @match        *://catwar.su/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
 // @require      https://abstract-class-shed.github.io/cwshed/jquery-3.4.1.min.js
@@ -16,7 +17,8 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.43';
+  const version = '1.45';
+  const domain = location.host.split('.').pop();
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
   const defaults = {
@@ -180,9 +182,9 @@
 
 , 'css_itemHighlightArray' : ['13','15','17','19','20','21','22','23','25','26','78','106','108','109','110','111','112','115','116','119','126','565','566','655','3993','4010','4011'] // предметы, которые нужно подсвечивать в Игровой
 , 'css_itemHighlightColor' : '#eeeeee' // предметы, которые нужно подсвечивать в Игровой
-, 'css_bgpicURL' : 'https://catwar.net/cw3/spacoj/0.jpg' // картинка на заднем плане игровой
-, 'css_huntbgpicURL' : 'https://catwar.net/cw3/jagd_img/bg1.png' // картинка на заднем плане игровой
-, 'css_locURL' : 'https://catwar.net/cw3/spacoj/170.jpg' // на какой фон заменять
+, 'css_bgpicURL' : 'https://catwar.' + domain + '/cw3/spacoj/0.jpg' // картинка на заднем плане игровой
+, 'css_huntbgpicURL' : 'https://catwar.su' + domain + '/cw3/jagd_img/bg1.png' // картинка на заднем плане игровой
+, 'css_locURL' : 'https://catwar.su' + domain + '/cw3/spacoj/170.jpg' // на какой фон заменять
 , 'css_cellshadeColor' : '#ffffff' // сетка цвет
 , 'css_cellshadeOpacity' : 0.1 // сетка прозрачность
 , 'css_theme' : 'theme_classic' // тема
@@ -212,7 +214,7 @@
     }
   }
   const sounds = {};
-  sounds.new_message = 'https://catwar.net/new_message.mp3';
+  sounds.new_message = '/new_message.mp3';
   sounds.action_notif = 'https://abstract-class-shed.github.io/cwshed/action_end.mp3';
   sounds.chat_mention = 'https://abstract-class-shed.github.io/cwshed/chat_mention.mp3';
   sounds.alert_attacked = 'https://d.zaix.ru/ihrv.mp3';
@@ -277,15 +279,15 @@
     return (num < 10) ? '0' + num : num;
   }
   const pageurl = window.location.href;
-  const isCW3 = (/^https:\/\/\w?\.?catwar.net\/cw3(?!(\/kns|\/jagd))/.test(pageurl));
-  const isSite = !(/^https:\/\/\w?\.?catwar.net\/cw3(\/kns|\/jagd)?.*/.test(pageurl));
-  const isDM = (/^https:\/\/\w?\.?catwar.net\/ls/.test(pageurl));
-  const isHunt = (/^https:\/\/\w?\.?catwar.net\/cw3\/jagd/.test(pageurl));
-  const isSett = (/^https:\/\/\w?\.?catwar.net\/settings/.test(pageurl));
-  const isMyCat = (/^https:\/\/\w?\.?catwar.net\/$/.test(pageurl));
-  const isBlog = (/^https:\/\/\w?\.?catwar.net\/blog\d+/.test(pageurl));
-  const isCUMoves = (/^https:\/\/\w?\.?catwar.net\/moves$/.test(pageurl));
-  const isProfile = (/^https:\/\/\w?\.?catwar.net\/cat(\d+|\/)/.test(pageurl));
+  const isCW3 = (/^https:\/\/\w?\.?catwar.(su|net)\/cw3(?!(\/kns|\/jagd))/.test(pageurl));
+  const isSite = !(/^https:\/\/\w?\.?catwar.(su|net)\/cw3(\/kns|\/jagd)?.*/.test(pageurl));
+  const isDM = (/^https:\/\/\w?\.?catwar.(su|net)\/ls/.test(pageurl));
+  const isHunt = (/^https:\/\/\w?\.?catwar.(su|net)\/cw3\/jagd/.test(pageurl));
+  const isSett = (/^https:\/\/\w?\.?catwar.(su|net)\/settings/.test(pageurl));
+  const isMyCat = (/^https:\/\/\w?\.?catwar.(su|net)\/$/.test(pageurl));
+  const isBlog = (/^https:\/\/\w?\.?catwar.(su|net)\/blog\d+/.test(pageurl));
+  const isCUMoves = (/^https:\/\/\w?\.?catwar.(su|net)\/moves$/.test(pageurl));
+  const isProfile = (/^https:\/\/\w?\.?catwar.(su|net)\/cat(\d+|\/)/.test(pageurl));
 
   try {
     if (isCW3) cw3();
@@ -3590,7 +3592,7 @@ ${nickArray}
 
 <div><input class="cwa-chk" id="on_css_bgpic" type="checkbox"${globals.on_css_bgpic?' checked':''}><label for="on_css_bgpic">Картинка на заднем плане Игровой</label></div>
 <block class="bl_in">
-<input type=text class="css-pic-text" id="css_bgpicURL" default="https://catwar.net/cw3/spacoj/0.jpg" value=${globals.css_bgpicURL}>
+<input type=text class="css-pic-text" id="css_bgpicURL" default="/cw3/spacoj/0.jpg" value=${globals.css_bgpicURL}>
 <div><button class="css-pic-url-apply" data-id="css_bgpicURL">Применить</button><button class="css-pic-url-reset" data-id="css_bgpicURL">Сбросить</button></div>
 <div class="css-pic-url-example" data-id="css_bgpicURL" style="background-image:url('${globals.css_bgpicURL}');"></div>
 </block>
@@ -3598,13 +3600,13 @@ ${nickArray}
 -->
 <div><input class="cwa-chk" id="on_css_bghuntpic" type="checkbox"${globals.on_css_bghuntpic?' checked':''}><label for="on_css_bghuntpic">Статичный фон на охоте:</label></div>
 <block class="bl_in">
-<input type=text class="css-pic-text" id="css_huntbgpicURL" default="https://catwar.net/cw3/jagd_img/bg1.png" value=${globals.css_huntbgpicURL}>
+<input type=text class="css-pic-text" id="css_huntbgpicURL" default="/cw3/jagd_img/bg1.png" value=${globals.css_huntbgpicURL}>
 <div><button class="css-pic-url-apply" data-id="css_huntbgpicURL">Применить</button><button class="css-pic-url-reset" data-id="css_huntbgpicURL">Сбросить</button></div>
 <div class="css-pic-url-example" data-id="css_huntbgpicURL" style="background-image:url('${globals.css_huntbgpicURL}');"></div>
 </block>
 <div><input class="cwa-chk" id="on_csslocation" type="checkbox"${globals.on_csslocation?' checked':''}><label for="on_csslocation">Статичный фон на каждой локации:</label></div>
 <block class="bl_in">
-<input type=text class="css-pic-text" id="css_locURL" default="https://catwar.net/cw3/spacoj/170.jpg" value=${globals.css_locURL}>
+<input type=text class="css-pic-text" id="css_locURL" default="/cw3/spacoj/170.jpg" value=${globals.css_locURL}>
 <div><button class="css-pic-url-apply" data-id="css_locURL">Применить</button><button class="css-pic-url-reset" data-id="css_locURL">Сбросить</button></div>
 <div class="css-pic-url-example" data-id="css_locURL" style="background-image:url('${globals.css_locURL}');"></div>
 </block>
