@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.45
+// @version      1.46
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2024, Тис (https://catwar.net/cat406811)
@@ -17,7 +17,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.45';
+  const version = '1.46';
   const domain = location.host.split('.').pop();
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
@@ -1741,25 +1741,6 @@ height: 25px;
           error(`Чистота: ${perc}% (${green}px).${(green<150)?` Вылизываться ${(fleas)?'уже поздно':timeConv(time)}.`:''}`);
         }
       });
-      let healthText = '',
-        hr;
-      $('body').on('click', '#health_table .symbole', function () {
-        let green = $('#health td:first-child').attr('style').replace(/[^\d\.]/g, '');
-        let perc = Math.round(green / 150 * 10000) / 100;
-        healthText = "Здоровье: " + perc + "% (" + green + "px)";
-        hr = setTimeout(function () {
-          clearTimeout(hr);
-          healthText = '';
-        }, 10000);
-      });
-      $("body").on('DOMSubtreeModified', '#error', function () {
-        let html = $(this).html();
-        if (html && healthText !== '') {
-          let tmp = healthText;
-          healthText = '';
-          $('#error').html(html + '<br>' + tmp);
-        }
-      });
     }
     for (let i = 0; i < globals.css_itemHighlightArray.length; i++) {
         globals.css_itemHighlightArray[i] = globals.css_itemHighlightArray[i].trim();
@@ -1835,20 +1816,21 @@ height: 25px;
 [data-id='exchange']>img {content:url(http://d.zaix.ru/aRJm.png);}
 [data-id='flowers']>img {content: url(http://d.zaix.ru/aRIh.png);}
 #dialog>img {content: url(http://d.zaix.ru/fpvK.png);}</style>`,
-      'on_css_coloredparam': `<style id="cwsstyle_on_css_coloredparam">#dream td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
-#dream td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[2]}, ${globals.css_cp_colors[3]});}
-#hunger td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[4]}, ${globals.css_cp_colors[5]});}
-#hunger td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[6]}, ${globals.css_cp_colors[7]});}
-#thirst td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[8]}, ${globals.css_cp_colors[9]});}
-#thirst td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[10]}, ${globals.css_cp_colors[11]});}
-#need td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[12]}, ${globals.css_cp_colors[13]});}
-#need td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[14]}, ${globals.css_cp_colors[15]});}
-#health td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[16]}, ${globals.css_cp_colors[17]});}
-#health td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[18]}, ${globals.css_cp_colors[19]});}
-#clean td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[20]}, ${globals.css_cp_colors[21]});}
-#clean td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[22]}, ${globals.css_cp_colors[23]});}
-.parameter td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[24]}, ${globals.css_cp_colors[25]});}
-.parameter td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[26]}, ${globals.css_cp_colors[27]});}</style>`,
+      'on_css_coloredparam': `<style id="cwsstyle_on_css_coloredparam">
+#dream .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
+#dream .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[2]}, ${globals.css_cp_colors[3]});}
+#hunger .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[4]}, ${globals.css_cp_colors[5]});}
+#hunger .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[6]}, ${globals.css_cp_colors[7]});}
+#thirst .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[8]}, ${globals.css_cp_colors[9]});}
+#thirst .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[10]}, ${globals.css_cp_colors[11]});}
+#need .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[12]}, ${globals.css_cp_colors[13]});}
+#need .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[14]}, ${globals.css_cp_colors[15]});}
+#health .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[16]}, ${globals.css_cp_colors[17]});}
+#health .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[18]}, ${globals.css_cp_colors[19]});}
+#clean .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[20]}, ${globals.css_cp_colors[21]});}
+#clean .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[22]}, ${globals.css_cp_colors[23]});}
+.bar .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[24]}, ${globals.css_cp_colors[25]});}
+.bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[26]}, ${globals.css_cp_colors[27]});}</style>`,
       'on_css_highlightmove': `<style id="cwsstyle_on_css_highlightmove">.move_parent:hover {
 filter: drop-shadow(0px 0px 6px #ffffffcf);
 transition: 0.2s;-webkit-transition: 0.2s;-o-transition: 0.2s;-moz-transition: 0.2s;
@@ -3022,20 +3004,20 @@ ${my_id_div}
   function sett() {
     $('head').append(`<style id="css_cellshade_example">#cages td {box-shadow: inset 0px ${globals.css_cellshadeOpacity}px 0px ${globals.css_cellshadeOpacity}px ${globals.css_cellshadeColor};}</style>`);
     const pattern = globals.css_cp_pattern ? 'url(https://i.imgur.com/V4TX5Cv.png), ' : '';
-    let css_coloredparam_example = `#dream td:first-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
-#dream td:last-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[2]}, ${globals.css_cp_colors[3]});}
-#hunger td:first-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[4]}, ${globals.css_cp_colors[5]});}
-#hunger td:last-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[6]}, ${globals.css_cp_colors[7]});}
-#thirst td:first-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[8]}, ${globals.css_cp_colors[9]});}
-#thirst td:last-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[10]}, ${globals.css_cp_colors[11]});}
-#need td:first-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[12]}, ${globals.css_cp_colors[13]});}
-#need td:last-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[14]}, ${globals.css_cp_colors[15]});}
-#health td:first-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[16]}, ${globals.css_cp_colors[17]});}
-#health td:last-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[18]}, ${globals.css_cp_colors[19]});}
-#clean td:first-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[20]}, ${globals.css_cp_colors[21]});}
-#clean td:last-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[22]}, ${globals.css_cp_colors[23]});}
-.parameter td:first-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[24]}, ${globals.css_cp_colors[25]});}
-.parameter td:last-child {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[26]}, ${globals.css_cp_colors[27]});}`;
+    let css_coloredparam_example = `#dream .bar-fill {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
+#dream .bar {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[2]}, ${globals.css_cp_colors[3]});}
+#hunger .bar-fill {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[4]}, ${globals.css_cp_colors[5]});}
+#hunger .bar {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[6]}, ${globals.css_cp_colors[7]});}
+#thirst .bar-fill {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[8]}, ${globals.css_cp_colors[9]});}
+#thirst .bar {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[10]}, ${globals.css_cp_colors[11]});}
+#need .bar-fill {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[12]}, ${globals.css_cp_colors[13]});}
+#need .bar {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[14]}, ${globals.css_cp_colors[15]});}
+#health .bar-fill {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[16]}, ${globals.css_cp_colors[17]});}
+#health .bar {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[18]}, ${globals.css_cp_colors[19]});}
+#clean .bar-fill {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[20]}, ${globals.css_cp_colors[21]});}
+#clean .bar {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[22]}, ${globals.css_cp_colors[23]});}
+.bar .bar-fill {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[24]}, ${globals.css_cp_colors[25]});}
+.bar {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[26]}, ${globals.css_cp_colors[27]});}`;
     $('head').append(`<style id="css_coloredparam_example">${css_coloredparam_example}</style>`);
     let action_group_dis = (globals.on_actNotif) ? '' : ' disabled',
       tf_group_dis = (globals.on_teamFights) ? '' : ' disabled',
@@ -3215,23 +3197,66 @@ height:200px;
 }
 .tt-page-name {width:50px;}
 .css-pic-text {width:250px; max-width:100%;}
-.parameter, .parameter td {
-    margin: 0;
-    padding: 0;
-    border-spacing: 0;
-}
-.parameter {
-    border: 1px solid black;
-    width: 150px;
-    height: 15px;
+.parameter, .skill {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 2px;
+    justify-content: left;
+    flex-direction: row;
+    height: 17px;
 }
 .symbole {
-    width: 15px;
-    height: 15px;
-    background: url(/cw3/symbole/icons.png) no-repeat;
+    width: 19px;
+    height: 17px;
+    background-image: url(/cw3/symbole/icons.png);
+    background-repeat: no-repeat;
+    background-position-x: 0;
     padding: 0;
     margin: 0;
 }
+.bar {
+    width: 150px;
+    box-shadow: 0 0 0 1px black;
+    height: 15px;
+    font-size: 11px;
+    position: relative;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-left: 2px;
+    margin-right: 2px;
+}
+.bar-fill, .bar-data {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    color: black !important;
+}
+#weight {
+    font-weight: bold;
+    height: 15px;
+}
+#weightExtra {
+    font-size: smaller;
+    opacity: .72;
+    font-weight: initial;
+}
+.level {
+    font-weight: bold;
+    width: 15px;
+}
+#smell .symbole {  background-position-y: 0; }
+#thirst .symbole {  background-position-y: -17px; }
+#dream .symbole {  background-position-y: -34px; }
+#need .symbole {  background-position-y: -51px; }
+#hunger .symbole {  background-position-y: -68px; }
+#health .symbole {  background-position-y: -102px; }
+#dig .symbole {  background-position-y: -119px; }
+#clean .symbole {  background-position-y: -136px; }
+#swim .symbole {  background-position-y: -153px; }
+#might .symbole {  background-position-y: -170px; }
+#weight .symbole {  background-position-y: -255px; }
+
 #parameters_block {
   width: 185px;
 display:inline-block;
@@ -3619,11 +3644,21 @@ ${nickArray}
 <div>В таблице ниже можно настроить каждый цвет по желанию. "Зелёный" означает заполненную, зелёную часть полоски, "Красный" - отсутствующую, красную (в случае с навыками - серую) часть полоски. Под каждой частью есть два цвета - левая и правая часть градиента. Если не хотите, чтобы был градиент - ставьте одинаковые цвета.</div>
 <div style="display:inline-block; margin-top:5px;"><table class="cws-tbl-bordered">
 <tr><th></th><th colspan=2>Зелёный</th><th colspan=2>Красный</th></tr>
-<tr><td align=center>Сон</td>
+<tr><td align=center>Здоровье</td>
+<td align=right><input type="color" data-id="16" value="${globals.css_cp_colors[16]}" class="cp-color-pick"></td>
+<td><input type="color" data-id="17" value="${globals.css_cp_colors[17]}" class="cp-color-pick"></td>
+<td align=right><input type="color" data-id="18" value="${globals.css_cp_colors[18]}" class="cp-color-pick"></td>
+<td><input type="color" data-id="19" value="${globals.css_cp_colors[19]}" class="cp-color-pick"></td></tr>
+<tr><td align=center>Бодрость</td>
 <td align=right><input type="color" data-id="0" value="${globals.css_cp_colors[0]}" class="cp-color-pick"></td>
 <td><input type="color" data-id="1" value="${globals.css_cp_colors[1]}" class="cp-color-pick"></td>
 <td align=right><input type="color" data-id="2" value="${globals.css_cp_colors[2]}" class="cp-color-pick"></td>
 <td><input type="color" data-id="3" value="${globals.css_cp_colors[3]}" class="cp-color-pick"></td></tr>
+<tr><td align=center>Чистота</td>
+<td align=right><input type="color" data-id="20" value="${globals.css_cp_colors[20]}" class="cp-color-pick"></td>
+<td><input type="color" data-id="21" value="${globals.css_cp_colors[21]}" class="cp-color-pick"></td>
+<td align=right><input type="color" data-id="22" value="${globals.css_cp_colors[22]}" class="cp-color-pick"></td>
+<td><input type="color" data-id="23" value="${globals.css_cp_colors[23]}" class="cp-color-pick"></td></tr>
 <tr><td align=center>Голод</td>
 <td align=right><input type="color" data-id="4" value="${globals.css_cp_colors[4]}" class="cp-color-pick"></td>
 <td><input type="color" data-id="5" value="${globals.css_cp_colors[5]}" class="cp-color-pick"></td>
@@ -3639,46 +3674,27 @@ ${nickArray}
 <td><input type="color" data-id="13" value="${globals.css_cp_colors[13]}" class="cp-color-pick"></td>
 <td align=right><input type="color" data-id="14" value="${globals.css_cp_colors[14]}" class="cp-color-pick"></td>
 <td><input type="color" data-id="15" value="${globals.css_cp_colors[15]}" class="cp-color-pick"></td></tr>
-<tr><td align=center>Здоровье</td>
-<td align=right><input type="color" data-id="16" value="${globals.css_cp_colors[16]}" class="cp-color-pick"></td>
-<td><input type="color" data-id="17" value="${globals.css_cp_colors[17]}" class="cp-color-pick"></td>
-<td align=right><input type="color" data-id="18" value="${globals.css_cp_colors[18]}" class="cp-color-pick"></td>
-<td><input type="color" data-id="19" value="${globals.css_cp_colors[19]}" class="cp-color-pick"></td></tr>
-<tr><td align=center>Чистота</td>
-<td align=right><input type="color" data-id="20" value="${globals.css_cp_colors[20]}" class="cp-color-pick"></td>
-<td><input type="color" data-id="21" value="${globals.css_cp_colors[21]}" class="cp-color-pick"></td>
-<td align=right><input type="color" data-id="22" value="${globals.css_cp_colors[22]}" class="cp-color-pick"></td>
-<td><input type="color" data-id="23" value="${globals.css_cp_colors[23]}" class="cp-color-pick"></td></tr>
 <tr><td align=center>Навыки</td>
 <td align=right><input type="color" data-id="24" value="${globals.css_cp_colors[24]}" class="cp-color-pick"></td>
 <td><input type="color" data-id="25" value="${globals.css_cp_colors[25]}" class="cp-color-pick"></td>
 <td align=right><input type="color" data-id="26" value="${globals.css_cp_colors[26]}" class="cp-color-pick"></td>
 <td><input type="color" data-id="27" value="${globals.css_cp_colors[27]}" class="cp-color-pick"></td></tr></table></div>
 
-<div id="parameters_block"><table id="dream_table"><tbody><tr><td><div class="symbole" style="background-position: 0px -30px"></div></td><td><span id="dream">
-<table class="parameter"><tbody><tr><td style="width: 75px;"></td><td style="width: 75px;"></td></tr></tbody></table></span></td></tr></tbody></table>
-<table><tbody><tr><td><div class="symbole" style="background-position: 0px -60px"></div></td><td><span id="hunger">
-<table class="parameter"><tbody><tr><td style="width: 90px;"></td><td style="width: 60px;"></td></tr></tbody></table></span></td></tr></tbody></table>
-<table><tbody><tr><td><div class="symbole" style="background-position: 0px -15px"></div></td><td><span id="thirst">
-<table class="parameter"><tbody><tr><td style="width: 45px;"></td><td style="width: 105px;"></td></tr></tbody></table></span></td></tr></tbody></table>
-<table><tbody><tr><td><div class="symbole" style="background-position: 0px -45px"></div></td><td><span id="need">
-<table class="parameter"><tbody><tr><td style="width: 70px;"></td><td style="red; width: 80px;"></td></tr></tbody></table></span></td></tr></tbody></table>
-<table><tbody><tr><td><div class="symbole" style="background-position: 0px -90px"></div></td><td><span id="health">
-<table class="parameter"><tbody><tr><td style="width: 80px;"></td><td style="red; width: 70px;"></td></tr></tbody></table></span></td></tr></tbody></table>
-<table><tbody><tr><td><div class="symbole" style="background-position: 0px -120px"></div></td><td><span id="clean">
-<table class="parameter"><tbody><tr><td style="width: 75px;"></td><td style="red; width: 75px;"></td></tr></tbody></table></span></td></tr></tbody></table>
-<hr style="display:flex;">
-<table id="smell_table"><tbody><tr><td><div class="symbole" id="smell_icon" style="background-position: 0px 0px"></div></td><td><span id="smell">
-<table cellspacing="0" cellpadding="0"><tbody><tr><td>
-<table class="parameter"><tbody><tr><td style="width:75px;"></td><td style="width:75px"></td></tr></tbody></table></td><td>&nbsp;<b>5</b></td></tr></tbody></table></span></td></tr></tbody></table>
-<table id="dig_table"><tbody><tr><td><div class="symbole" style="background-position: 0px -105px"></div></td><td><span id="dig">
-<table cellspacing="0" cellpadding="0"><tbody><tr><td>
-<table class="parameter"><tbody><tr><td style="width:50px;"></td><td style="width:100px"></td></tr></tbody></table></td><td>&nbsp;<b>5</b></td></tr></tbody></table></span></td></tr></tbody></table>
-<table id="swim_table"><tbody><tr><td><div class="symbole" style="background-position: 0px -135px"></div></td><td><span id="swim">
-<table cellspacing="0" cellpadding="0"><tbody><tr><td>
-<table class="parameter"><tbody><tr><td style="width:90px;"></td><td style="width:60px"></td></tr></tbody></table></td><td>&nbsp;<b>5</b></td></tr></tbody></table></span></td></tr></tbody></table>
-<table id="might_table"><tbody><tr><td><div class="symbole" style="background-position: 0px -150px"></div></td><td><span id="might"><table cellspacing="0" cellpadding="0"><tbody><tr><td>
-<table class="parameter"><tbody><tr><td style="width:70px;"></td><td style="width:80px"></td></tr></tbody></table></td><td>&nbsp;<b>5</b></td></tr></tbody></table></span></td></tr></tbody></table></div>
+<div id="parameters_block">
+<div id="health" class="parameter"><div class="symbole"></div> <div class="bar"><div class="bar-fill" style="width: 46%;"></div> <div class="bar-data">Здоровье: 46%</div></div></div>
+<div id="dream" class="parameter"><div class="symbole"></div> <div class="bar"><div class="bar-fill" style="width: 50%;"></div> <div class="bar-data">Бодрость: 50%</div></div></div>
+<div id="clean" class="parameter"><div class="symbole"></div> <div class="bar"><div class="bar-fill" style="width: 50%;"></div> <div class="bar-data">Чистота: 50%</div></div></div>
+<div id="weight" class="parameter"><div class="symbole"></div> <div class=""><span>0</span> / <span>4</span></div>&nbsp;<span id="weightExtra">(+4)</span></div>
+<hr>
+<div id="hunger" class="parameter"><div class="symbole"></div> <div class="bar"><div class="bar-fill" style="width: 96%;"></div> <div class="bar-data">Голод: 4%</div></div></div>
+<div id="thirst" class="parameter"><div class="symbole"></div> <div class="bar"><div class="bar-fill" style="width: 90%;"></div> <div class="bar-data">Жажда: 10%</div></div></div>
+<div id="need" class="parameter"><div class="symbole"></div> <div class="bar"><div class="bar-fill" style="width: 34%;"></div> <div class="bar-data">Нужда: 66%</div></div></div>
+<hr>
+<div id="smell" class="skill"><div class="symbole"></div> <div class="bar"><div class="bar-fill" style="width: 50%;"></div></div> <div class="level">5</div></div>
+<div id="dig" class="skill"><div class="symbole"></div> <div class="bar"><div class="bar-fill" style="width: 33%;"></div></div> <div class="level">5</div></div>
+<div id="swim" class="skill"><div class="symbole"></div> <div class="bar"><div class="bar-fill" style="width: 60%;"></div></div> <div class="level">5</div></div>
+<div id="might" class="skill"><div class="symbole"></div> <div class="bar"><div class="bar-fill" style="width: 50%;"></div></div> <div class="level">5</div></div>
+</div>
 <table>
 <tr><td>Окошко для экспорта:</td><td><input type="text" value='${JSON.stringify(globals.css_cp_colors)}' id="css_cp_export"></td></tr>
 <tr><td>Окошко для импорта:</td><td><input type="text" id="css_cp_import"></td></tr>
@@ -3829,20 +3845,20 @@ Y: <input type=number id="tt_window_top" class="cws-number" min=0 max=9999 value
         for (let i = 0; i < 28; i++) {
           $('.cp-color-pick[data-id=' + i + ']').val(globals.css_cp_colors[i]);
         }
-        css_coloredparam_example = `#dream td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
-#dream td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[2]}, ${globals.css_cp_colors[3]});}
-#hunger td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[4]}, ${globals.css_cp_colors[5]});}
-#hunger td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[6]}, ${globals.css_cp_colors[7]});}
-#thirst td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[8]}, ${globals.css_cp_colors[9]});}
-#thirst td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[10]}, ${globals.css_cp_colors[11]});}
-#need td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[12]}, ${globals.css_cp_colors[13]});}
-#need td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[14]}, ${globals.css_cp_colors[15]});}
-#health td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[16]}, ${globals.css_cp_colors[17]});}
-#health td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[18]}, ${globals.css_cp_colors[19]});}
-#clean td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[20]}, ${globals.css_cp_colors[21]});}
-#clean td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[22]}, ${globals.css_cp_colors[23]});}
-.parameter td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[24]}, ${globals.css_cp_colors[25]});}
-.parameter td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[26]}, ${globals.css_cp_colors[27]});}`;
+        css_coloredparam_example = `#dream .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
+#dream .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[2]}, ${globals.css_cp_colors[3]});}
+#hunger .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[4]}, ${globals.css_cp_colors[5]});}
+#hunger .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[6]}, ${globals.css_cp_colors[7]});}
+#thirst .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[8]}, ${globals.css_cp_colors[9]});}
+#thirst .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[10]}, ${globals.css_cp_colors[11]});}
+#need .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[12]}, ${globals.css_cp_colors[13]});}
+#need .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[14]}, ${globals.css_cp_colors[15]});}
+#health .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[16]}, ${globals.css_cp_colors[17]});}
+#health .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[18]}, ${globals.css_cp_colors[19]});}
+#clean .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[20]}, ${globals.css_cp_colors[21]});}
+#clean .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[22]}, ${globals.css_cp_colors[23]});}
+.bar .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[24]}, ${globals.css_cp_colors[25]});}
+.bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[26]}, ${globals.css_cp_colors[27]});}`;
         $('#css_coloredparam_example').html(css_coloredparam_example);
       }
       else {
@@ -3855,20 +3871,20 @@ Y: <input type=number id="tt_window_top" class="cws-number" min=0 max=9999 value
       globals.css_cp_colors[id] = val;
       setSettings('css_cp_colors', JSON.stringify(globals.css_cp_colors));
       $('#css_cp_export').val(JSON.stringify(globals.css_cp_colors));
-      css_coloredparam_example = `#dream td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
-#dream td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[2]}, ${globals.css_cp_colors[3]});}
-#hunger td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[4]}, ${globals.css_cp_colors[5]});}
-#hunger td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[6]}, ${globals.css_cp_colors[7]});}
-#thirst td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[8]}, ${globals.css_cp_colors[9]});}
-#thirst td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[10]}, ${globals.css_cp_colors[11]});}
-#need td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[12]}, ${globals.css_cp_colors[13]});}
-#need td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[14]}, ${globals.css_cp_colors[15]});}
-#health td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[16]}, ${globals.css_cp_colors[17]});}
-#health td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[18]}, ${globals.css_cp_colors[19]});}
-#clean td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[20]}, ${globals.css_cp_colors[21]});}
-#clean td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[22]}, ${globals.css_cp_colors[23]});}
-.parameter td:first-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[24]}, ${globals.css_cp_colors[25]});}
-.parameter td:last-child {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[26]}, ${globals.css_cp_colors[27]});}`;
+      css_coloredparam_example = `#dream .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
+#dream .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[2]}, ${globals.css_cp_colors[3]});}
+#hunger .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[4]}, ${globals.css_cp_colors[5]});}
+#hunger .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[6]}, ${globals.css_cp_colors[7]});}
+#thirst .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[8]}, ${globals.css_cp_colors[9]});}
+#thirst .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[10]}, ${globals.css_cp_colors[11]});}
+#need .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[12]}, ${globals.css_cp_colors[13]});}
+#need .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[14]}, ${globals.css_cp_colors[15]});}
+#health .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[16]}, ${globals.css_cp_colors[17]});}
+#health .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[18]}, ${globals.css_cp_colors[19]});}
+#clean .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[20]}, ${globals.css_cp_colors[21]});}
+#clean .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[22]}, ${globals.css_cp_colors[23]});}
+.bar .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[24]}, ${globals.css_cp_colors[25]});}
+.bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[26]}, ${globals.css_cp_colors[27]});}`;
       $('#css_coloredparam_example').html(css_coloredparam_example);
     });
     $body.on('change', '.tt-folders-enabled', function () {
