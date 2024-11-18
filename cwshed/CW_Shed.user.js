@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CW: Shed
-// @version      1.46
+// @version      1.47
 // @description  Сборник небольших дополнений к игре CatWar
 // @author       ReiReiRei
 // @copyright    2020-2024, Тис (https://catwar.net/cat406811)
@@ -17,7 +17,7 @@
 (function (window, document, $) {
   'use strict';
   if (typeof $ === 'undefined') return;
-  const version = '1.46';
+  const version = '1.47';
   const domain = location.host.split('.').pop();
   const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
   const isDesktop = !$('meta[name=viewport]').length;
@@ -930,28 +930,33 @@
       }
       let rang = false;
       let move_ok = false; // можно проигрывать звук
-      let action = which_action($("#block_mess").html());
-
-      $("body").on('DOMSubtreeModified', "#block_mess", function () { //На изменении блока-сообщения о времени действия или переносе твоего зада куда-то
-        if ($('#sek').text().length) { //Если текст #sek существует
-          let time = $('#sek').text();
-          action = which_action($("#block_mess").html());
-          if (time == '7 с' || time == '6 с') move_ok = true; //Действие длится хотя бы 7 секунд -С МОМЕНТА ОТКРЫТИЯ ИГРОВОЙ-
-          if (action.txt !== null) $('title').text(time + " / " + action.txt); //Сменить титульник, если текст на это действие включен
-          let datenow = new Date();
-          if (!action.snd) rang = true; //Реагировать только на нужные навыки ("звук был" = да)
-          if ((time === '2 с' || time === '1 с') && !rang && move_ok) { //Свернутая вкладка обновляется каждые 2 секунды, F // До конца действия 1-2 сек, звука ещё не было/звук включен, звук можно проигрывать
-            playAudio(sounds.action_notif, globals.sound_notifEndAct);
-            rang = true;
-            move_ok = false;
-          }
-        }
-        if ($("#block_mess").html() === "") { //Если пуст, действий нет
-          $('title').text('Игровая / CatWar');
-          rang = false;
-          move_ok = false;
-        }
+      let action = which_action($("#block_mess").text() || "");
+      var actionNotificationObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutationRecord) {
+              if (mutationRecord.type === "characterData") {
+                  let match = $('#block_mess').text().match(/(\d+\sч\s)?(\d+\sмин\s)?(\d+\sс)/u);
+                  if (match) {
+                      let time = match[0].trim();
+                      action = which_action($("#block_mess").text() || "");
+                      if (time == '7 с' || time == '6 с') move_ok = true; //Действие длится хотя бы 7 секунд -С МОМЕНТА ОТКРЫТИЯ ИГРОВОЙ-
+                      if (action.txt !== null) $('title').text(time + " / " + action.txt); //Сменить титульник, если текст на это действие включен
+                      let datenow = new Date();
+                      if (!action.snd) rang = true; //Реагировать только на нужные навыки ("звук был" = да)
+                      if ((time === '3 с' || time === '2 с' || time === '1 с') && !rang && move_ok) { //Свернутая вкладка обновляется каждые 2-3 секунды, F // До конца действия 1-3 сек, звука ещё не было/звук включен, звук можно проигрывать
+                          playAudio(sounds.action_notif, globals.sound_notifEndAct);
+                          rang = true;
+                          move_ok = false;
+                      }
+                  } else {
+                      $('title').text('Игровая / CatWar');
+                      rang = false;
+                      move_ok = false;
+                  }
+              }
+          });
       });
+      const actParentNode = document.getElementById('tr_actions').children[0];
+      actionNotificationObserver.observe(actParentNode, { subtree: true, childList: true, characterData: true, characterDataOldValue: true, });
     }
     if (globals.notif_eaten) { //Уведомления, когда вас поднимают
       $("body").on('DOMSubtreeModified', "#block_mess", function () {
