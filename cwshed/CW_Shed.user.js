@@ -938,7 +938,7 @@
                   if (match) {
                       let time = match[0].trim();
                       action = which_action($("#block_mess").text() || "");
-                      if (time == '7 с' || time == '6 с') move_ok = true; //Действие длится хотя бы 7 секунд -С МОМЕНТА ОТКРЫТИЯ ИГРОВОЙ-
+                      if (time == '8 с' || time == '7 с' || time == '6 с') move_ok = true; //Действие длится хотя бы 8 секунд -С МОМЕНТА ОТКРЫТИЯ ИГРОВОЙ-
                       if (action.txt !== null) $('title').text(time + " / " + action.txt); //Сменить титульник, если текст на это действие включен
                       let datenow = new Date();
                       if (!action.snd) rang = true; //Реагировать только на нужные навыки ("звук был" = да)
