@@ -1,311 +1,1002 @@
 // ==UserScript==
-// @name         CW: Shed
-// @version      1.47
+// @name         CW: Shed Fixed
+// @version      1.47 fixed
 // @description  Сборник небольших дополнений к игре CatWar
-// @author       ReiReiRei
+// @author       тис вонючка
 // @copyright    2020-2024, Тис (https://catwar.net/cat406811)
 // @license      MIT; https://opensource.org/licenses/MIT
-// @updateURL    https://abstract-class-shed.github.io/cwshed/CW_Shed.meta.js
 // @match        *://catwar.net/*
 // @match        *://catwar.su/*
 // @grant        GM_xmlhttpRequest
-// @grant        GM.xmlHttpRequest
-// @require      https://abstract-class-shed.github.io/cwshed/jquery-3.4.1.min.js
+// @grant        GM_log
+// @require      https://github.com/polexka/abstract-class-shed.github.io/raw/refs/heads/main/cwshed/jquery-3.4.1.min.js
 // @require      https://raw.githubusercontent.com/litera/jquery-scrollintoview/master/jquery.scrollintoview.min.js
-// @require      https://abstract-class-shed.github.io/cwshed/jquery-ui.js
+// @require      https://github.com/polexka/abstract-class-shed.github.io/raw/refs/heads/main/cwshed/jquery-ui.js
 // ==/UserScript==
 (function (window, document, $) {
-  'use strict';
-  if (typeof $ === 'undefined') return;
-  const version = '1.47';
-  const domain = location.host.split('.').pop();
-  const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
-  const isDesktop = !$('meta[name=viewport]').length;
-  const defaults = {
-'on_customChat' : false // Кастомный чат
-,'on_chatReverse' : false // "Перевернуть" чат
-,'on_actNotif' : false // Уведомления на действия
-, 'on_newDM' : false // уведомления на новые лс
-, 'on_newChat' : false // уведомления на новое соо в чате (не игровой)
-, 'on_chatMention' : false // уведомления на упоминание имени в чате
-, 'on_blockNotif' : false // уведомления при нажатии/отжатии блока
-, 'on_smellTimerNotif' : true // уведомление при окончании таймера нюха
-, 'on_paramInfo' : true // Информация о параметрах при нажатии
-, 'on_idDM' : true // Включены по умолчанию: ID в личных сообщениях
-, 'on_idCatMouth' : true // ID котов во рту при выборе
-, 'on_idItemMouth' : true // ID предметов (и уникальные, и обычные) + инфо
-, 'on_idChat' : false // ID в чате Игровой
-, 'on_teamFights' : false // Команды в боережиме
-, 'on_huntText' : true // Охота с текстом движения дичи
-, 'on_huntMobileBtns' : true // Стиль, добавляющий кнопки охоте на телефонах
-, 'on_huntMobileFix' : false // Стиль, фиксящий охоту на телефонах
-, 'on_cleanerHistory' : false // лог чистки
-, 'on_charInline' : true // душевые в одну строчку
-, 'on_charHide' : false // скрыть душевых в игровой
-, 'on_catsDown' : false // коты внизу клетки
-, 'on_nickHighlight' : false // подсвечивание (кастомных) имен в чате
-, 'on_moveFightLog' : false // кнопка (и возможность) перемещения лога бр
-, 'on_shortFightLog' : false // сокращение лога бр
-, 'on_reports' : true // отчеты в блогах
-, 'on_oldDialogue' : false // старый вид диалогов (1 колонка в выборе)
-, 'on_smellTimer' : false // таймер нюха
-, 'on_cuMovesNote' : true // Окно заметок для ВТ
-, 'on_settLink' : true // Ссылка на настройки в игровой
-, 'on_extraInfo' : false // Доп. инфо о котиках
-, 'on_deletionWarning' : false // Предупреждение об удалении
-, 'on_historyCleanWarning' : false // Предупреждение о чистке истории TODO
-, 'on_localTimer' : 0 // Отображение системного времени в игровой (0 - выключен, 1 - локальное, 2 - московское)
- //Громкость звуков
-, 'sound_notifEaten' : 0.2 // Звук, когда тебя подняли
-, 'sound_notifBeaten' : 0.2 // Звук, когда тебя атакуют
-, 'sound_notifEndAct' : 0.1 // Звук, когда заканчивается действие
-, 'sound_newDM' : 0.1 // Звук при получении ЛС
-, 'sound_newChat' : 0.1 // Звук при получении соо в Чате
-, 'sound_chatMention' : 0.3 // Звук при упоминании имени игрока в чате (жёлтым)
-, 'sound_blockStart' : 0.1 // Звук при нажатии блока
-, 'sound_blockEnd' : 0.1 // Звук при отжатии блока
-, 'sound_ttRefresh' : 0.2 // Звук при смене карты
-, 'sound_smellTimer' : 0.1 // Звук при окончании таймера нюха
- //Настройки лога чистки
-, 'clean_id' : true // Писать в логе ID поднятого
-, 'clean_underscore' : false // Подчеркивать "поднял/опустил"
-, 'clean_title' : true // Писать в логе должность поднятого
-, 'clean_status' : false // Писать в логе должность поднятого
-, 'clean_location' : true // Писать в логе локацию, где подняли и где отпустили
-, 'clean_action' : false // Писать в логе проверку на действие
- //Массивы
-, 'cm_blocked' : [] //Список игроков, от которых не получать уведомления на упоминание в чате
-, 'nickListArray' : [] //Список ников игрока
- //Настройки команд в БР
-, 'tf_max_height' : 100 // макс высота блока с командами
-, 'fight_log_max_height' : 70 // высота лога бр
-, 'tf_color_g_team1' : "#41cd70" // зелёный цвет команды 1 (основная) в командах бр
-, 'tf_color_g_team2' : "#429dde" // зелёный цвет команды 2 в командах бр
-, 'tf_color_g_team3' : "#f6c739" // зелёный цвет команды 3 в командах бр
-, 'tf_color_g_team4' : "#ee91d7" // зелёный цвет команды 4 в командах бр
-, 'tf_color_r_team1' : "#cd4141" // красный цвет команды 1 (основная) в командах бр
-, 'tf_color_r_team2' : "#cd4141" // красный цвет команды 2 в командах бр
-, 'tf_color_r_team3' : "#cd4141" // красный цвет команды 3 в командах бр
-, 'tf_color_r_team4' : "#cd4141" // красный цвет команды 4 в командах бр
- //Умолчания действий (УВЕДОМЛЕНИЯ)
-, 'notif_eaten' : true // Уведомлять, когда тебя съели
-, 'notif_attack' : false // Уведомлять, когда тебя ввели в БР через Т2/Т3
- //Умолчания действий - ЗВУК
-, 'snd_act_move' : true // Переход
-, 'snd_act_eat' : false // Еда
-, 'snd_act_need' : true // Нужда
-, 'snd_act_drink' : true // Жажда
-, 'snd_act_dig' : true // Копать
-, 'snd_act_sleep' : true // Спать
-, 'snd_act_sniff' : true // Нюхать
-, 'snd_act_digin' : true // Закапывать
-, 'snd_act_clean' : true // Вылизывать(ся)
-, 'snd_act_swim' : true // Поплавать
-, 'snd_act_fill_moss' : true // Наполнить водой мох
-, 'snd_act_dive' : true // Нырять
-, 'snd_act_murr' : true // Помурлыкать
-, 'snd_act_tails' : false // Переплести хвосты
-, 'snd_act_cheek' : false // Потереться щекой о щёку
-, 'snd_act_ground' : false // Повалять по земле
-, 'snd_act_rub' : false // Потереться носом о нос
-, 'snd_act_calm' : false // Выход из бр
-, 'snd_act_watch' : true // Осматривать окрестности
-, 'snd_act_marking' : false // Метить территорию
-, 'snd_act_clawscratch' : false // Точить когти
-, 'snd_act_rug' : false // Чистить ковёр
-, 'snd_act_attention' : false // Привлекать внимание
-, 'snd_act_domestsleep' : false // Сон в лежанке
-, 'snd_act_domesthunt' : false // Грандиозная охота
-, 'snd_act_checkup' : false // Осмотреть кота
-, 'snd_act_loottr' : true // осмотреть дупло
-, 'snd_act_lootcr' : true // осмотреть расщелину
- //Умолчания действий - ТЕКСТ
-, 'txt_act_move' : true // Переход
-, 'txt_act_eat' : true // Еда
-, 'txt_act_need' : true // Нужда
-, 'txt_act_drink' : true // Жажда
-, 'txt_act_dig' : true // Копать
-, 'txt_act_sleep' : true // Спать
-, 'txt_act_sniff' : true // Нюхать
-, 'txt_act_digin' : true // Закапывать
-, 'txt_act_clean' : true // Вылизывать(ся)
-, 'txt_act_swim' : true // Поплавать
-, 'txt_act_fill_moss' : true // Наполнить водой мох
-, 'txt_act_dive' : true // Нырять
-, 'txt_act_murr' : true // Помурлыкать
-, 'txt_act_tails' : true // Переплести хвосты
-, 'txt_act_cheek' : true // Потереться щекой о щёку
-, 'txt_act_ground' : true // Повалять по земле
-, 'txt_act_rub' : true // Потереться носом о нос
-, 'txt_act_calm' : true // Выход из бр
-, 'txt_act_watch' : true // Осматривать окрестности
-, 'txt_act_marking' : true // Метить территорию
-, 'txt_act_clawscratch' : true // Точить когти
-, 'txt_act_rug' : true // Чистить ковёр
-, 'txt_act_attention' : true // Привлекать внимание
-, 'txt_act_domestsleep' : true // Сон в лежанке
-, 'txt_act_domesthunt' : true // Грандиозная охота
-, 'txt_act_checkup' : true // Осмотреть кота
-, 'txt_act_loottr' : true // осмотреть дупло
-, 'txt_act_lootcr' : true // осмотреть расщелину
-, 'my_id' : '' // Айди для отчетов
- //Минное поле
-, 'on_treeTechies' : false // минное поле
-, 'tt_folded' : false // сворачивать минное поле
-, 'tt_dark_theme' : false // темная тема
-, 'tt_show_volume' : true // показывать громкость веток в чате
-, 'tt_clean_confirm' : true // подтверждение очистки
-, 'tt_notif_refresh' : false // звук при обновлении локи
-, 'tt_window_top' : 20 // положение окна относительно верхней части
-, 'tt_window_left' : 20 // положение окна относительно левой части
-, 'tt_pagenamesArray' : ['1А', '2А', '3А', '4А', '5А', '6А', '1Б', '2Б', '3Б', '4Б', '5Б', '6Б', '1В', '2В', '3В', '4В', '5В', '6В', '1Г', '2Г', '3Г', '4Г', '5Г', '6Г'] //Список названий
-, 'tt_pageenabledArray' : [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true] //Список включенных , страниц
-, 'tt_foldersnamesArray' : ['А', 'Б', 'В', 'Г'] //имена вкладок
-, 'tt_foldersenabledArray' : [true, true, true, true] //включение вкладок
- //CSS
-, 'on_css_quicksettings' : false // быстрые настройки
-, 'on_csslocation' : false // замена фона на определенный
-, 'on_css_defects' : false // светить дефекты (но не грязь)
-, 'on_css_defects_dirt' : false // светить дефекты (грязь)
-, 'on_css_removesky' : false // убрать небо
-, 'on_css_oldicons' : false // старые иконки
-, 'on_css_coloredparam' : false // цветные параметры и навыки
-, 'on_css_cellshade' : false // сетка
-, 'on_css_bgpic' : false // картинка на заднем фоне
-, 'on_css_bghuntpic' : false // картинка на заднем фоне охоты
-, 'on_css_highlightmove' : false // подсветка переходов при наведении
-, 'on_css_maxopacity' : false // непрозрачные мертвецы
-, 'on_css_hideTooltip' : false // скрыть табличку (для кача лу)
-, 'on_css_daylight' : false // всегда день
-, 'on_css_alternativeDivideGUI' : false // Альтернативный интерфейс разделения травы
-, 'on_css_itemHighlight' : false // Альтернативный интерфейс разделения травы
+    'use strict';
+    if (typeof $ === 'undefined') return;
+    const version = '1.47';
+    const domain = location.host.split('.').pop();
+    const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
+    const isDesktop = !$('meta[name=viewport]').length;
+    const defaults = {
+        'on_customChat' : false // Кастомный чат
+        ,'on_chatReverse' : false // "Перевернуть" чат
+        ,'on_actNotif' : false // Уведомления на действия
+        , 'on_newDM' : false // уведомления на новые лс
+        , 'on_newChat' : false // уведомления на новое соо в чате (не игровой)
+        , 'on_chatMention' : false // уведомления на упоминание имени в чате
+        , 'on_blockNotif' : false // уведомления при нажатии/отжатии блока
+        , 'on_smellTimerNotif' : true // уведомление при окончании таймера нюха
+        , 'on_paramInfo' : true // Информация о параметрах при нажатии
+        , 'on_idDM' : true // Включены по умолчанию: ID в личных сообщениях
+        , 'on_idCatMouth' : true // ID котов во рту при выборе
+        , 'on_idItemMouth' : true // ID предметов (и уникальные, и обычные) + инфо
+        , 'on_idChat' : false // ID в чате Игровой
+        , 'on_teamFights' : false // Команды в боережиме
+        , 'on_huntText' : true // Охота с текстом движения дичи
+        , 'on_huntMobileBtns' : true // Стиль, добавляющий кнопки охоте на телефонах
+        , 'on_huntMobileFix' : false // Стиль, фиксящий охоту на телефонах
+        , 'on_cleanerHistory' : false // лог чистки
+        , 'on_charInline' : true // душевые в одну строчку
+        , 'on_charHide' : false // скрыть душевых в игровой
+        , 'on_catsDown' : false // коты внизу клетки
+        , 'on_nickHighlight' : false // подсвечивание (кастомных) имен в чате
+        , 'on_moveFightLog' : false // кнопка (и возможность) перемещения лога бр
+        , 'on_shortFightLog' : false // сокращение лога бр
+        , 'on_reports' : true // отчеты в блогах
+        , 'on_oldDialogue' : false // старый вид диалогов (1 колонка в выборе)
+        , 'on_smellTimer' : false // таймер нюха
+        , 'on_cuMovesNote' : true // Окно заметок для ВТ
+        , 'on_settLink' : true // Ссылка на настройки в игровой
+        , 'on_extraInfo' : false // Доп. инфо о котиках
+        , 'on_deletionWarning' : false // Предупреждение об удалении
+        , 'on_historyCleanWarning' : false // Предупреждение о чистке истории TODO
+        , 'on_localTimer' : 0 // Отображение системного времени в игровой (0 - выключен, 1 - локальное, 2 - московское)
+        //Громкость звуков
+        , 'sound_notifEaten' : 0.2 // Звук, когда тебя подняли
+        , 'sound_notifBeaten' : 0.2 // Звук, когда тебя атакуют
+        , 'sound_notifEndAct' : 0.1 // Звук, когда заканчивается действие
+        , 'sound_newDM' : 0.1 // Звук при получении ЛС
+        , 'sound_newChat' : 0.1 // Звук при получении соо в Чате
+        , 'sound_chatMention' : 0.3 // Звук при упоминании имени игрока в чате (жёлтым)
+        , 'sound_blockStart' : 0.1 // Звук при нажатии блока
+        , 'sound_blockEnd' : 0.1 // Звук при отжатии блока
+        , 'sound_ttRefresh' : 0.2 // Звук при смене карты
+        , 'sound_smellTimer' : 0.1 // Звук при окончании таймера нюха
+        //Настройки лога чистки
+        , 'clean_id' : true // Писать в логе ID поднятого
+        , 'clean_underscore' : false // Подчеркивать "поднял/опустил"
+        , 'clean_title' : true // Писать в логе должность поднятого
+        , 'clean_status' : false // Писать в логе должность поднятого
+        , 'clean_location' : true // Писать в логе локацию, где подняли и где отпустили
+        , 'clean_action' : false // Писать в логе проверку на действие
+        //Массивы
+        , 'cm_blocked' : [] //Список игроков, от которых не получать уведомления на упоминание в чате
+        , 'nickListArray' : [] //Список ников игрока
+        //Настройки команд в БР
+        , 'tf_max_height' : 100 // макс высота блока с командами
+        , 'fight_log_max_height' : 70 // высота лога бр
+        , 'tf_color_g_team1' : "#41cd70" // зелёный цвет команды 1 (основная) в командах бр
+        , 'tf_color_g_team2' : "#429dde" // зелёный цвет команды 2 в командах бр
+        , 'tf_color_g_team3' : "#f6c739" // зелёный цвет команды 3 в командах бр
+        , 'tf_color_g_team4' : "#ee91d7" // зелёный цвет команды 4 в командах бр
+        , 'tf_color_r_team1' : "#cd4141" // красный цвет команды 1 (основная) в командах бр
+        , 'tf_color_r_team2' : "#cd4141" // красный цвет команды 2 в командах бр
+        , 'tf_color_r_team3' : "#cd4141" // красный цвет команды 3 в командах бр
+        , 'tf_color_r_team4' : "#cd4141" // красный цвет команды 4 в командах бр
+        //Умолчания действий (УВЕДОМЛЕНИЯ)
+        , 'notif_eaten' : true // Уведомлять, когда тебя съели
+        , 'notif_attack' : false // Уведомлять, когда тебя ввели в БР через Т2/Т3
+        //Умолчания действий - ЗВУК
+        , 'snd_act_move' : true // Переход
+        , 'snd_act_eat' : false // Еда
+        , 'snd_act_need' : true // Нужда
+        , 'snd_act_drink' : true // Жажда
+        , 'snd_act_dig' : true // Копать
+        , 'snd_act_sleep' : true // Спать
+        , 'snd_act_sniff' : true // Нюхать
+        , 'snd_act_digin' : true // Закапывать
+        , 'snd_act_clean' : true // Вылизывать(ся)
+        , 'snd_act_swim' : true // Поплавать
+        , 'snd_act_fill_moss' : true // Наполнить водой мох
+        , 'snd_act_dive' : true // Нырять
+        , 'snd_act_murr' : true // Помурлыкать
+        , 'snd_act_tails' : false // Переплести хвосты
+        , 'snd_act_cheek' : false // Потереться щекой о щёку
+        , 'snd_act_ground' : false // Повалять по земле
+        , 'snd_act_rub' : false // Потереться носом о нос
+        , 'snd_act_calm' : false // Выход из бр
+        , 'snd_act_watch' : true // Осматривать окрестности
+        , 'snd_act_marking' : false // Метить территорию
+        , 'snd_act_clawscratch' : false // Точить когти
+        , 'snd_act_rug' : false // Чистить ковёр
+        , 'snd_act_attention' : false // Привлекать внимание
+        , 'snd_act_domestsleep' : false // Сон в лежанке
+        , 'snd_act_domesthunt' : false // Грандиозная охота
+        , 'snd_act_checkup' : false // Осмотреть кота
+        , 'snd_act_loottr' : true // осмотреть дупло
+        , 'snd_act_lootcr' : true // осмотреть расщелину
+        //Умолчания действий - ТЕКСТ
+        , 'txt_act_move' : true // Переход
+        , 'txt_act_eat' : true // Еда
+        , 'txt_act_need' : true // Нужда
+        , 'txt_act_drink' : true // Жажда
+        , 'txt_act_dig' : true // Копать
+        , 'txt_act_sleep' : true // Спать
+        , 'txt_act_sniff' : true // Нюхать
+        , 'txt_act_digin' : true // Закапывать
+        , 'txt_act_clean' : true // Вылизывать(ся)
+        , 'txt_act_swim' : true // Поплавать
+        , 'txt_act_fill_moss' : true // Наполнить водой мох
+        , 'txt_act_dive' : true // Нырять
+        , 'txt_act_murr' : true // Помурлыкать
+        , 'txt_act_tails' : true // Переплести хвосты
+        , 'txt_act_cheek' : true // Потереться щекой о щёку
+        , 'txt_act_ground' : true // Повалять по земле
+        , 'txt_act_rub' : true // Потереться носом о нос
+        , 'txt_act_calm' : true // Выход из бр
+        , 'txt_act_watch' : true // Осматривать окрестности
+        , 'txt_act_marking' : true // Метить территорию
+        , 'txt_act_clawscratch' : true // Точить когти
+        , 'txt_act_rug' : true // Чистить ковёр
+        , 'txt_act_attention' : true // Привлекать внимание
+        , 'txt_act_domestsleep' : true // Сон в лежанке
+        , 'txt_act_domesthunt' : true // Грандиозная охота
+        , 'txt_act_checkup' : true // Осмотреть кота
+        , 'txt_act_loottr' : true // осмотреть дупло
+        , 'txt_act_lootcr' : true // осмотреть расщелину
+        , 'my_id' : '' // Айди для отчетов
+        //Минное поле
+        , 'on_treeTechies' : false // минное поле
+        , 'tt_folded' : false // сворачивать минное поле
+        , 'tt_dark_theme' : false // темная тема
+        , 'tt_show_volume' : true // показывать громкость веток в чате
+        , 'tt_clean_confirm' : true // подтверждение очистки
+        , 'tt_notif_refresh' : false // звук при обновлении локи
+        , 'tt_window_top' : 20 // положение окна относительно верхней части
+        , 'tt_window_left' : 20 // положение окна относительно левой части
+        , 'tt_pagenamesArray' : ['1А', '2А', '3А', '4А', '5А', '6А', '1Б', '2Б', '3Б', '4Б', '5Б', '6Б', '1В', '2В', '3В', '4В', '5В', '6В', '1Г', '2Г', '3Г', '4Г', '5Г', '6Г'] //Список названий
+        , 'tt_pageenabledArray' : [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true] //Список включенных , страниц
+        , 'tt_foldersnamesArray' : ['А', 'Б', 'В', 'Г'] //имена вкладок
+        , 'tt_foldersenabledArray' : [true, true, true, true] //включение вкладок
+        //CSS
+        , 'on_css_quicksettings' : false // быстрые настройки
+        , 'on_csslocation' : false // замена фона на определенный
+        , 'on_css_defects' : false // светить дефекты (но не грязь)
+        , 'on_css_defects_dirt' : false // светить дефекты (грязь)
+        , 'on_css_removesky' : false // убрать небо
+        , 'on_css_oldicons' : false // старые иконки
+        , 'on_css_coloredparam' : false // цветные параметры и навыки
+        , 'on_css_cellshade' : false // сетка
+        , 'on_css_bgpic' : false // картинка на заднем фоне
+        , 'on_css_bghuntpic' : false // картинка на заднем фоне охоты
+        , 'on_css_highlightmove' : false // подсветка переходов при наведении
+        , 'on_css_maxopacity' : false // непрозрачные мертвецы
+        , 'on_css_hideTooltip' : false // скрыть табличку (для кача лу)
+        , 'on_css_daylight' : false // всегда день
+        , 'on_css_alternativeDivideGUI' : false // Альтернативный интерфейс разделения травы
+        , 'on_css_itemHighlight' : false // Альтернативный интерфейс разделения травы
 
-, 'css_itemHighlightArray' : ['13','15','17','19','20','21','22','23','25','26','78','106','108','109','110','111','112','115','116','119','126','565','566','655','3993','4010','4011'] // предметы, которые нужно подсвечивать в Игровой
-, 'css_itemHighlightColor' : '#eeeeee' // предметы, которые нужно подсвечивать в Игровой
-, 'css_bgpicURL' : 'https://catwar.' + domain + '/cw3/spacoj/0.jpg' // картинка на заднем плане игровой
-, 'css_huntbgpicURL' : 'https://catwar.' + domain + '/cw3/jagd_img/bg1.png' // картинка на заднем плане игровой
-, 'css_locURL' : 'https://catwar.' + domain + '/cw3/spacoj/170.jpg' // на какой фон заменять
-, 'css_cellshadeColor' : '#ffffff' // сетка цвет
-, 'css_cellshadeOpacity' : 0.1 // сетка прозрачность
-, 'css_theme' : 'theme_classic' // тема
-, 'css_cp_pattern' : true // узор в навыках и параметрах
-, 'css_cp_colors' : ['#ac23bf', '#d860ea', '#5e1268', '#6f2f79', '#dfab04', '#f0d142', '#845406', '#886921', '#28afd0', '#2bedee', '#165f75', '#157a7d', '#51d74c', '#89df4b', '#327327', '#54842d', '#d22c28', '#ee8761', '#841921', '#913733', '#a65b32', '#f09662', '#62351c', '#804c2d', '#379034', '#51bb39', '#1b4d1b', '#336b24'] // цвета
-, 'on_css_hideChat' : false // скрыть чат
-  };
-  const globals = {}; //Настройки
-  for (var key in defaults) {
-    let settings = getSettings(key);
-    if (settings === null) {
-      globals[key] = defaults[key];
+        , 'css_itemHighlightArray' : ['13','15','17','19','20','21','22','23','25','26','78','106','108','109','110','111','112','115','116','119','126','565','566','655','3993','4010','4011'] // предметы, которые нужно подсвечивать в Игровой
+        , 'css_itemHighlightColor' : '#eeeeee' // предметы, которые нужно подсвечивать в Игровой
+        , 'css_bgpicURL' : 'https://catwar.' + domain + '/cw3/spacoj/0.jpg' // картинка на заднем плане игровой
+        , 'css_huntbgpicURL' : 'https://catwar.' + domain + '/cw3/jagd_img/bg1.png' // картинка на заднем плане игровой
+        , 'css_locURL' : 'https://catwar.' + domain + '/cw3/spacoj/170.jpg' // на какой фон заменять
+        , 'css_cellshadeColor' : '#ffffff' // сетка цвет
+        , 'css_cellshadeOpacity' : 0.1 // сетка прозрачность
+        , 'css_theme' : 'theme_classic' // тема
+        , 'css_cp_pattern' : true // узор в навыках и параметрах
+        , 'css_cp_colors' : ['#ac23bf', '#d860ea', '#5e1268', '#6f2f79', '#dfab04', '#f0d142', '#845406', '#886921', '#28afd0', '#2bedee', '#165f75', '#157a7d', '#51d74c', '#89df4b', '#327327', '#54842d', '#d22c28', '#ee8761', '#841921', '#913733', '#a65b32', '#f09662', '#62351c', '#804c2d', '#379034', '#51bb39', '#1b4d1b', '#336b24'] // цвета
+        , 'on_css_hideChat' : false // скрыть чат
+    };
+    const globals = {}; //Настройки
+    for (var key in defaults) {
+        let settings = getSettings(key);
+        if (settings === null) {
+            globals[key] = defaults[key];
+        }
+        else {
+            if (Array.isArray(defaults[key])) {
+                try {
+                    globals[key] = JSON.parse(settings);
+                } catch(e) {
+                    console.log('CWShed: Ошибка при загрузке настройки ' + key)
+                    console.log(settings)
+                    console.error(e)
+                }
+            }
+            else {
+                globals[key] = settings;
+            }
+        }
     }
-    else {
-      if (Array.isArray(defaults[key])) {
-          try {
-              globals[key] = JSON.parse(settings);
-          } catch(e) {
-              console.log('CWShed: Ошибка при загрузке настройки ' + key)
-              console.log(settings)
-              console.error(e)
-          }
-      }
-      else {
-        globals[key] = settings;
-      }
+    const sounds = {};
+    sounds.new_message = '/new_message.mp3';
+    sounds.action_notif = 'https://raw.githubusercontent.com/polexka/abstract-class-shed.github.io/refs/heads/main/cwshed/action_end.mp3';
+    sounds.chat_mention = 'https://raw.githubusercontent.com/polexka/abstract-class-shed.github.io/refs/heads/main/cwshed/chat_mention.mp3';
+    sounds.alert_attacked = 'https://d.zaix.ru/ihrv.mp3';
+    sounds.tt_refresh = 'https://raw.githubusercontent.com/polexka/abstract-class-shed.github.io/refs/heads/main/cwshed/refresh.wav'; //изменить потом
+    sounds.block_start = 'https://raw.githubusercontent.com/polexka/abstract-class-shed.github.io/refs/heads/main/cwshed/lock.mp3';
+    sounds.block_end = 'https://raw.githubusercontent.com/polexka/abstract-class-shed.github.io/refs/heads/main/cwshed/unlock.mp3';
+    const audioGlobal = new Audio();
+    audioGlobal.autoplay = false;
+    audioGlobal.loop = false;
+
+
+    const item_names_json = {"1":"Красивая палочка",
+                             "2":"Кролик",
+                             "3":"Рыба",
+                             "4":"Летучая мышь",
+                             "5":"Кротёнок",
+                             "6":"Мышь",
+                             "7":"Голубь",
+                             "8":"Воробей",
+                             "9":"Ящерица",
+                             "10":"Травяная лягушка (хилая)",
+                             "11":"Яйца полосатого полоза",
+                             "12":"Землеройка",
+                             "13":"Кошачья мята",
+                             "14":"Шоколадка",
+                             "15":"Подорожник",
+                             "16":"Трава",
+                             "17":"Крапива",
+                             "18":"Трава",
+                             "19":"Щавель",
+                             "20":"Паутина",
+                             "21":"Целебная водоросль",
+                             "22":"Трава",
+                             "23":"Бурачник",
+                             "24":"Трава",
+                             "25":"Тысячелистник",
+                             "26":"Мать-и-мачеха",
+                             "27":"Белый кролик",
+                             "28":"Семицвет",
+                             "29":"Ваббаджек",
+                             "30":"Кулёк с конфетами",
+                             "31":"Кулёк с конфетами",
+                             "32":"Кулёк с конфетами",
+                             "33":"Кулёк с конфетами",
+                             "34":"Кулёк с конфетами",
+                             "35":"Кроличья беззаботность",
+                             "36":"Морковка",
+                             "37":"Белый голубь",
+                             "38":"Голубое мороженое",
+                             "39":"Хомяк",
+                             "40":"Суслик",
+                             "41":"Клубничное мороженое со сливками",
+                             "42":"Кофейное мороженое",
+                             "43":"Ласка",
+                             "44":"Падаль",
+                             "45":"Белка",
+                             "46":"Сковородка",
+                             "47":"Сыр",
+                             "48":"Леденец",
+                             "49":"Декабрин",
+                             "50":"Орёл",
+                             "51":"Дубовый лист",
+                             "52":"Щит",
+                             "53":"Инь-Янь",
+                             "54":"Кленовый лист",
+                             "55":"Три тополиных листа",
+                             "56":"Лист каштана",
+                             "57":"Тортик",
+                             "58":"Пряник",
+                             "59":"Карамельная трость",
+                             "60":"Кит",
+                             "61":"Трава",
+                             "62":"Плюшевый Усяка",
+                             "63":"Мусор Двуногих",
+                             "64":"Чай",
+                             "65":"Картошка",
+                             "66":"Кролебород",
+                             "67":"Атрамед",
+                             "68":"Клинок Горя",
+                             "69":"Ползучий Ужас",
+                             "70":"Нутелла",
+                             "71":"Сок",
+                             "72":"Шапочка",
+                             "73":"Гончая",
+                             "74":"Тушканчик",
+                             "75":"Мох",
+                             "76":"Наполненный водой мох",
+                             "77":"Использованный мох",
+                             "78":"Наполненный мышиной желчью мох",
+                             "79":"Терроклюв",
+                             "80":"Сладость",
+                             "81":"Барсук",
+                             "82":"Корсак",
+                             "83":"Злобное привидение",
+                             "84":"Добродушное привидение",
+                             "85":"Ядовитый паук",
+                             "86":"Светлячки",
+                             "87":"Тыква",
+                             "88":"Червяк ненависти",
+                             "89":"Чайка",
+                             "90":"Нераздизассемблирующиеся ключи",
+                             "91":"Краб",
+                             "92":"Осколок Лабиринта Вселенных",
+                             "93":"Надежда",
+                             "94":"Звездная пыль",
+                             "95":"Водяной мох",
+                             "96":"Странное зёрнышко",
+                             "97":"Странная соломинка",
+                             "98":"Мышь (обычная)",
+                             "99":"Носок",
+                             "100":"Синяя лошадь",
+                             "101":"Звёздная мышь",
+                             "102":"Дрозд",
+                             "103":"Он",
+                             "104":"Трава",
+                             "105":"Петрушка",
+                             "106":"Клевер",
+                             "107":"Еловая ветвь",
+                             "108":"Лопух",
+                             "109":"Мятлик",
+                             "110":"Мёд",
+                             "111":"Незабудка",
+                             "112":"Одуванчик",
+                             "113":"Трава",
+                             "114":"Петрушка",
+                             "115":"Пижма",
+                             "116":"Рябина",
+                             "117":"Трава",
+                             "118":"Трава",
+                             "119":"Шиповник",
+                             "120":"Стебель какой-то травы",
+                             "121":"Семена какой-то травы",
+                             "122":"Корень какой-то травы",
+                             "123":"Листья какой-то травы",
+                             "124":"Сок какой-то травы",
+                             "125":"Ягоды",
+                             "126":"Ягоды",
+                             "127":"Трава",
+                             "128":"Разжёванная трава",
+                             "129":"Разжёванный стебель",
+                             "130":"Разжёванный корень",
+                             "131":"Разжёванные листья",
+                             "132":"Разжёванные ягоды",
+                             "133":"Уголёк",
+                             "134":"Гриб",
+                             "135":"Прелесть",
+                             "136":"Букет тюльпанов",
+                             "137":"Фиолетовый цветок",
+                             "138":"Белая роза",
+                             "139":"Тюльпаны",
+                             "140":"Голубой цветок",
+                             "141":"Кувшинка",
+                             "142":"Лилия",
+                             "143":"Подсолнух",
+                             "144":"Чарлюсюмюлюсюсюсенючёнок",
+                             "145":"Слеза Системолапа",
+                             "146":"Царица-лягушка",
+                             "147":"Лукарио",
+                             "148":"Сиэль",
+                             "149":"Беззубик",
+                             "150":"Красивый камушек",
+                             "151":"Енот",
+                             "152":"Пчела",
+                             "153":"Щит",
+                             "154":"Палитра",
+                             "155":"Перо",
+                             "156":"Красный пузырь",
+                             "157":"Оранжевый пузырь",
+                             "158":"Жёлтый пузырь",
+                             "159":"Синий пузырь",
+                             "160":"Фиолетовый пузырь",
+                             "161":"Кинжал",
+                             "162":"Яйцо желаний",
+                             "163":"Огонь",
+                             "164":"Пузырёк с чернилами",
+                             "165":"Золотая рыбка",
+                             "166":"Свиток",
+                             "167":"Волшебная лампа",
+                             "168":"Щит",
+                             "169":"Значок",
+                             "170":"Сова",
+                             "171":"Серая белка",
+                             "172":"Горностай",
+                             "173":"Лисёнок",
+                             "174":"Красный кардинал",
+                             "175":"Дятел",
+                             "176":"Голубая сойка",
+                             "177":"Серебряная рыба",
+                             "178":"Зверёк в банке",
+                             "179":"Пузырёк с живой водой",
+                             "180":"Гниль",
+                             "181":"Синяя жемчужина",
+                             "182":"Розовая жемчужина",
+                             "183":"Кролик",
+                             "184":"Кролик",
+                             "185":"Обычная рыба",
+                             "186":"Упитанная рыба",
+                             "187":"Летучая мышь",
+                             "188":"Летучая мышь",
+                             "189":"Кротёнок",
+                             "190":"Кротёнок",
+                             "191":"Мышка",
+                             "192":"Мышка",
+                             "193":"Городской голубь",
+                             "194":"Городской голубь",
+                             "195":"Воробей",
+                             "196":"Воробей",
+                             "197":"Ящерица",
+                             "198":"Ящерица",
+                             "199":"Травяная лягушка (обычная)",
+                             "200":"Травяная лягушка (упитанная)",
+                             "201":"Полосатый полоз (обычный)",
+                             "202":"Полосатый полоз (упитанный)",
+                             "203":"Землеройка",
+                             "204":"Землеройка",
+                             "205":"Белка",
+                             "206":"Белка",
+                             "207":"Орёл",
+                             "208":"Орёл",
+                             "209":"Чайка",
+                             "210":"Чайка",
+                             "211":"Краб",
+                             "212":"Краб",
+                             "213":"Обычная звёздная мышь",
+                             "214":"Упитанная звёздная мышь",
+                             "215":"Серебряная рыба",
+                             "216":"Серебряная рыба",
+                             "217":"Кролик",
+                             "218":"Кролик",
+                             "219":"Кролик",
+                             "220":"Кролик",
+                             "221":"Кролик",
+                             "222":"Кролик",
+                             "223":"Кролик",
+                             "224":"Кролик",
+                             "225":"Кролик",
+                             "226":"Кролик",
+                             "227":"Кролик",
+                             "228":"Кролик",
+                             "229":"Землеройка",
+                             "230":"Землеройка",
+                             "231":"Землеройка",
+                             "232":"Землеройка (хилая)",
+                             "233":"Землеройка (обычная)",
+                             "234":"Землеройка (упитанная)",
+                             "235":"Улитка (хилая)",
+                             "236":"Улитка (обычная)",
+                             "237":"Улитка (упитанная)",
+                             "239":"Мышь",
+                             "240":"Мышь",
+                             "241":"Мышь",
+                             "246":"Дятел (упитанный)",
+                             "247":"Воробей (упитанный)",
+                             "248":"Сойка (упитанная)",
+                             "250":"Рыба",
+                             "251":"Рыба",
+                             "252":"Рыба",
+                             "253":"Древесная лягушка (хилая)",
+                             "254":"Древесная лягушка (обычная)",
+                             "255":"Древесная лягушка (упитанная)",
+                             "256":"Синеголовая лягушка (хилая, ядовитая)",
+                             "257":"Синеголовая лягушка (обычная, ядовитая)",
+                             "258":"Синеголовая лягушка (упитанная, ядовитая)",
+                             "259":"Бурая лягушка (хилая)",
+                             "260":"Бурая лягушка (обычная)",
+                             "261":"Бурая лягушка (упитанная)",
+                             "262":"Солнечная лягушка (хилая)",
+                             "263":"Солнечная лягушка (обычная)",
+                             "264":"Солнечная лягушка (упитанная)",
+                             "265":"Болотная лягушка (хилая)",
+                             "266":"Болотная лягушка (обычная)",
+                             "267":"Болотная лягушка (упитанная)",
+                             "273":"Луговая змея (упитанная)",
+                             "274":"Яйца щитомордника",
+                             "275":"Щитомордник (обычный, ядовитый)",
+                             "276":"Щитомордник (упитанный, ядовитый)",
+                             "278":"Околоводная змея (обычная)",
+                             "279":"Околоводная змея (упитанная)",
+                             "280":"Яйца желтого полоза",
+                             "281":"Жёлтый полоз (обычный)",
+                             "282":"Жёлтый полоз (упитанный)",
+                             "284":"Полосатый аспид (обычный, ядовитый)",
+                             "285":"Полосатый аспид (упитанный, ядовитый)",
+                             "286":"Полевая мышь (хилая)",
+                             "287":"Полевая мышь (обычная)",
+                             "288":"Полевая мышь (упитанная)",
+                             "289":"Дикая мышь (хилая)",
+                             "290":"Дикая мышь (обычная)",
+                             "291":"Дикая мышь (упитанная)",
+                             "292":"Иглистая мышь (хилая)",
+                             "293":"Иглистая мышь (обычная)",
+                             "294":"Иглистая мышь (упитанная)",
+                             "295":"Чёрно-белая мышь (хилая)",
+                             "296":"Чёрно-белая мышь (обычная)",
+                             "297":"Чёрно-белая мышь (упитанная)",
+                             "298":"Лесная мышь (хилая)",
+                             "299":"Лесная мышь (обычная)",
+                             "300":"Лесная мышь (упитанная)",
+                             "301":"рыба",
+                             "304":"рыба",
+                             "309":"Рыба",
+                             "310":"Ракушка",
+                             "311":"Флаг",
+                             "312":"Перо",
+                             "313":"Осетр",
+                             "314":"Кварц",
+                             "315":"Краснопёрка (хилая)",
+                             "316":"Пескарь (хилая)",
+                             "317":"Плотва (хилая)",
+                             "318":"Карась (обычная)",
+                             "319":"Окунь (обычная)",
+                             "320":"Сазан (обычная)",
+                             "321":"Лосось (упитанная)",
+                             "322":"Щука (упитанная)",
+                             "323":"Сом (упитанная)",
+                             "324":"Мышь (упитанная)",
+                             "325":"<big><b>ПАЛОЧКА СОВРЕМЕННОГО ИСКУССТВА</b></big>",
+                             "326":"Осколок саней",
+                             "327":"Яйцо теневого дракона",
+                             "328":"Сладкий фрукт",
+                             "329":"Перо жар-птицы",
+                             "330":"Подсолнух",
+                             "331":"Сияющая белка",
+                             "332":"Сосновая шишка",
+                             "333":"Бутылка",
+                             "334":"Яйцо лилового дракона",
+                             "341":"Букашка в смолистом камне",
+                             "343":"Спокойная бабочка",
+                             "345":"Зубец Ледяной Короны",
+                             "352":"Странный воробей",
+                             "353":"Чайка",
+                             "356":"Чайка",
+                             "359":"Чайка",
+                             "362":"Чайка",
+                             "368":"голубь",
+                             "370":"голубь",
+                             "373":"голубь",
+                             "376":"голубь",
+                             "379":"Лечебные грибы",
+                             "380":"голубь",
+                             "381":"Кроличья лапка",
+                             "382":"Перо совы",
+                             "383":"Перо голубой сойки",
+                             "384":"Янтарь",
+                             "385":"Звёздная пыль",
+                             "386":"Звёздная пыль",
+                             "387":"Звёздная пыль",
+                             "388":"Звёздная пыль",
+                             "389":"Звёздная пыль",
+                             "390":"Звёздная пыль",
+                             "391":"Звёздная пыль",
+                             "392":"Звёздная пыль",
+                             "393":"Ветвь семьдесят второго древа",
+                             "394":"Кисть семидесяти двух красок",
+                             "395":"Роза семидесяти двух шипов",
+                             "396":"Семьдесят второй ворон",
+                             "397":"Компас семидесяти двух стрелок",
+                             "398":"Кинжал семидесяти двух ударов",
+                             "399":"Осколок метеорита",
+                             "400":"Переливающееся яйцо",
+                             "401":"Ландыш",
+                             "402":"Сирень",
+                             "403":"Пасхальный кролик",
+                             "404":"Ветка вербы",
+                             "405":"Мак",
+                             "406":"Мусор",
+                             "407":"Мусор",
+                             "408":"Мусор",
+                             "409":"Острые косточки",
+                             "416":"Стайка бабочек",
+                             "417":"Небольшой камень",
+                             "418":"Камень",
+                             "419":"Большой камень",
+                             "420":"Увесистый камень",
+                             "433":"Привет из прошлого",
+                             "434":"ТАРДИС",
+                             "439":"Паучок на палочке",
+                             "454":"Летучая мышь (упитанная)",
+                             "467":"Бурая ящерица (хилая)",
+                             "468":"Бурая ящерица (обычная)",
+                             "469":"Бурая ящерица (упитанная)",
+                             "475":"Зелёная ящерица (упитанная)",
+                             "484":"Попугай",
+                             "485":"Карта Джокера",
+                             "486":"Кулон",
+                             "493":"Мольберт",
+                             "494":"Морской Набор",
+                             "502":"Совенок",
+                             "503":"Тыква",
+                             "554":"Смерть",
+                             "555":"Маленькое привидение",
+                             "560":"Наложенный костоправ из вьюнка",
+                             "561":"Наложенный костоправ из паутины",
+                             "562":"Костоправ из вьюнка",
+                             "563":"Костоправ из паутины",
+                             "565":"Крепкая ветка",
+                             "566":"Вьюнок",
+                             "586":"Снегирь",
+                             "587":"Заледеневший воробей",
+                             "590":"Домик светлячка",
+                             "592":"Зелье",
+                             "602":"Белка (упитанная)",
+                             "607":"Малиновка (обычная)",
+                             "624":"Подводный дар",
+                             "640":"Черный кролик",
+                             "645":"Мышка",
+                             "646":"Листоклавиатура",
+                             "647":"Пенькокран",
+                             "649":"Красноватый паук",
+                             "650":"Тёмный паук",
+                             "651":"Бурый паук",
+                             "653":"Тёмный паук",
+                             "665":"Белка (упитанная)",
+                             "720":"Репка",
+                             "789":"Бурундук (обычный)",
+                             "814":"Бурундук (упитанный)",
+                             "831":"Гадюка (обычная)",
+                             "864":"Дубонос (обычный)",
+                             "876":"Пухляк (обычный)",
+                             "887":"Крупный ворон",
+                             "888":"Серая ворона",
+                             "889":"Вороньи яйца",
+                             "890":"Слабая крыса",
+                             "891":"Крыса (обычная)",
+                             "907":"Соловей (хилый)",
+                             "908":"Соловей (обычный)",
+                             "914":"Ворон",
+                             "917":"Крупная ящерица",
+                             "918":"Ящерица (обычная)",
+                             "919":"Яйца ящерицы",
+                             "924":"Извивающийся уж (обычный)",
+                             "926":"Ароматный сыр",
+                             "927":"Ароматный сыр",
+                             "932":"Ароматный сыр",
+                             "981":"Орёл (упитанный)",
+                             "985":"Кости",
+                             "986":"Косточки",
+                             "987":"Кости",
+                             "988":"Скорлупа",
+                             "990":"Обычная бабочка",
+                             "991":"Красивая бабочка",
+                             "992":"Редкая бабочка",
+                             "993":"Светлячок",
+                             "1002":"Панцирь",
+                             "1004":"Скелет малька",
+                             "1009":"Мальки",
+                             "1034":"Крошечный камень",
+                             "1035":"Ветка",
+                             "1108":"Шляпа со сладостями",
+                             "1200":"Благодарность дракона",
+                             "1298":"Джейк",
+                             "1302":"Альпийская завирушка (упитанная)",
+                             "1303":"Испанская каменка (хилая)",
+                             "1332":"Число ПИ",
+                             "1333":"Анимированное число Пи",
+                             "1340":"Мороженое на двоих",
+                             "1342":"Шоколадный пончик",
+                             "1346":"Прощение Матильды",
+                             "1354":"Форель (обычная)",
+                             "1355":"Крупная форель (упитанная)",
+                             "1359":"Небольшая нельма (хилая)",
+                             "1360":"Нельма (обычная)",
+                             "1361":"Здоровенная нельма (упитанная)",
+                             "1370":"Ледяной ключ",
+                             "1372":"Шкатулка Снежной Королевы",
+                             "1383":"Ленок (щуплый)",
+                             "1384":"Ленок (обычный)",
+                             "1385":"Ленок (упитанный)",
+                             "1387":"Усатый голец (обычный)",
+                             "1388":"Усатый голец (упитанный)",
+                             "1389":"Крохотный юрок (хилый)",
+                             "1390":"Юрок (обычный)",
+                             "1391":"Толстенький юрок (упитанный)",
+                             "1392":"Худощавый кречет (хилый)",
+                             "1394":"Крупный кречет (упитанный)",
+                             "1395":"Крохотная пуночка (хилая)",
+                             "1396":"Пуночка (обычная)",
+                             "1397":"Толстенькая пуночка (упитанная)",
+                             "1402":"Заяц (обычный)",
+                             "1404":"Щуплый лемминг (хилый)",
+                             "1405":"Лемминг (обычный)",
+                             "1408":"Суслик (обычный)",
+                             "1409":"Толстенький суслик (упитанный)",
+                             "1410":"Садовая пчела (хилая)",
+                             "1411":"Садовая пчела (обычная)",
+                             "1412":"Садовая пчела (упитанная)",
+                             "1426":"Коготь росомахи",
+                             "1427":"Клык росомахи",
+
+                             "1437":"Королевская гонча (обычная)",
+                             "1438":"Кошачья змея (упитанная)",
+                             "1439":"Гюрза (хилая)",
+                             "1440":"Полоз (обычный)",
+                             "1441":"Тигровый уж (упитанный)",
+                             "1442":"Желтобрюхий полоз (хилый)",
+                             "1444":"Щитомордник (упитанный)",
+                             "1671":"Птенцы",
+                             "1672":"Юный соловьиный слёток",
+                             "1693":"Аистёнок",
+                             "1775":"Береговая ласточка (хилая)",
+                             "1776":"Оляпка (хилая)",
+                             "1777":"Камышовка (хилая)",
+                             "1778":"Селезень (обычный)",
+                             "1779":"Кряква (обычная)",
+                             "1780":"Утка (обычная)",
+                             "1781":"Лебедь (упитанный)",
+                             "1782":"Чёрный лебедь (упитанный)",
+                             "1783":"Белая лебёдка (упитанная)",
+                             "1866":"Золотая лира",
+                             "1872":"Талисман команды китят",
+                             "1907":"Шоколадная летучая мышь",
+                             "1908":"Карамельный череп",
+                             "2072":"Гнёздышко с яйцами",
+                             "2073":"Гнёздышко с яйцами",
+                             "2074":"Яйцо",
+                             "2075":"Огромное перо (-2% к урону от падения, пассивно)",
+                             "2076":"Огромное перо (+8% к получению ЛУ, пассивно)",
+                             "2077":"Огромное перо (+20 к ЛУ при съедании)",
+                             "2078":"Переплетение ветвей и перьев",
+                             "2079":"Заплесневелый сыр Мурлычки",
+                             "2078":"Переплетение ветвей и перьев",
+                             "2283":"Частичка Фестиваля Снежинок",
+                             "2351":"Яйца ужа-рыбоеда",
+                             "2352":"Уж-рыбоед (обычный)",
+                             "2353":"Уж-рыбоед (упитанный)",
+                             "2354":"Яйца странной на вид змеи",
+                             "2355":"Странная на вид змея (обычная)",
+                             "2356":"Странная на вид змея (упитанная)",
+                             "2357":"Яйца гадюки",
+                             "2358":"Гадюка (обычная, ядовитая)",
+                             "2359":"Гадюка (упитанная, ядовитая)",
+                             "2364":"Серая полёвка (хилая)",
+                             "2365":"Серая полёвка (обычная)",
+                             "2366":"Серая полёвка (упитанная)",
+                             "2367":"Пойманная дичь",
+                             "2369":"Пойманная дичь",
+                             "2370":"Подброшенная дичь",
+                             "2372":"Подброшенная дичь",
+                             "2420":"Свинка",
+                             "2430":"Послание в бутылке",
+                             "2496":"Лёгкое невероятно хитроумное сооружение из погребных брусков Двуногих, обвязанных изумительным лоскутом голубой ткани в горошек с помойки",
+                             "2497":"Увесистое невероятно хитроумное сооружение из погребных брусков Двуногих, обвязанных изумительным лоскутом голубой ткани в горошек с помойки",
+                             "2498":"Тяжеловатое невероятно хитроумное сооружение из погребных брусков Двуногих, обвязанных изумительным лоскутом голубой ткани в горошек с помойки",
+                             "2499":"Неподъёмное невероятно хитроумное сооружение из погребных брусков Двуногих, обвязанных изумительным лоскутом голубой ткани в горошек с помойки",
+                             "2539":"Веселье в шляпе",
+                             "2611":"Голубка чистоты",
+                             "2612":"Шаловливый ворон",
+                             "2613":"Трава со двора",
+                             "2614":"Трава со двора",
+                             "2825":"Дремлющая сущность",
+                             "2826":"Символ сопротивления",
+                             "2841":"Бутылка Двуноги",
+                             "2844":"Ветка",
+                             "2845":"Листья",
+                             "2846":"Карикатура в бутылке",
+                             "2847":"Пойманная дичь",
+                             "2848":"Подброшенная дичь",
+                             "2849":"Пакет с мусором Двуногих",
+                             "2850":"Лист бумаги Двуногих",
+                             "2851":"Лоскут синей ткани Двуногих",
+                             "2852":"Увесистый брусок Двуногих",
+                             "2853":"Лоскут красной ткани Двуногих",
+                             "2854":"Лоскут жёлтой ткани Двуногих",
+                             "2855":"Лоскут зеленой ткани Двуногих",
+                             "2856":"Лоскут пурпурной ткани Двуногих",
+                             "2857":"Лоскут полосатой ткани Двуногих",
+                             "2858":"Лоскут черной ткани Двуногих",
+                             "2859":"Лоскут радужной ткани Двуногих",
+                             "2869":"Кривая поделка из листьев",
+                             "2877":"Кривая поделка из бумаги Двуногих",
+                             "2880":"Качественная поделка в бутылке",
+                             "2890":"Красный ошейник",
+                             "2891":"Жёлтый ошейник",
+                             "2892":"Зеленый ошейник",
+                             "2893":"Синий ошейник",
+                             "2894":"Пурпурный ошейник",
+                             "2895":"Полосатый ошейник",
+                             "2896":"Черный ошейник",
+                             "2897":"Радужный ошейник",
+                             "2898":"Жёлтый бант",
+                             "2899":"Синий бант",
+                             "2900":"Веревка",
+                             "2941":"Мошка",
+                             "2942":"Необычная поделка",
+                             "2943":"Пойманная дичь",
+                             "2944":"Подброшенная дичь",
+
+                             "3167":"Осётр (обычный)",
+
+                             "3132": "Хэллоуинское настроение",
+                             "3132": "Хэллоуинский мешочек со случайным подарком",
+
+                             "3171":"Щучья икра",
+                             "3172":"Щука (обычная)",
+                             "3174":"Лещёвая икра",
+                             "3175":"Лещ (обычный)",
+                             "3177":"Крупный лещ",
+                             "3180":"Горбуша (обычная)",
+                             "3181":"Крупная горбуша",
+                             "3183":"Пескарь",
+                             "3184":"Окунь",
+                             "3185":"Плотва",
+                             "3190":"Демоническая книга",
+                             "3191":"Использованная демоническая книга",
+
+                             "3195":"Плюшевый Шип",
+                             "3196":"Плюшевый Клык",
+                             "3197":"Плюшевый Ясн",
+                             "3198":"Плюшевый Персик",
+                             "3199":"Плюшевый Хиро",
+
+                             "3304":"Хэллоуинский котёл с украшениями",
+                             "3305":"Загадочное существо (+100 к нюху)",
+                             "3306":"Загадочное существо (+100 к зоркости)",
+                             "3307":"Загадочное существо (восстанавливает здоровье)",
+                             "3308":"Загадочное существо (восстанавливает сонливость)",
+                             "3309":"Загадочное существо (+100 к плавательным умениям)",
+                             "3310":"Загадочное существо (+100 к копанию)",
+                             "3311":"Загадочное существо (+100 к боевым умениям)",
+                             "3312":"Загадочное существо (восстанавливает чистоту)",
+                             "3313":"Загадочное существо (+100 к лазанию)",
+                             "3314":"Загадочное существо (эффект декабрина на ~45 мин.)",
+
+                             "3406":"Новогодняя открытка",
+
+                             "3430": "Лунный камень",
+                             "3956": "Живой рак",
+                             "3957": "Рак (дичь)",
+                             "3958": "Живой рак",
+                             "3959": "Рак (дичь)",
+                             "3960": "Живой рак",
+                             "3961": "Рак (дичь)",
+                             "3962": "Краснобрюхая жерлянка (ядовитая)",
+                             "3963": "Камышовая жаба (ядовитая)",
+                             "3964": "Зелёная жаба (ядовитая)",
+                             "3965": "Карась (обычный)",
+                             "3966": "Сазан (обычный)",
+                             "3967": "Форель (обычная)",
+                             "3968": "Белый амур (обычный)",
+                             "3969": "Чёрный окунь (обычный)",
+                             "3970": "Толстолобик (обычный)",
+                             "3971": "Живой речной угорь",
+                             "3972": "Речной угорь (дичь)",
+                             "3973": "Живой речной угорь",
+                             "3974": "Речной угорь (дичь)",
+
+                             "3987": "Коралловый лосось (обычный)",
+                             "3988": "Жёлто-синий луциан (обычный)",
+
+                             "3991": "Сиган (обычный)",
+                             "3992": "Рыба-бабочка (обычная)",
+                             "3993": "Плотная водоросль",
+                             "3994": "Большая ракушка (+20 ПУ)",
+                             "3995": "Большая ракушка (+30 ПУ)",
+
+                             "3997": "Небольшая ракушка (-8 мин сна в водах)",
+                             "3998": "Небольшая ракушка (+15 ПУ)",
+                             "3999": "Небольшая ракушка (+28 ПУ)",
+                             "4000": "Горстка васильковых ракушек",
+
+                             "4008": "Ком из веток и водорослей",
+                             "4040": "Сердце речных глубин",
+
+                             "5834": "Крольчонок с бантиком",
+                             "6018": "Огненная ящерица сумрачного леса",
+                             "6020": "Душа Фурвентуса [0/3]",
+                             "6021": "Душа Фурвентуса [1/3]",
+                             "6022": "Душа Фурвентуса [2/3]",
+                             "6023": "Душа Фурвентуса [3/3]",
+                             "6024": "Душа Арулиса [0/3]",
+                             "6025": "Душа Арулиса [1/3]",
+                             "6026": "Душа Арулиса [2/3]",
+                             "6027": "Душа Арулиса [3/3]",
+                             "6028": "Душа Аригниса [0/3]",
+                             "6029": "Душа Аригниса [1/3]",
+                             "6030": "Душа Аригниса [2/3]",
+                             "6031": "Душа Аригниса [3/3]",
+                             "6032": "Душа Белифуса [0/3]",
+                             "6033": "Душа Белифуса [1/3]",
+                             "6034": "Душа Белифуса [2/3]",
+                             "6035": "Душа Белифуса [3/3]",
+                             "6036": "Проклятие Верховного Существа [0/3]",
+                             "6037": "Проклятие Верховного Существа [1/3]",
+                             "6038": "Проклятие Верховного Существа [2/3]",
+                             "6039": "Проклятие Верховного Существа [3/3]"
+                            };
+
+    function waitForElement(selector, callback) {
+        const el = document.querySelector(selector);
+        if (el) return callback(el);
+
+        const observer = new MutationObserver(() => {
+            const el = document.querySelector(selector);
+            if (el) {
+                observer.disconnect();
+                callback(el);
+            }
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
     }
-  }
-  const sounds = {};
-  sounds.new_message = '/new_message.mp3';
-  sounds.action_notif = 'https://abstract-class-shed.github.io/cwshed/action_end.mp3';
-  sounds.chat_mention = 'https://abstract-class-shed.github.io/cwshed/chat_mention.mp3';
-  sounds.alert_attacked = 'https://d.zaix.ru/ihrv.mp3';
-  sounds.tt_refresh = 'https://abstract-class-shed.github.io/cwshed/refresh.wav'; //изменить потом
-  sounds.block_start = 'https://abstract-class-shed.github.io/cwshed/lock.mp3';
-  sounds.block_end = 'https://abstract-class-shed.github.io/cwshed/unlock.mp3';
-  const audioGlobal = new Audio();
-  audioGlobal.autoplay = false;
-  audioGlobal.loop = false;
 
-  function playAudio(src, vlm) {
-    let audio = audioGlobal;
-    audio.src = src;
-    audio.volume = vlm;
-    audio.play();
-  }
-
-  function getSettings(key) { //Получение настроек
-    let setting = 'cws_sett_' + key;
-    let val = window.localStorage.getItem(setting);
-    switch (val) {
-      case null:
-        return null;
-      case 'true':
-        return true;
-      case 'false':
-        return false;
-      default:
-        return val;
+    function playAudio(src, vlm) {
+        let audio = audioGlobal;
+        audio.src = src;
+        audio.volume = vlm;
+        audio.play();
     }
-  }
-  var error_tm;
 
-  function error(t) {
-    $("#error").text(t).show();
-    clearTimeout(error_tm);
-    error_tm = setTimeout(function () {
-      hideError()
-    }, 10000);
-  }
+    function getSettings(key) { //Получение настроек
+        let setting = 'cws_sett_' + key;
+        let val = window.localStorage.getItem(setting);
+        switch (val) {
+            case null:
+                return null;
+            case 'true':
+                return true;
+            case 'false':
+                return false;
+            default:
+                return val;
+        }
+    }
+    var error_tm;
 
-  function hideError() {
-    clearTimeout(error_tm);
-    $("#error").fadeOut(500);
-  }
+    function error(t) {
+        $("#error").text(t).show();
+        clearTimeout(error_tm);
+        error_tm = setTimeout(function () {
+            hideError()
+        }, 10000);
+    }
 
-  function setSettings(key, val) {
-    let setting = 'cws_sett_' + key;
-    window.localStorage.setItem(setting, val);
-  }
+    function hideError() {
+        clearTimeout(error_tm);
+        $("#error").fadeOut(500);
+    }
 
-  function removeSettings(key) {
-    let setting = 'cws_sett_' + key;
-    window.localStorage.removeItem(setting);
-  }
+    function setSettings(key, val) {
+        let setting = 'cws_sett_' + key;
+        window.localStorage.setItem(setting, val);
+    }
 
-  function addCSS(css) {
-    $('head').append(`<style>${css}</style>`);
-  }
+    function removeSettings(key) {
+        let setting = 'cws_sett_' + key;
+        window.localStorage.removeItem(setting);
+    }
 
-  function leadZero(num) {
-    return (num < 10) ? '0' + num : num;
-  }
-  const pageurl = window.location.href;
-  const isCW3 = (/^https:\/\/\w?\.?catwar.(su|net)\/cw3(?!(\/kns|\/jagd))/.test(pageurl));
-  const isSite = !(/^https:\/\/\w?\.?catwar.(su|net)\/cw3(\/kns|\/jagd)?.*/.test(pageurl));
-  const isDM = (/^https:\/\/\w?\.?catwar.(su|net)\/ls/.test(pageurl));
-  const isHunt = (/^https:\/\/\w?\.?catwar.(su|net)\/cw3\/jagd/.test(pageurl));
-  const isSett = (/^https:\/\/\w?\.?catwar.(su|net)\/settings/.test(pageurl));
-  const isMyCat = (/^https:\/\/\w?\.?catwar.(su|net)\/$/.test(pageurl));
-  const isBlog = (/^https:\/\/\w?\.?catwar.(su|net)\/blog\d+/.test(pageurl));
-  const isCUMoves = (/^https:\/\/\w?\.?catwar.(su|net)\/moves$/.test(pageurl));
-  const isProfile = (/^https:\/\/\w?\.?catwar.(su|net)\/cat(\d+|\/)/.test(pageurl));
+    function addCSS(css) {
+        $('head').append(`<style>${css}</style>`);
+    }
 
-  try {
-    if (isCW3) cw3();
-    if (isSite) site();
-    if (isDM) dm();
-    if (isSett) sett();
-    if (isHunt) hunt();
-    if (isMyCat) myCat();
-    if (isBlog) blog();
-    if (isProfile) profile();
-    if (isCUMoves) cumoves();
-  }
-  catch (err) {
-    window.console.error('CW:Shed error: ', err);
-  }
+    function leadZero(num) {
+        return (num < 10) ? '0' + num : num;
+    }
+    const pageurl = window.location.href;
+    const isCW3 = (/^https:\/\/\w?\.?catwar.(su|net)\/cw3(?!(\/kns|\/jagd))/.test(pageurl));
+    const isSite = !(/^https:\/\/\w?\.?catwar.(su|net)\/cw3(\/kns|\/jagd)?.*/.test(pageurl));
+    const isDM = (/^https:\/\/\w?\.?catwar.(su|net)\/ls/.test(pageurl));
+    const isHunt = (/^https:\/\/\w?\.?catwar.(su|net)\/cw3\/jagd/.test(pageurl));
+    const isSett = (/^https:\/\/\w?\.?catwar.(su|net)\/settings/.test(pageurl));
+    const isMyCat = (/^https:\/\/\w?\.?catwar.(su|net)\/$/.test(pageurl));
+    const isBlog = (/^https:\/\/\w?\.?catwar.(su|net)\/blog\d+/.test(pageurl));
+    const isCUMoves = (/^https:\/\/\w?\.?catwar.(su|net)\/moves$/.test(pageurl));
+    const isProfile = (/^https:\/\/\w?\.?catwar.(su|net)\/cat(\d+|\/)/.test(pageurl));
 
-  if (!isDesktop) { // фиксы дизайнов
-    addCSS(`.tag_edit, .tag_save {
+    try {
+        if (isCW3) cw3();
+        if (isSite) site();
+        if (isDM) dm();
+        if (isSett) sett();
+        if (isHunt) hunt();
+        if (isMyCat) myCat();
+        if (isBlog) blog();
+        if (isProfile) profile();
+        if (isCUMoves) cumoves();
+    }
+    catch (err) {
+        window.console.error('CW:Shed error: ', err);
+    }
+
+    if (!isDesktop) { // фиксы дизайнов
+        addCSS(`.tag_edit, .tag_save {
                   font-size: 130%;
               }
               .tag_remove, .tag_cancel {
@@ -317,7 +1008,7 @@
               #tag_add {
                 padding: 9px;
               }`);
-  }
+    }
 
     function site() { // Весь сайт, кроме Игровой и её разделов
         if (globals.on_deletionWarning) {
@@ -356,40 +1047,40 @@
             }
         }
     }
-  function cw3() { //Игровая
-    if (globals.on_settLink) {
-      $('.small').first().append(` | <a href="/settings">Настройки модов</a>`); //Настройки мода
-    }
-    if (no(globals.on_links)) {
-        return;
-    }
-    if (globals.on_historyCleanWarning) {
-      $(document).ready(function () {
-          const istElem = $('#ist');
-          addCSS(`#history_clean { display: none; }`);
-          $('<a href="#" id="cws_history_clean">Очистить историю</a>').insertAfter('#history_block > #ist + br');
-          if (istElem.text() == 'История очищена.') {
-              $('#cws_history_clean').css('display', 'none');
-          }
-          $('body').on('click', '#cws_history_clean', function(e) {
-              e.preventDefault();
-              if (confirm('Точно очистить историю?')) {
-                  $('#history_clean')[0].click();
-              }
-          });
-          var observer = new MutationObserver(function(mutationsList, observer) {
-              const ist = $('#ist').text();
-              $('#cws_history_clean').css('display', (istElem.text() == 'История очищена.' ? 'none' : 'inline'));
-          });
-          observer.observe(window.document.getElementById('ist'), {characterData: false, childList: true, attributes: false}); // Я без понятия что это, в observer не шарю, что-то нашлось на stackoverflow работает и хрен с ним
+    function cw3() { //Игровая
+        if (globals.on_settLink) {
+            $('.small').first().append(` | <a href="/settings">Настройки модов</a>`); //Настройки мода
+        }
+        if (no(globals.on_links)) {
+            return;
+        }
+        if (globals.on_historyCleanWarning) {
+            $(document).ready(function () {
+                const istElem = $('#ist');
+                addCSS(`#history_clean { display: none; }`);
+                $('<a href="#" id="cws_history_clean">Очистить историю</a>').insertAfter('#history_block > #ist + br');
+                if (istElem.text() == 'История очищена.') {
+                    $('#cws_history_clean').css('display', 'none');
+                }
+                $('body').on('click', '#cws_history_clean', function(e) {
+                    e.preventDefault();
+                    if (confirm('Точно очистить историю?')) {
+                        $('#history_clean')[0].click();
+                    }
+                });
+                var observer = new MutationObserver(function(mutationsList, observer) {
+                    const ist = $('#ist').text();
+                    $('#cws_history_clean').css('display', (istElem.text() == 'История очищена.' ? 'none' : 'inline'));
+                });
+                observer.observe(window.document.getElementById('ist'), {characterData: false, childList: true, attributes: false}); // Я без понятия что это, в observer не шарю, что-то нашлось на stackoverflow работает и хрен с ним
 
-      });
-    }
-    if (globals.on_css_alternativeDivideGUI) {
-        $("body").on('click', '#reveal_info li:has(.select_teil)', function () {
-            $(this).find('.select_teil')[0].click();
-        });
-        addCSS(`#reveal_info > ul:has(.select_teil) { display: flex; flex-flow: row wrap; margin: 0; padding: 0; }
+            });
+        }
+        if (globals.on_css_alternativeDivideGUI) {
+            $("body").on('click', '#reveal_info li:has(.select_teil)', function () {
+                $(this).find('.select_teil')[0].click();
+            });
+            addCSS(`#reveal_info > ul:has(.select_teil) { display: flex; flex-flow: row wrap; margin: 0; padding: 0; }
 #reveal_info > ul:has(.select_teil) > li { display: block; width: 70px; height: calc(70px + 1.25em); position: relative; background-repeat: no-repeat; margin: 0 0 .2em .5em; cursor: pointer; }
 #reveal_info > ul:has(.select_teil) > li > a { display: block; position: absolute; text-decoration: none; width: 70px; bottom: 0; text-align: center; }
 #reveal_info > ul:has(.select_teil) > li:nth-child(1) { background-image: url(/cw3/things/120.png); }
@@ -398,230 +1089,239 @@
 #reveal_info > ul:has(.select_teil) > li:nth-child(4) { background-image: url(/cw3/things/123.png); }
 #reveal_info > ul:has(.select_teil) > li:nth-child(5) { background-image: url(/cw3/things/124.png); }
 #reveal_info > ul:has(.select_teil) > li:nth-child(6) { background-image: url(/cw3/things/125.png); }`);
-    }
-    if (globals.on_extraInfo) {
-		$.fn.reveal=function(options){var defaults={animation:'fadeAndPop',animationspeed:300,closeonbackgroundclick:true,dismissmodalclass:'close-reveal-modal'};
-		var options=$.extend({},defaults,options);return this.each(function(){var modal=$(this),topMeasure=parseInt(modal.css('top')),topOffset=modal.height()
-		+topMeasure,locked=false,modalBG=$('.reveal-modal-bg');if(modalBG.length==0){modalBG=$('<div class="reveal-modal-bg"/>').insertAfter(modal)} modal.bind(
-		'reveal:open',function(){modalBG.unbind('click.modalEvent');$('.'+options.dismissmodalclass).unbind('click.modalEvent');if(!locked){lockModal();if
-		(options.animation=="fadeAndPop"){modal.css({'top':$(document).scrollTop()-topOffset,'opacity':0,'visibility':'visible'});modalBG.fadeIn(options.
-		animationspeed/2);modal.delay(options.animationspeed/2).animate({"top":$(document).scrollTop()+topMeasure+'px',"opacity":1},options.animationspeed,
-		unlockModal())}if(options.animation=="fade"){modal.css({'opacity':0,'visibility':'visible','top':$(document).scrollTop()+topMeasure});modalBG.fadeIn(
-		options.animationspeed/2);modal.delay(options.animationspeed/2).animate({"opacity":1},options.animationspeed,unlockModal())}if(options.animation=="none")
-		{modal.css({'visibility':'visible','top':$(document).scrollTop()+topMeasure});modalBG.css({"display":"block"});unlockModal()}}modal.unbind('reveal:open')}
-		);modal.bind('reveal:close',function(){if(!locked){lockModal();if(options.animation=="fadeAndPop"){modalBG.delay(options.animationspeed).fadeOut(options.
-		animationspeed);modal.animate({"top":$(document).scrollTop()-topOffset+'px',"opacity":0},options.animationspeed/2,function(){modal.remove();unlockModal()}
-		)}if(options.animation=="fade"){modalBG.delay(options.animationspeed).fadeOut(options.animationspeed);modal.animate({"opacity":0},options.animationspeed,
-		function(){modal.remove();unlockModal()})}if(options.animation=="none"){modal.remove();modalBG.css({'display':'none'})}}modal.unbind('reveal:close')});
-		modal.trigger('reveal:open');var closeButton=$('.'+options.dismissmodalclass).bind('click.modalEvent',function(){modal.trigger('reveal:close')});
-		if(options.closeonbackgroundclick){modalBG.css({"cursor":"pointer"});modalBG.bind('click.modalEvent',function(){modal.trigger('reveal:close')})}$('body')
-		.keyup(function(e){if(e.which===27){modal.trigger('reveal:close')}});function unlockModal(){locked=false}function lockModal(){locked=true}})}
-        const cws_showModal = function(t, e) {
-           $("#app").append('<div id="reveal" class="reveal-modal"><h1>' +
-                            t + '</h1><div id="reveal_info">' +
-                            e + '</div><a id="close-reveal" class="close-reveal-modal">&#215;</a></div>');
-           $("#reveal").reveal();
         }
-        const cws_catsInfo = {};
-        $('body').on('mouseenter', '.cat', function () {
-            const cat = $(this);
-            let el = cat.find('.d');
-            const link = cat.find('a').first();
-            const catName = link.text();
-            const cat_id = /\d+/.exec(link.attr('href'))[0];
-            const defects = {};
-            let el_composited, el_costume, size;
-            el.children().each(function (e) {
-                const bgImg = $(this).css('background-image');
-                size = $(this).css('background-size');
-                const isDefects = bgImg.indexOf('defects') > -1;
-                if (bgImg.indexOf('defects') > -1) {
-                    const data = /cats\/-?\d+\/defects\/([a-z]+).*(\d+)\.png/.exec(bgImg)
-                    if (data) {
-                        const name = data[1], val = +(data[2]);
-                        defects[name] = val;
+        if (globals.on_extraInfo) {
+            $.fn.reveal=function(options){var defaults={animation:'fadeAndPop',animationspeed:300,closeonbackgroundclick:true,dismissmodalclass:'close-reveal-modal'};
+                                          var options=$.extend({},defaults,options);return this.each(function(){var modal=$(this),topMeasure=parseInt(modal.css('top')),topOffset=modal.height()
+                                          +topMeasure,locked=false,modalBG=$('.reveal-modal-bg');if(modalBG.length==0){modalBG=$('<div class="reveal-modal-bg"/>').insertAfter(modal)} modal.bind(
+                                              'reveal:open',function(){modalBG.unbind('click.modalEvent');$('.'+options.dismissmodalclass).unbind('click.modalEvent');if(!locked){lockModal();if
+                                                  (options.animation=="fadeAndPop"){modal.css({'top':$(document).scrollTop()-topOffset,'opacity':0,'visibility':'visible'});modalBG.fadeIn(options.
+		animationspeed/2);modal.delay(options.animationspeed/2).animate({"top":$(document).scrollTop()+topMeasure+'px',"opacity":1},options.animationspeed,
+                                                                        unlockModal())}if(options.animation=="fade"){modal.css({'opacity':0,'visibility':'visible','top':$(document).scrollTop()+topMeasure});modalBG.fadeIn(
+                                                      options.animationspeed/2);modal.delay(options.animationspeed/2).animate({"opacity":1},options.animationspeed,unlockModal())}if(options.animation=="none")
+                                                  {modal.css({'visibility':'visible','top':$(document).scrollTop()+topMeasure});modalBG.css({"display":"block"});unlockModal()}}modal.unbind('reveal:open')}
+                                          );modal.bind('reveal:close',function(){if(!locked){lockModal();if(options.animation=="fadeAndPop"){modalBG.delay(options.animationspeed).fadeOut(options.
+		animationspeed);modal.animate({"top":$(document).scrollTop()-topOffset+'px',"opacity":0},options.animationspeed/2,function(){modal.remove();unlockModal()}
+                                     )}if(options.animation=="fade"){modalBG.delay(options.animationspeed).fadeOut(options.animationspeed);modal.animate({"opacity":0},options.animationspeed,
+		function(){modal.remove();unlockModal()})}if(options.animation=="none"){modal.remove();modalBG.css({'display':'none'})}}modal.unbind('reveal:close')});
+                                                                                                                modal.trigger('reveal:open');var closeButton=$('.'+options.dismissmodalclass).bind('click.modalEvent',function(){modal.trigger('reveal:close')});
+                                                                                                                if(options.closeonbackgroundclick){modalBG.css({"cursor":"pointer"});modalBG.bind('click.modalEvent',function(){modal.trigger('reveal:close')})}$('body')
+                                                                                                                    .keyup(function(e){if(e.which===27){modal.trigger('reveal:close')}});function unlockModal(){locked=false}function lockModal(){locked=true}})}
+            const cws_showModal = function(t, e) {
+                $("#app").append('<div id="reveal" class="reveal-modal"><h1>' +
+                                 t + '</h1><div id="reveal_info">' +
+                                 e + '</div><a id="close-reveal" class="close-reveal-modal">&#215;</a></div>');
+                $("#reveal").reveal();
+            }
+            const cws_catsInfo = {};
+            $('body').on('mouseenter', '.cat', function () {
+                const cat = $(this);
+                let el = cat.find('.d');
+                const link = cat.find('a').first();
+                const catName = link.text();
+                const cat_id = /\d+/.exec(link.attr('href'))[0];
+                const defects = {};
+                let el_composited, el_costume, size;
+                el.children().each(function (e) {
+                    const bgImg = $(this).css('background-image');
+                    size = $(this).css('background-size');
+                    const isDefects = bgImg.indexOf('defects') > -1;
+                    if (bgImg.indexOf('defects') > -1) {
+                        const data = /cats\/-?\d+\/defects\/([a-z]+).*(\d+)\.png/.exec(bgImg)
+                        if (data) {
+                            const name = data[1], val = +(data[2]);
+                            defects[name] = val;
+                        }
+                    } else if (bgImg.indexOf('composited') > -1) {
+                        el_composited = $(this);
+                    } else if (bgImg.indexOf('costume') > -1 && el_costume === undefined) {
+                        el_costume = $(this);
                     }
-                } else if (bgImg.indexOf('composited') > -1) {
-                    el_composited = $(this);
-                } else if (bgImg.indexOf('costume') > -1 && el_costume === undefined) {
-                    el_costume = $(this);
+                });
+                let image = "none";
+                const hasGenerated = (el_composited !== undefined);
+                if (hasGenerated) { // take composited
+                    image = /(composited\/[\da-f]{16})\.png/.exec(el_composited.css('background-image'))[1];
+                } else if (el_costume !== undefined) { // take FIRST COSTUME
+                    image = /(cats\/-?\d+\/costume\/\d+)\.png/.exec(el_costume.css('background-image'))[1];
+                }
+                const pol = !!(/Его запах/.exec(cat.html()));
+                cws_catsInfo[cat_id] = {
+                    "name" : catName,
+                    hasGenerated,
+                    image,
+                    defects,
+                    size,
+                    pol,
+                };
+                if (!cat.find('.cws-show-more').length) {
+                    cat.find('.online').before(`<a class="cws-show-more" href="#" data-id="${cat_id}">Подробнее</a><br>`);
+                } else {
+                    cat.find('.cws-show-more').data('id', cat_id);
                 }
             });
-            let image = "none";
-            const hasGenerated = (el_composited !== undefined);
-            if (hasGenerated) { // take composited
-                image = /(composited\/[\da-f]{16})\.png/.exec(el_composited.css('background-image'))[1];
-            } else if (el_costume !== undefined) { // take FIRST COSTUME
-                image = /(cats\/-?\d+\/costume\/\d+)\.png/.exec(el_costume.css('background-image'))[1];
-            }
-            const pol = !!(/Его запах/.exec(cat.html()));
-            cws_catsInfo[cat_id] = {
-                "name" : catName,
-                hasGenerated,
-                image,
-                defects,
-                size,
-                pol,
-            };
-            if (!cat.find('.cws-show-more').length) {
-                cat.find('.online').before(`<a class="cws-show-more" href="#" data-id="${cat_id}">Подробнее</a><br>`);
-            } else {
-                cat.find('.cws-show-more').data('id', cat_id);
-            }
-        });
-        $('body').on('click', '.cws-show-more', function (e) {
-            e.preventDefault();
-            let text = "Ничего не нашли грустно...";
-            let title = "Информация";
-            const id = $(this).data('id');
-            const info = cws_catsInfo[id];
-            if (info) {
-                title = `<a href='/cat${id}'>${info.name}</a>`;
-                text = `<table>`;
-                text += `<tr>`;
-                text += `<td><a href='/cw3/${info.image}.png'><img src='/cw3/${info.image}.png'></a></td>`;
-                text += `<td>`;
-                text += `<div style='margin-bottom:.35em'>Пол: ${info.pol ? "кот" : "кошка"}<br>`;
-                text += `Рост: ${info.size}${+(info.size.replace('%', '')) == 101 ? " (надута)" : ""}</div>`;
-                if (Object.keys(info.defects).length > 0) {
-                    const defects_list = {
-                        "poisoning" : {
-                            name : "Отравления",
-                            states : { "1" : "недомогание", "2" : "лёгкое отравление", "3" : "сильное отравление", "4" : "смертельное отравление", }
-                        },
-                        "wound" : {
-                            name : "Раны",
-                            states : { "1" : "царапины", "2" : "лёгкие раны", "3" : "глубокие раны", "4" : "смертельные раны", }
-                        },
-                        "drown" : {
-                            name : "Травмы от утопления",
-                            states : { "1" : "cсадины", "2" : "небольшие кровоподтёки", "3" : "сильные травмы", "4" : "смертельные травмы", }
-                        },
-                        "disease" : {
-                            name : "Болезнь",
-                            states : { "1" : "кашель", "2" : "", "3" : "", "4" : "", }
-                        },
-                        "trauma" : {
-                            name : "Переломы",
-                            states : { "1" : "синяки", "2" : "лёгкие ушибы", "3" : "сильные ушибы", "4" : "смертельные ушибы", }
-                        },
-                        "dirt" : {
-                            name : "Грязь",
-                            states : { "1" : "грязные лапы", "2" : "грязевые пятна", "3" : "клещи", "4" : "блохи", }
-                        },
-                    };
-                    const defects = [];
-                    for (const defect in info.defects) {
-                        const value = info.defects[defect];
-                        const name = defects_list[defect] && defects_list[defect].name || defect;
-                        const flavor = defects_list[defect] && defects_list[defect].states[value] || "неизвестно";
-                        defects.push(`<b>${name}</b>: ${value} стадия (${flavor})`);
+            $('body').on('click', '.cws-show-more', function (e) {
+                e.preventDefault();
+                let text = "Ничего не нашли грустно...";
+                let title = "Информация";
+                const id = $(this).data('id');
+                const info = cws_catsInfo[id];
+                if (info) {
+                    title = `<a href='/cat${id}'>${info.name}</a>`;
+                    text = `<table>`;
+                    text += `<tr>`;
+                    text += `<td><a href='/cw3/${info.image}.png'><img src='/cw3/${info.image}.png'></a></td>`;
+                    text += `<td>`;
+                    text += `<div style='margin-bottom:.35em'>Пол: ${info.pol ? "кот" : "кошка"}<br>`;
+                    text += `Рост: ${info.size}${+(info.size.replace('%', '')) == 101 ? " (надута)" : ""}</div>`;
+                    if (Object.keys(info.defects).length > 0) {
+                        const defects_list = {
+                            "poisoning" : {
+                                name : "Отравления",
+                                states : { "1" : "недомогание", "2" : "лёгкое отравление", "3" : "сильное отравление", "4" : "смертельное отравление", }
+                            },
+                            "wound" : {
+                                name : "Раны",
+                                states : { "1" : "царапины", "2" : "лёгкие раны", "3" : "глубокие раны", "4" : "смертельные раны", }
+                            },
+                            "drown" : {
+                                name : "Травмы от утопления",
+                                states : { "1" : "cсадины", "2" : "небольшие кровоподтёки", "3" : "сильные травмы", "4" : "смертельные травмы", }
+                            },
+                            "disease" : {
+                                name : "Болезнь",
+                                states : { "1" : "кашель", "2" : "", "3" : "", "4" : "", }
+                            },
+                            "trauma" : {
+                                name : "Переломы",
+                                states : { "1" : "синяки", "2" : "лёгкие ушибы", "3" : "сильные ушибы", "4" : "смертельные ушибы", }
+                            },
+                            "dirt" : {
+                                name : "Грязь",
+                                states : { "1" : "грязные лапы", "2" : "грязевые пятна", "3" : "клещи", "4" : "блохи", }
+                            },
+                        };
+                        const defects = [];
+                        for (const defect in info.defects) {
+                            const value = info.defects[defect];
+                            const name = defects_list[defect] && defects_list[defect].name || defect;
+                            const flavor = defects_list[defect] && defects_list[defect].states[value] || "неизвестно";
+                            defects.push(`<b>${name}</b>: ${value} стадия (${flavor})`);
+                        }
+                        text += defects.join("<br>");
+                    } else {
+                        text += `Здоров${info.pol ? "" : "а"}`;
                     }
-                    text += defects.join("<br>");
-                } else {
-                    text += `Здоров${info.pol ? "" : "а"}`;
+                    text += `</td>`;
+                    text += `</tr>`;
+                    text += `</table>`;
                 }
-                text += `</td>`;
-                text += `</tr>`;
-                text += `</table>`;
-            }
-            cws_showModal(title, text);
-        });
-    }
-    if (globals.on_smellTimer) {
-      $(document).ready(function () {
-        $('.small').first().append(` | Нюх через: <span id="cws_smell_timer" value=0>0 с</span>`);
-        let smellActive = 0;
-        let smellOtherActive = 0;
-        let firstNote = "";
-        let rang = true;
-
-        function smellTimerTick() {
-          let val = parseInt($('#cws_smell_timer').attr('value'));
-          if (val) {
-            rang = false;
-            val--;
-            $('#cws_smell_timer').attr('value', val);
-            let str = '';
-            let hr = parseInt(val / 3600);
-            let mi = parseInt((val - hr * 3600) / 60);
-            let se = parseInt(val - (hr * 3600 + mi * 60));
-            str += (hr) ? hr + ' ч ' : '';
-            str += (mi || hr) ? mi + ' мин ' : '';
-            str += se + ' с';
-            $('#cws_smell_timer').html(str);
-          }
-          else if (globals.on_smellTimerNotif && !rang) {
-            playAudio(sounds.action_notif, globals.sound_smellTimer);
-            rang = true;
-          }
+                cws_showModal(title, text);
+            });
         }
-        setInterval(smellTimerTick, 1000);
-        //TODO: сделать так, чтоб таймер не запускался вообще, пока есть действие нюха, т.е. value != 0
-        let firstClick = setInterval(function () { //господи я ненавижу варовскую привычку сначала создавать элемент <!----> а потом вставлять в него данные
-          if ($('#smell_icon').length) {
-            firstNote = $('#error').html();
-            $('#smell_icon').click();
-            clearInterval(firstClick);
-          }
-        }, 500);
+        if (globals.on_smellTimer) {
+            $(document).ready(function () {
+                $('.small').first().append(` | Нюх через: <span id="cws_smell_timer" value=0>0 с</span>`);
+                let smellActive = 0;
+                let smellOtherActive = 0;
+                let firstNote = "";
+                let rang = true;
 
-        $("body").on('DOMNodeInserted', '#dein', 'a[data-id=14]', function () {
-          let isActive = $('#dein a[data-id=14]').length;
-          if (!smellOtherActive && isActive) { //Отменено действие нюха
-            $('#cws_smell_timer').attr('value', 0);
-            $('#cws_smell_timer').html('0 с');
-          }
-          smellOtherActive = isActive;
-        });
-        const smell_timer = {"0": 3600,"1": 3600,"2": 3600,"3": 3600,"4": 1800,"5": 1200,"6": 900,"7": 720,"8": 600,"9": 0};
-        $("body").on('DOMNodeRemoved', '#dein', 'a[data-id=14]', function () {
-          let isActive = $('#dein a[data-id=14]').length;
-          if (smellOtherActive && !isActive) { //Нажато действие нюха
-            let smell_lv = $('#smell b').text(),
-                smell_time = smell_timer[smell_lv],
-                str = '',
-                mi = smell_time / 60,
-                se = smell_time - mi * 60;
-            str += (mi) ? mi + ' мин ' : '';
-            str += se + ' с';
-            $('#cws_smell_timer').attr('value', smell_time);
-            $('#cws_smell_timer').html(str);
-          }
-          smellOtherActive = isActive;
-        });
+                function smellTimerTick() {
+                    let val = parseInt($('#cws_smell_timer').attr('value'));
+                    if (val) {
+                        rang = false;
+                        val--;
+                        $('#cws_smell_timer').attr('value', val);
+                        let str = '';
+                        let hr = parseInt(val / 3600);
+                        let mi = parseInt((val - hr * 3600) / 60);
+                        let se = parseInt(val - (hr * 3600 + mi * 60));
+                        str += (hr) ? hr + ' ч ' : '';
+                        str += (mi || hr) ? mi + ' мин ' : '';
+                        str += se + ' с';
+                        $('#cws_smell_timer').html(str);
+                    }
+                    else if (globals.on_smellTimerNotif && !rang) {
+                        playAudio(sounds.action_notif, globals.sound_smellTimer);
+                        rang = true;
+                    }
+                }
+                setInterval(smellTimerTick, 1000);
+                //TODO: сделать так, чтоб таймер не запускался вообще, пока есть действие нюха, т.е. value != 0
+                let firstClick = setInterval(function () { //господи я ненавижу варовскую привычку сначала создавать элемент <!----> а потом вставлять в него данные
+                    if ($('#smell_icon').length) {
+                        firstNote = $('#error').html();
+                        $('#smell_icon').click();
+                        clearInterval(firstClick);
+                    }
+                }, 500);
 
-        $("body").on('DOMSubtreeModified', '#error', function () {
-          let html = $(this).html();
-          if (html && html.indexOf('Следующее обнюхивание') !== -1) {
-            let text = html.replace('Следующее обнюхивание будет доступно через ', '');
-            let smellMin = (text.match(/(\d+) мин/g) == null) ? 0 : parseInt(text.match(/(\d+) мин/g)[0].replace(/\D/g, ''));
-            let smellSec = parseInt(text.match(/(\d+) с/g)[0].replace(/\D/g, ''));
-            let totalSec = smellMin * 60 + smellSec;
-            $('#cws_smell_timer').attr('value', totalSec);
-            $('#cws_smell_timer').html(smellMin + ' мин ' + smellSec + ' с');
-            if (firstNote !== "") { //Чтоб не перекрывало уведомления о ранах, голоде и т.д.
-              $('#error').html(firstNote);
-              firstNote = "";
-            }
-          }
-          else if (html.indexOf('Час уже прошёл') !== -1 && firstNote !== "") {
-            $('#error').html(firstNote);
-            firstNote = "";
-          }
-        });
-      });
-    }
-    if (globals.on_oldDialogue) {
-      $(document).ready(function () {
-        $("body").on('DOMNodeInserted', '#text', function () {
-          $(this).attr('size', 1);
-        });
-      });
-    }
-    if (globals.on_catsDown) { //опускаем котов вниз вместе со стрелами
-      $(document).ready(function () {
-        $('head').append(`<style>
+                $("body").on('DOMNodeInserted', '#dein', 'a[data-id=14]', function () {
+                    let isActive = $('#dein a[data-id=14]').length;
+                    if (!smellOtherActive && isActive) { //Отменено действие нюха
+                        $('#cws_smell_timer').attr('value', 0);
+                        $('#cws_smell_timer').html('0 с');
+                    }
+                    smellOtherActive = isActive;
+                });
+                const smell_timer = {"0": 3600,"1": 3600,"2": 3600,"3": 3600,"4": 1800,"5": 1200,"6": 900,"7": 720,"8": 600,"9": 0};
+                $("body").on('DOMNodeRemoved', '#dein', 'a[data-id=14]', function () {
+                    let isActive = $('#dein a[data-id=14]').length;
+                    if (smellOtherActive && !isActive) { //Нажато действие нюха
+                        let smell_lv = $('#smell b').text(),
+                            smell_time = smell_timer[smell_lv],
+                            str = '',
+                            mi = smell_time / 60,
+                            se = smell_time - mi * 60;
+                        str += (mi) ? mi + ' мин ' : '';
+                        str += se + ' с';
+                        $('#cws_smell_timer').attr('value', smell_time);
+                        $('#cws_smell_timer').html(str);
+                    }
+                    smellOtherActive = isActive;
+                });
+
+                const target = document.querySelector('#error');
+
+                if (target) {
+                    const observer = new MutationObserver(() => {
+                        const html = target.innerHTML;
+                        if (html && html.indexOf('Следующее обнюхивание') !== -1) {
+                            let text = html.replace('Следующее обнюхивание будет доступно через ', '');
+                            let smellMin = (text.match(/(\d+) мин/g) == null) ? 0 : parseInt(text.match(/(\d+) мин/g)[0].replace(/\D/g, ''));
+                            let smellSec = parseInt(text.match(/(\d+) с/g)[0].replace(/\D/g, ''));
+                            let totalSec = smellMin * 60 + smellSec;
+                            $('#cws_smell_timer').attr('value', totalSec);
+                            $('#cws_smell_timer').html(smellMin + ' мин ' + smellSec + ' с');
+                            if (firstNote !== "") {
+                                $('#error').html(firstNote);
+                                firstNote = "";
+                            }
+                        } else if (html.indexOf('Час уже прошёл') !== -1 && firstNote !== "") {
+                            $('#error').html(firstNote);
+                            firstNote = "";
+                        }
+                    });
+
+                    observer.observe(target, {
+                        childList: true,
+                        subtree: true,
+                        characterData: true
+                    });
+                }
+            });
+        }
+        if (globals.on_oldDialogue) {
+            $(document).ready(function () {
+                $("body").on('DOMNodeInserted', '#text', function () {
+                    $(this).attr('size', 1);
+                });
+            });
+        }
+        if (globals.on_catsDown) { //опускаем котов вниз вместе со стрелами
+            $(document).ready(function () {
+                $('head').append(`<style>
 .d, .d div {
   background-position: left bottom;
 }
@@ -638,142 +1338,182 @@
 .mouth {
   max-width: 160px;
 }</style>`);
-        $("body").on('DOMSubtreeModified DOMNodeInserted', '.catWithArrow', function (e) {
-          let $arrow = $(this).find('.arrow');
-          let topval = $arrow.css('top');
-          if (topval) {
-            let int_topval = parseInt(topval.replace('px', ''));
-            if (int_topval > 0) {
-              $arrow.css('bottom', topval);
-              $arrow.css('top', '');
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        mutation.addedNodes.forEach((node) => {
+                            if (node.nodeType === 1) { // ELEMENT_NODE
+                                const $node = $(node);
+                                if ($node.hasClass('catWithArrow') || $node.find('.catWithArrow').length > 0) {
+                                    // либо сам элемент, либо вложенный
+                                    const $cats = $node.hasClass('catWithArrow') ? $node : $node.find('.catWithArrow');
+                                    $cats.each(function () {
+                                        const $arrow = $(this).find('.arrow');
+                                        const topval = $arrow.css('top');
+                                        if (topval) {
+                                            const int_topval = parseInt(topval.replace('px', ''));
+                                            if (int_topval > 0) {
+                                                $arrow.css({
+                                                    bottom: topval,
+                                                    top: ''
+                                                });
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    });
+                });
+
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+            });
+        }
+        if (globals.on_charInline) {
+            addCSS(`.other_cats_list + br {display: none;}.other_cats_list::after {content: " ||";}.other_cats_list {border: none;}`);
+        }
+        if (+globals.on_localTimer) {
+            const getTimeStr = function() {
+                const date = new Date();
+                if (+globals.on_localTimer == 2) {
+                    date.setTime(date.getTime() + (date.getTimezoneOffset() + 180) * 60 * 1000);
+                }
+                return date.toLocaleTimeString() + "&nbsp;&nbsp;&nbsp;"
+                    + ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'][date.getDay()] + ', '
+                    + date.getDate() + ' ' + ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'][date.getMonth()];
             }
-          }
-        });
-      });
-    }
-    if (globals.on_charInline) {
-      addCSS(`.other_cats_list + br {display: none;}.other_cats_list::after {content: " ||";}.other_cats_list {border: none;}`);
-    }
-    if (+globals.on_localTimer) {
-        const getTimeStr = function() {
-            const date = new Date();
-            if (+globals.on_localTimer == 2) {
-                date.setTime(date.getTime() + (date.getTimezoneOffset() + 180) * 60 * 1000);
+            if (isDesktop) {
+                addCSS(`#cws_localTimer {color: #d7d7d7;background-color: #00000096;padding: 0 1em;font-size: 12px;line-height:2.2}#tr_tos > td {display: flex;justify-content: space-between;}`);
+            } else {
+                addCSS(`#cws_localTimer {color: #d7d7d7;background-color: #00000096;padding: 0 1em 0.3em 1em;font-size: 12px}`);
             }
-            return date.toLocaleTimeString() + "&nbsp;&nbsp;&nbsp;"
-            + ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'][date.getDay()] + ', '
-            + date.getDate() + ' ' + ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'][date.getMonth()];
+            $('#tr_tos > td').append('<div id="cws_localTimer">' + getTimeStr() + '</div>');
+            setInterval(function () {
+                $('#cws_localTimer').html(getTimeStr());
+            }, 1000);
         }
-        if (isDesktop) {
-            addCSS(`#cws_localTimer {color: #d7d7d7;background-color: #00000096;padding: 0 1em;font-size: 12px;line-height:2.2}#tr_tos > td {display: flex;justify-content: space-between;}`);
-        } else {
-            addCSS(`#cws_localTimer {color: #d7d7d7;background-color: #00000096;padding: 0 1em 0.3em 1em;font-size: 12px}`);
+        if (globals.on_charHide) {
+            addCSS(`.other_cats_list {display: none;}.other_cats_list + br {display: none;}`);
         }
-        $('#tr_tos > td').append('<div id="cws_localTimer">' + getTimeStr() + '</div>');
-        setInterval(function () {
-            $('#cws_localTimer').html(getTimeStr());
-        }, 1000);
-    }
-    if (globals.on_charHide) {
-      addCSS(`.other_cats_list {display: none;}.other_cats_list + br {display: none;}`);
-    }
-    if (globals.on_newDM) {
-      let newDM = 0;
-      $('body').on('DOMSubtreeModified', '#newls', function () { // deprecated, todo: remove/update
-        let newDMtmp = $(this).html();
-        if (newDMtmp !== undefined) {
-          newDMtmp = (newDMtmp === '') ? 0 : parseInt(newDMtmp.replace(/\D/gi, ''));
-          if (newDMtmp > newDM) {
-            playAudio(sounds.new_message, globals.sound_newDM);
-          }
-          newDM = newDMtmp;
+        if (globals.on_newDM) {
+            let newDM = 0;
+            const target = document.querySelector('#newls');
+
+            if (target) {
+                const observer = new MutationObserver(() => {
+                    let newDMtmp = $(target).html();
+                    if (newDMtmp !== undefined) {
+                        newDMtmp = (newDMtmp === '') ? 0 : parseInt(newDMtmp.replace(/\D/gi, ''));
+                        if (newDMtmp > newDM) {
+                            playAudio(sounds.new_message, globals.sound_newDM);
+                        }
+                        newDM = newDMtmp;
+                    }
+                });
+
+                observer.observe(target, {
+                    childList: true,
+                    subtree: true,
+                    characterData: true
+                });
+            }
         }
-      });
-    }
-    if (globals.on_newChat) {
-      let newChat = 0;
-      $('body').on('DOMSubtreeModified', '#newchat', function () { // deprecated, todo: remove/update
-        let newChattmp = $(this).html();
-        if (newChattmp !== undefined) {
-          newChattmp = (newChattmp === '') ? 0 : parseInt(newChattmp.replace(/\D/gi, ''));
-          if (newChattmp > newChat) {
-            playAudio(sounds.new_message, globals.sound_newChat);
-          }
-          newChat = newChattmp;
+        if (globals.on_newChat) {
+            let newChat = 0;
+            const target = document.querySelector('#newchat');
+
+            if (target) {
+                const observer = new MutationObserver(() => {
+                    let newChattmp = $(target).html();
+                    if (newChattmp !== undefined) {
+                        newChattmp = (newChattmp === '') ? 0 : parseInt(newChattmp.replace(/\D/gi, ''));
+                        if (newChattmp > newChat) {
+                            playAudio(sounds.new_message, globals.sound_newChat);
+                        }
+                        newChat = newChattmp;
+                    }
+                });
+
+                observer.observe(target, {
+                    childList: true,
+                    characterData: true,
+                    subtree: true
+                });
+            }
         }
-      });
-    }
-    if (globals.on_customChat) {
-      let messages = 1;
-      if (isDesktop) {
-        addCSS('#cws_chat_msg {width: 1000px;} .chat_text {width: 935px;}');
-      }
-      else {
-        addCSS('#cws_chat_msg {width: 100% !important;} .chat_text {line-break: anywhere;}');
-      }
-      addCSS(`#chat_msg {display: none;}#cws_chat_msg {overflow: auto;height: 275px;}.cws_chat_wrapper{display: -webkit-flex;padding: 0 .25em;display: flex;}
+        if (globals.on_customChat) {
+            let messages = 1;
+            if (isDesktop) {
+                addCSS('#cws_chat_msg {width: 1000px;} .chat_text {width: 935px;}');
+            }
+            else {
+                addCSS('#cws_chat_msg {width: 100% !important;} .chat_text {line-break: anywhere;}');
+            }
+            addCSS(`#chat_msg {display: none;}#cws_chat_msg {overflow: auto;height: 275px;}.cws_chat_wrapper{display: -webkit-flex;padding: 0 .25em;display: flex;}
       .cws_chat_msg {-webkit-flex: auto;flex: auto;-webkit-flex-direction: row;flex-direction: row;}.cws_chat_report {width: 42px;}.cws_chat_report {-webkit-touch-callout: none;
       -webkit-user-select: none;-khtml-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;}`);
-      // варомод (почему вы просите добавить совместимость меня, когда совместимость проще добавить тому кто сделал эту компактную игровую?)
-      const hvo_settings = JSON.parse(window.localStorage.getItem('cwmod_settings') || '{}');
-      if (hvo_settings.cw3_compact) {
-        addCSS(`#cws_chat_msg { width: auto !important; height: 350px; padding: 2px; }`);
-      }
-      if (globals.on_chatReverse) {
-        $('<div id="cws_chat_msg"><hr></div>').insertBefore('#chat_form');
-      }
-      else {
-        $('<div id="cws_chat_msg"><hr></div>').insertAfter('#chat_form');
-      }
-      let scroll = false; // была прокрутка до предыдущих сообщений
-      const chatTarget = document.getElementById('chat_msg');
-      const chatObserver = new MutationObserver(function (mutationsList, observer) {
-        let name_heard = false;
-        let last_mutation = mutationsList[mutationsList.length - 1].target;
-        let msg_new = last_mutation.children.length;
-        let msg_blocks = last_mutation.children;
-        for (let i = messages + 1; i <= msg_new; i++) { // Добавление во временный чат новых сообщений
-          let block = msg_blocks[msg_new - i];
-          if (block.nodeName == "SPAN") {
-            let msg = block.getElementsByClassName('chat_text')[0],
-              classList = msg.classList.value,
-              text = msg.querySelectorAll('span')[0].innerHTML,
-              nick = msg.getElementsByClassName('nick')[0].outerHTML,
-              bot_resp = msg.querySelectorAll('b + span')[0],
-              bot_msg = (bot_resp === undefined) ? '<!---->' : bot_resp.outerHTML,
-              report = block.querySelectorAll('td[style="width: 42px;"]')[0],
-              cat_id = report.querySelectorAll('a[href^="/cat"]')[0].getAttribute('href'),
-              silent_bot = msg.querySelectorAll('.nick[style*="italic"]').length,
-              cat_title = '';
-            cat_id = parseInt(cat_id.replace(/\D/g, ''));
-            let cat_id_format = (globals.on_idChat && !silent_bot) ? ` <i>[${cat_id}]</i>` : '';
-            let has_nickname = false;
-            if (globals.on_nickHighlight) { // Покрасить ники в myname
-              $.each(globals.nickListArray, function (index, key) {
-                let expr = new RegExp('^(' + key + ')[^А-ЯЁёA-Za-z0-9]|[^А-ЯЁёA-Za-z0-9>](' + key + ')[^А-ЯЁёA-Za-z0-9<]|[^А-ЯЁёA-Za-z0-9](' + key + ')$|^(' + key + ')$', "ig");
-                if (text.match(expr)) { //есть имя и оно ещё не внутри тега
-                  let matchAll = text.matchAll(expr);
-                  matchAll = Array.from(matchAll); // теперь массив
-                  $.each(matchAll, function (index, value) {
-                    let replacer = value[1] || value[2] || value[3] || value[4]; //То, что было найдено (4 местоположения key, 4 варианта регулярки)
-                    text = text.replace(value[0], value[0].replace(replacer, '<span class="myname">&shy;' + replacer + '&shy;</span>'));
-                    has_nickname = true;
-                  });
-                }
-              });
+            // варомод (почему вы просите добавить совместимость меня, когда совместимость проще добавить тому кто сделал эту компактную игровую?)
+            const hvo_settings = JSON.parse(window.localStorage.getItem('cwmod_settings') || '{}');
+            if (hvo_settings.cw3_compact) {
+                addCSS(`#cws_chat_msg { width: auto !important; height: 350px; padding: 2px; }`);
             }
-            if (globals.on_chatMention && !name_heard) { // Если в текущем сообщении есть myname и !name_heard - проиграть звук и выставить name_heard = true
-              let has_myname = msg.getElementsByClassName('myname').length;
-              if (has_myname || has_nickname) {
-                let is_bot = msg.getElementsByTagName('i').length;
-                if (jQuery.inArray(cat_id, globals.cm_blocked) == -1 && !is_bot) { //ЕСЛИ НЕ В МАССИВЕ ИГНОРИРУЕМЫХ и не бот
-                  playAudio(sounds.chat_mention, globals.sound_chatMention);
-                  name_heard = true; // чтоб не спамило звуки, когда загружаешь страницу а там чел твое имя 228 раз написал
-                }
-              }
+            if (globals.on_chatReverse) {
+                $('<div id="cws_chat_msg"><hr></div>').insertBefore('#chat_form');
             }
-            // Если надо свапнуть (и ID включены, иначе будет жирный пробел перед должностью)
-            let result = `<div class="cws_chat_wrapper">
+            else {
+                $('<div id="cws_chat_msg"><hr></div>').insertAfter('#chat_form');
+            }
+            let scroll = false; // была прокрутка до предыдущих сообщений
+            const chatTarget = document.getElementById('chat_msg');
+            const chatObserver = new MutationObserver(function (mutationsList, observer) {
+                let name_heard = false;
+                let last_mutation = mutationsList[mutationsList.length - 1].target;
+                let msg_new = last_mutation.children.length;
+                let msg_blocks = last_mutation.children;
+                for (let i = messages + 1; i <= msg_new; i++) { // Добавление во временный чат новых сообщений
+                    let block = msg_blocks[msg_new - i];
+                    if (block.nodeName == "SPAN") {
+                        let msg = block.getElementsByClassName('chat_text')[0],
+                            classList = msg.classList.value,
+                            text = msg.querySelectorAll('span')[0].innerHTML,
+                            nick = msg.getElementsByClassName('nick')[0].outerHTML,
+                            bot_resp = msg.querySelectorAll('b + span')[0],
+                            bot_msg = (bot_resp === undefined) ? '<!---->' : bot_resp.outerHTML,
+                            report = block.querySelectorAll('td[style="width: 42px;"]')[0],
+                            cat_id = report.querySelectorAll('a[href^="/cat"]')[0].getAttribute('href'),
+                            silent_bot = msg.querySelectorAll('.nick[style*="italic"]').length,
+                            cat_title = '';
+                        cat_id = parseInt(cat_id.replace(/\D/g, ''));
+                        let cat_id_format = (globals.on_idChat && !silent_bot) ? ` <i>[${cat_id}]</i>` : '';
+                        let has_nickname = false;
+                        if (globals.on_nickHighlight) { // Покрасить ники в myname
+                            $.each(globals.nickListArray, function (index, key) {
+                                let expr = new RegExp('^(' + key + ')[^А-ЯЁёA-Za-z0-9]|[^А-ЯЁёA-Za-z0-9>](' + key + ')[^А-ЯЁёA-Za-z0-9<]|[^А-ЯЁёA-Za-z0-9](' + key + ')$|^(' + key + ')$', "ig");
+                                if (text.match(expr)) { //есть имя и оно ещё не внутри тега
+                                    let matchAll = text.matchAll(expr);
+                                    matchAll = Array.from(matchAll); // теперь массив
+                                    $.each(matchAll, function (index, value) {
+                                        let replacer = value[1] || value[2] || value[3] || value[4]; //То, что было найдено (4 местоположения key, 4 варианта регулярки)
+                                        text = text.replace(value[0], value[0].replace(replacer, '<span class="myname">&shy;' + replacer + '&shy;</span>'));
+                                        has_nickname = true;
+                                    });
+                                }
+                            });
+                        }
+                        if (globals.on_chatMention && !name_heard) { // Если в текущем сообщении есть myname и !name_heard - проиграть звук и выставить name_heard = true
+                            let has_myname = msg.getElementsByClassName('myname').length;
+                            if (has_myname || has_nickname) {
+                                let is_bot = msg.getElementsByTagName('i').length;
+                                if (jQuery.inArray(cat_id, globals.cm_blocked) == -1 && !is_bot) { //ЕСЛИ НЕ В МАССИВЕ ИГНОРИРУЕМЫХ и не бот
+                                    playAudio(sounds.chat_mention, globals.sound_chatMention);
+                                    name_heard = true; // чтоб не спамило звуки, когда загружаешь страницу а там чел твое имя 228 раз написал
+                                }
+                            }
+                        }
+                        // Если надо свапнуть (и ID включены, иначе будет жирный пробел перед должностью)
+                        let result = `<div class="cws_chat_wrapper">
   <div class="cws_chat_msg">
     <span class="${classList}">${text} - ${nick}${cat_title} ${cat_id_format}
       ${bot_msg}
@@ -781,211 +1521,231 @@
   </div>
   <div class="cws_chat_report">${report.outerHTML}</div>
 </div>`;
+                        if (globals.on_chatReverse) {
+                            $('#cws_chat_msg').append(result);
+                            $('#cws_chat_msg').append('<hr>');
+                            if (!scroll) {
+                                $('#cws_chat_msg')[0].scrollTop = $('#cws_chat_msg')[0].scrollHeight;
+                            }
+                        }
+                        else {
+                            $('#cws_chat_msg').prepend(result);
+                            $('#cws_chat_msg').prepend('<hr>');
+                        }
+                    }
+                }
+                messages = mutationsList[mutationsList.length - 1].target.children.length;
+            });
+            chatObserver.observe(chatTarget, {
+                childList: true
+            });
+
+            $('#cws_chat_msg').on('click', '.nick', function () { // потому что клик на ник с ориг чата работает только на ориг чат фу бе
+                let $text = $('#text');
+                $text.val($text.val() + $(this).text() + ', ');
+                $text.focus();
+            });
+            $('#cws_chat_msg').on('click', '.msg_report', function () { // потому что клик на жалобу с ориг чата тоже работает только на ориг чат
+                let id = $(this).data('id');
+                $('#chat_msg .msg_report[data-id="' + id + '"]')[0].click(); // почему вообще нельзя одновременно кликнуть на несколько элементов массива это глупо jq
+            });
             if (globals.on_chatReverse) {
-              $('#cws_chat_msg').append(result);
-              $('#cws_chat_msg').append('<hr>');
-              if (!scroll) {
-                $('#cws_chat_msg')[0].scrollTop = $('#cws_chat_msg')[0].scrollHeight;
-              }
+                $('#cws_chat_msg').on('scroll', function () { // потому что клик на жалобу с ориг чата тоже работает только на ориг чат
+                    let $e = $('#cws_chat_msg');
+                    if ($e.scrollTop() + $e.height() >= $e[0].scrollHeight - 45) { // прокручено до конца
+                        scroll = false;
+                    }
+                    else {
+                        scroll = true;
+                    }
+                });
             }
-            else {
-              $('#cws_chat_msg').prepend(result);
-              $('#cws_chat_msg').prepend('<hr>');
+
+        }
+        if (globals.on_idItemMouth) {
+            $(document).ready(function () {
+                $("#thdey > ul").append('<li>Название предмета: <span id=item_name_ide>[ Неизвестно ]</span> [<span id=item_id_ide>?</span>]</li>');
+
+                $("body").on('click', "#itemList .itemInMouth", function () {
+                    if ($(this).hasClass("active_thing")) {
+                        let item_id = $(this).find("img").attr("src").replace(/\D/g, "");
+                        let name = item_names_json[item_id] || "[ Неизвестно ]";
+                        $("#item_name_ide").html(name);
+                        $("#item_id_ide").html(item_id);
+                    }
+                });
+            });
+        }
+        if (globals.on_idCatMouth) {
+            $(document).ready(function () {
+                $("#ctdey > ul").append('<li>ID кота: <span id=cat_id_ide>[ Не определено ]</span></li>');
+                $("body").on('click', "#itemList .catrot", function () {
+                    if ($(this).hasClass("active_thing")) {
+                        $("#cat_id_ide").html($(this).attr('id'));
+                    }
+                });
+            });
+        }
+        if (globals.on_actNotif) {
+            function which_action(text) {
+                const act_detect = {
+                    "move": "Переход",
+                    "eat": [" дичь", "Перекусывать"],
+                    "need": "Делаем свои дела",
+                    "drink": "Пьём ещё",
+                    "dig": "Копать",
+                    "sleep": "Сон",
+                    "sniff": "нюх",
+                    "digin": "Закапывать",
+                    "clean": "Вылизывать",
+                    "swim": "Плавать",
+                    "fill_moss": "Наполнять мох",
+                    "dive": "Нырять",
+                    "murr": "Мурлыкать",
+                    "tails": "Переплетаем хвосты",
+                    "cheek": "Трёмся щекой",
+                    "ground": "Валяем по земле",
+                    "rub": "Тереться носом о нос",
+                    "calm": "Успокаиваться",
+                    "watch": "Осматривать окрестности",
+                    "marking": "Помечать территорию",
+                    "clawscratch": "Точить когти",
+                    "rug": "Чистить ковёр",
+                    "attention": "Привлекать внимание",
+                    "domestsleep": "Спать ",
+                    "domesthunt": "Грандиозно охотиться ",
+                    "checkup": "Осматривать к",
+                    "loottr": "Осматривать дупло",
+                    "lootcr": "Осматривать расщелину"
+                };
+                const act_flav_text = {
+                    "move": "Переход",
+                    "eat": "Поедание дичи",
+                    "need": "Справление нужды",
+                    "drink": "Питьё",
+                    "dig": "Копание",
+                    "sleep": "Сон",
+                    "sniff": "Нюх",
+                    "digin": "Закапывание",
+                    "clean": "Вылизывание",
+                    "swim": "Плавание",
+                    "fill_moss": "Наполнение мха",
+                    "dive": "Ныряние",
+                    "murr": "Мурлыкаем",
+                    "tails": "Переплетаем хвосты",
+                    "cheek": "Трёмся щекой",
+                    "ground": "Валяем по земле",
+                    "rub": "Трёмся носом о нос",
+                    "calm": "Выход из боевой стойки",
+                    "watch": "Осмотр окрестностей",
+                    "marking": "Пометка территории",
+                    "clawscratch": "Затачивание когтей",
+                    "rug": "Чистка ковра",
+                    "attention": "Привлечение внимания",
+                    "domestsleep": "Сон в лежанке",
+                    "domesthunt": "Грандиозная охота",
+                    "checkup": "Осмотр целителем",
+                    "loottr": "Осмотр дупла",
+                    "lootcr": "Осмотр расщелины"
+                };
+                let wh_act = {
+                    txt: null,
+                    snd: false
+                };
+                $.each(act_detect, function (actid, acttext) {
+                    if (!(acttext instanceof Array)) {acttext = [acttext];}
+                    for (let textinstance in acttext) {
+                        if (text.indexOf(acttext[textinstance]) !== -1) {
+                            if (globals["txt_act_" + actid]) wh_act.txt = act_flav_text[actid];
+                            if (globals["snd_act_" + actid]) wh_act.snd = true;
+                            return wh_act;
+                        }
+                    }
+
+                });
+                return wh_act;
             }
-          }
+            let rang = false;
+            let move_ok = false; // можно проигрывать звук
+            let action = which_action($("#block_mess").text() || "");
+            var actionNotificationObserver = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutationRecord) {
+                    if (mutationRecord.type === "characterData") {
+                        let match = $('#block_mess').text().match(/(\d+\sч\s)?(\d+\sмин\s)?(\d+\sс)/u);
+                        if (match) {
+                            let time = match[0].trim();
+                            action = which_action($("#block_mess").text() || "");
+                            if (time == '8 с' || time == '7 с' || time == '6 с') move_ok = true; //Действие длится хотя бы 8 секунд -С МОМЕНТА ОТКРЫТИЯ ИГРОВОЙ-
+                            if (action.txt !== null) $('title').text(time + " / " + action.txt); //Сменить титульник, если текст на это действие включен
+                            let datenow = new Date();
+                            if (!action.snd) rang = true; //Реагировать только на нужные навыки ("звук был" = да)
+                            if ((time === '3 с' || time === '2 с' || time === '1 с') && !rang && move_ok) { //Свернутая вкладка обновляется каждые 2-3 секунды, F // До конца действия 1-3 сек, звука ещё не было/звук включен, звук можно проигрывать
+                                playAudio(sounds.action_notif, globals.sound_notifEndAct);
+                                rang = true;
+                                move_ok = false;
+                            }
+                        } else {
+                            $('title').text('Игровая / CatWar');
+                            rang = false;
+                            move_ok = false;
+                        }
+                    }
+                });
+            });
+            const actParentNode = document.getElementById('tr_actions').children[0];
+            actionNotificationObserver.observe(actParentNode, { subtree: true, childList: true, characterData: true, characterDataOldValue: true, });
         }
-        messages = mutationsList[mutationsList.length - 1].target.children.length;
-      });
-      chatObserver.observe(chatTarget, {
-        childList: true
-      });
+        if (globals.notif_eaten) {
+            const target = document.querySelector('#block_mess');
 
-      $('#cws_chat_msg').on('click', '.nick', function () { // потому что клик на ник с ориг чата работает только на ориг чат фу бе
-        let $text = $('#text');
-        $text.val($text.val() + $(this).text() + ', ');
-        $text.focus();
-      });
-      $('#cws_chat_msg').on('click', '.msg_report', function () { // потому что клик на жалобу с ориг чата тоже работает только на ориг чат
-        let id = $(this).data('id');
-        $('#chat_msg .msg_report[data-id="' + id + '"]')[0].click(); // почему вообще нельзя одновременно кликнуть на несколько элементов массива это глупо jq
-      });
-      if (globals.on_chatReverse) {
-        $('#cws_chat_msg').on('scroll', function () { // потому что клик на жалобу с ориг чата тоже работает только на ориг чат
-          let $e = $('#cws_chat_msg');
-          if ($e.scrollTop() + $e.height() >= $e[0].scrollHeight - 45) { // прокручено до конца
-            scroll = false;
-          }
-          else {
-            scroll = true;
-          }
-        });
-      }
+            if (target) {
+                const observer = new MutationObserver(() => {
+                    const html = $("#block_mess").html();
+                    if (html.includes("Вы не сможете выбраться")) {
+                        $('title').text("Во рту");
+                        playAudio(sounds.sound_notifEndAct, globals.sound_notifEaten);
+                    }
 
-    }
-    if (globals.on_idItemMouth) {
-      let item_names_json = {};
-      $(document).ready(function () {
-        $.getJSON("https://abstract-class-shed.github.io/cwshed/item_names.json?" + Date.now(), function (response) { //Подгрузка имен предметов из json файла
-          item_names_json = response;
-          $("#thdey > ul").append('<li>Название предмета: <span id=item_name_ide>[ Неизвестно ]</span> [<span id=item_id_ide>?</span>]</li>');
-          $("body").on('click', "#itemList .itemInMouth", function () {
-            if ($(this).hasClass("active_thing")) {
-              let item_id = $(this).find("img").attr("src").replace(/\D/g, "");
-              let name = item_names_json[item_id] || "[ Неизвестно ]";
-              $("#item_name_ide").html(name);
-              $("#item_id_ide").html(item_id);
+                    if (html === "" && !globals.on_actNotif) {
+                        $('title').text('Игровая / CatWar');
+                    }
+                });
+
+                observer.observe(target, {
+                    childList: true,
+                    characterData: true,
+                    subtree: true
+                });
             }
-          });
-        });
-      });
-    }
-    if (globals.on_idCatMouth) {
-      $(document).ready(function () {
-        $("#ctdey > ul").append('<li>ID кота: <span id=cat_id_ide>[ Не определено ]</span></li>');
-        $("body").on('click', "#itemList .catrot", function () {
-          if ($(this).hasClass("active_thing")) {
-            $("#cat_id_ide").html($(this).attr('id'));
-          }
-        });
-      });
-    }
-    if (globals.on_actNotif) {
-      function which_action(text) {
-        const act_detect = {
-          "move": "Переход",
-          "eat": [" дичь", "Перекусывать"],
-          "need": "Делаем свои дела",
-          "drink": "Пьём ещё",
-          "dig": "Копать",
-          "sleep": "Сон",
-          "sniff": "нюх",
-          "digin": "Закапывать",
-          "clean": "Вылизывать",
-          "swim": "Плавать",
-          "fill_moss": "Наполнять мох",
-          "dive": "Нырять",
-          "murr": "Мурлыкать",
-          "tails": "Переплетаем хвосты",
-          "cheek": "Трёмся щекой",
-          "ground": "Валяем по земле",
-          "rub": "Тереться носом о нос",
-          "calm": "Успокаиваться",
-          "watch": "Осматривать окрестности",
-          "marking": "Помечать территорию",
-          "clawscratch": "Точить когти",
-          "rug": "Чистить ковёр",
-          "attention": "Привлекать внимание",
-          "domestsleep": "Спать ",
-          "domesthunt": "Грандиозно охотиться ",
-          "checkup": "Осматривать к",
-          "loottr": "Осматривать дупло",
-          "lootcr": "Осматривать расщелину"
-        };
-        const act_flav_text = {
-          "move": "Переход",
-          "eat": "Поедание дичи",
-          "need": "Справление нужды",
-          "drink": "Питьё",
-          "dig": "Копание",
-          "sleep": "Сон",
-          "sniff": "Нюх",
-          "digin": "Закапывание",
-          "clean": "Вылизывание",
-          "swim": "Плавание",
-          "fill_moss": "Наполнение мха",
-          "dive": "Ныряние",
-          "murr": "Мурлыкаем",
-          "tails": "Переплетаем хвосты",
-          "cheek": "Трёмся щекой",
-          "ground": "Валяем по земле",
-          "rub": "Трёмся носом о нос",
-          "calm": "Выход из боевой стойки",
-          "watch": "Осмотр окрестностей",
-          "marking": "Пометка территории",
-          "clawscratch": "Затачивание когтей",
-          "rug": "Чистка ковра",
-          "attention": "Привлечение внимания",
-          "domestsleep": "Сон в лежанке",
-          "domesthunt": "Грандиозная охота",
-          "checkup": "Осмотр целителем",
-          "loottr": "Осмотр дупла",
-          "lootcr": "Осмотр расщелины"
-        };
-        let wh_act = {
-          txt: null,
-          snd: false
-        };
-        $.each(act_detect, function (actid, acttext) {
-          if (!(acttext instanceof Array)) {acttext = [acttext];}
-          for (let textinstance in acttext) {
-              if (text.indexOf(acttext[textinstance]) !== -1) {
-                  if (globals["txt_act_" + actid]) wh_act.txt = act_flav_text[actid];
-                  if (globals["snd_act_" + actid]) wh_act.snd = true;
-                  return wh_act;
-              }
-          }
+        }
+        if (globals.notif_attack) {
+            const container = document.querySelector('#ist');
 
-        });
-        return wh_act;
-      }
-      let rang = false;
-      let move_ok = false; // можно проигрывать звук
-      let action = which_action($("#block_mess").text() || "");
-      var actionNotificationObserver = new MutationObserver(function(mutations) {
-          mutations.forEach(function(mutationRecord) {
-              if (mutationRecord.type === "characterData") {
-                  let match = $('#block_mess').text().match(/(\d+\sч\s)?(\d+\sмин\s)?(\d+\sс)/u);
-                  if (match) {
-                      let time = match[0].trim();
-                      action = which_action($("#block_mess").text() || "");
-                      if (time == '8 с' || time == '7 с' || time == '6 с') move_ok = true; //Действие длится хотя бы 8 секунд -С МОМЕНТА ОТКРЫТИЯ ИГРОВОЙ-
-                      if (action.txt !== null) $('title').text(time + " / " + action.txt); //Сменить титульник, если текст на это действие включен
-                      let datenow = new Date();
-                      if (!action.snd) rang = true; //Реагировать только на нужные навыки ("звук был" = да)
-                      if ((time === '3 с' || time === '2 с' || time === '1 с') && !rang && move_ok) { //Свернутая вкладка обновляется каждые 2-3 секунды, F // До конца действия 1-3 сек, звука ещё не было/звук включен, звук можно проигрывать
-                          playAudio(sounds.action_notif, globals.sound_notifEndAct);
-                          rang = true;
-                          move_ok = false;
-                      }
-                  } else {
-                      $('title').text('Игровая / CatWar');
-                      rang = false;
-                      move_ok = false;
-                  }
-              }
-          });
-      });
-      const actParentNode = document.getElementById('tr_actions').children[0];
-      actionNotificationObserver.observe(actParentNode, { subtree: true, childList: true, characterData: true, characterDataOldValue: true, });
-    }
-    if (globals.notif_eaten) { //Уведомления, когда вас поднимают
-      $("body").on('DOMSubtreeModified', "#block_mess", function () {
-        if ($("#block_mess").html().indexOf("Вы не сможете выбраться") !== -1) {
-          $('title').text("Во рту");
-          playAudio(sounds.sound_notifEndAct, globals.sound_notifEaten);
+            if (container) {
+                const observer = new MutationObserver(() => {
+                    const html = container.innerHTML;
+                    const parts = html.split('.');
+                    const last_note = parts[parts.length - 2]; // Предпоследнее предложение
+
+                    if (last_note && last_note.includes("в боевую стойку, поскольку на меня напал")) {
+                        playAudio(sounds.alert_attacked, globals.sound_notifBeaten);
+                    }
+                });
+
+                observer.observe(container, {
+                    childList: true,
+                    characterData: true,
+                    subtree: true
+                });
+            }
         }
-        if ($("#block_mess").html() === "" && !globals.on_actNotif) { //Если пуст, действий нет (нужно, если нет уведомлений на действия)
-          $('title').text('Игровая / CatWar');
-        }
-      });
-    }
-    if (globals.notif_attack) {
-      $("#history_block").on('DOMSubtreeModified', '#ist', function () {
-        let last_note = $($("#ist").html().split('.')).get(-2);
-        if (last_note !== undefined) {
-          if (last_note.indexOf("в боевую стойку, поскольку на меня напал") !== -1) {
-            playAudio(sounds.alert_attacked, globals.sound_notifBeaten);
-          }
-        }
-      });
-    }
-    if (globals.on_moveFightLog) {
-      $('#app').ready(function () { //Возможность перетаскивать панель лога боя
-        $('head').append(`<style>#fightPanelHandle {
+        if (globals.on_moveFightLog) {
+            $('#app').ready(function () { //Возможность перетаскивать панель лога боя
+                $('head').append(`<style>#fightPanelHandle {
                                 display:inline-block;
                                 height:16px;
                                 width:16px;
-                                background: url(https://abstract-class-shed.github.io/cwshed/untargeted.png) center no-repeat;
+                                background: url(https://raw.githubusercontent.com/polexka/abstract-class-shed.github.io/refs/heads/main/cwshed/untargeted.png) center no-repeat;
                                 background-color: #ccc;
                                 margin-right:4px;
                                 border-radius: 5px;
@@ -995,79 +1755,80 @@
                                 left: 3px;
                             }
                             #fightPanelHandle:active {
-                                background: url(https://abstract-class-shed.github.io/cwshed/targeted.png) center no-repeat;
+                                background: url(https://raw.githubusercontent.com/polexka/abstract-class-shed.github.io/refs/heads/main/cwshed/targeted.png) center no-repeat;
                                 background-color: #ccc;
                             }</style>`);
-        $("#fightPanel").prepend(`<a id="fightPanelHandle"></a>`);
-        $("#fightPanel").draggable({
-          handle: "#fightPanelHandle"
-        });
-      });
-    }
-    if (globals.on_blockNotif) {
-      let block = false;
-      $('#app').ready(function () {
-        $('#block').on('load', function () {
-          if ($(this).attr('src') == 'symbole/lock.png') { //locked
-            block = true;
-            playAudio(sounds.block_start, globals.sound_blockStart);
-          }
-          else if (block) { //unlocked
-            block = false;
-            playAudio(sounds.block_end, globals.sound_blockEnd);
-          }
-        });
-      });
-    }
-    if (globals.fight_log_max_height != 70) {
-      $('#fightLog').css('height', globals.fight_log_max_height);
-    }
-    if (globals.on_shortFightLog) {
-      $(document).ready(function () {
-              let prev_log = '';
-              let prev_class = '';
-              const observer = new MutationObserver(function (mutationsList) {
-                  mutationsList.forEach(function (mutation) {
-                      if (mutation.type === 'childList') {
-                          $(mutation.addedNodes).each(function () {
-                              if (this.nodeType === Node.ELEMENT_NODE && $(this).is('span:not(.cws-hit-count)')) {
-                                  GM_log('MutationObserver detected change');
+                $("#fightPanel").prepend(`<a id="fightPanelHandle"></a>`);
+                $("#fightPanel").draggable({
+                    handle: "#fightPanelHandle"
+                });
+            });
+        }
+        if (globals.on_blockNotif) {
+            let block = false;
+            $('#app').ready(function () {
+                $('#block').on('load', function () {
+                    if ($(this).attr('src') == 'symbole/lock.png') { //locked
+                        block = true;
+                        playAudio(sounds.block_start, globals.sound_blockStart);
+                    }
+                    else if (block) { //unlocked
+                        block = false;
+                        playAudio(sounds.block_end, globals.sound_blockEnd);
+                    }
+                });
+            });
+        }
+        if (globals.fight_log_max_height != 70) {
+            $('#fightLog').css('height', globals.fight_log_max_height);
+        }
+        if (globals.on_shortFightLog) {
+            GM_log('on_shortFightLog = true');
+            $(document).ready(function () {
+                let prev_log = '';
+                let prev_class = '';
+                const observer = new MutationObserver(function (mutationsList) {
+                    mutationsList.forEach(function (mutation) {
+                        if (mutation.type === 'childList') {
+                            $(mutation.addedNodes).each(function () {
+                                if (this.nodeType === Node.ELEMENT_NODE && $(this).is('span:not(.cws-hit-count)')) {
+                                    GM_log('MutationObserver detected change');
 
-                                  let this_log = $(this).html();
-                                  let this_class = $(this).attr('class');
+                                    let this_log = $(this).html();
+                                    let this_class = $(this).attr('class');
 
-                                  if (this_log === prev_log && prev_class === this_class) {
-                                      $(this).remove();
-                                      $('#fightLog > br:first-child').remove(); // Чистка
-                                      let $to_change = $('.cws-hit-count').first();
-                                      let count = parseInt($to_change.attr('count'));
-                                      count++;
-                                      $to_change.attr('count', count);
-                                      $to_change.html(' (х' + count + ')');
-                                  } else { // Новый удар
-                                      $('<span class="cws-hit-count ' + this_class + '" count=1></span>').insertAfter($(this));
-                                  }
+                                    if (this_log === prev_log && prev_class === this_class) {
+                                        $(this).remove();
+                                        $('#fightLog > br:first-child').remove(); // Чистка
+                                        let $to_change = $('.cws-hit-count').first();
+                                        let count = parseInt($to_change.attr('count'));
+                                        count++;
+                                        $to_change.attr('count', count);
+                                        $to_change.html(' (х' + count + ')');
+                                    } else { // Новый удар
+                                        $('<span class="cws-hit-count ' + this_class + '" count=1></span>').insertAfter($(this));
+                                    }
 
-                                  prev_log = this_log;
-                                  prev_class = this_class;
-                              }
-                          });
-                      }
-                  });
-              });
+                                    prev_log = this_log;
+                                    prev_class = this_class;
+                                }
+                            });
+                        }
+                    });
+                });
 
-              // Наблюдаем за элементом #fightLog
-              const fightLog = document.getElementById('fightLog');
-              if (fightLog) {
-                  observer.observe(fightLog, {
-                      childList: true, // Отслеживаем добавление/удаление дочерних узлов
-                      subtree: false,  // Не отслеживаем изменения в дочерних элементах
-                  });
-              }
-          });
-    }
-    if (globals.on_teamFights) {
-      $('head').append(`<style>
+                // Наблюдаем за элементом #fightLog
+                const fightLog = document.getElementById('fightLog');
+                if (fightLog) {
+                    observer.observe(fightLog, {
+                        childList: true, // Отслеживаем добавление/удаление дочерних узлов
+                        subtree: false,  // Не отслеживаем изменения в дочерних элементах
+                    });
+                }
+            });
+        }
+        if (globals.on_teamFights) {
+            $('head').append(`<style>
 :root {
 --team1g: ${globals.tf_color_g_team1};
 --team1r: ${globals.tf_color_r_team1};
@@ -1114,10 +1875,10 @@ input:checked + .cws-team {
 #refresh-team {width: 100%;}
 .tf-color {color:black;}
 </style>`); //Определение цветов команд
-      $('head').append(`<style id=cws_team_fights></style>`); //Заготовка раскраски команд
-      $("#app").ready(function () {
-        let ids = {}; //Список айди
-        $("#fightPanel").append(`<div id=fteams-wrap>
+            $('head').append(`<style id=cws_team_fights></style>`); //Заготовка раскраски команд
+            $("#app").ready(function () {
+                let ids = {}; //Список айди
+                $("#fightPanel").append(`<div id=fteams-wrap>
                         <table id=fteams-table>
                         <thead>
                         <th class="tf-color">Имя</th>
@@ -1127,256 +1888,67 @@ input:checked + .cws-team {
                         </table>
                         <button id=refresh-team>Обновить список</button>
                         </div>`); //Добавление списка в панель бр
-        $("#refresh-team").on("click", function () { //Кнопка "Обновить"
-          $('#fightColors > tr').each(function () { //Удалить старое
-            let id = $(this).attr('id').match(/\d+/)[0];
-            if (!$("#arrow" + id).length) { //если не существует кота из списка в боережиме
-              $("#team_member_" + id).remove();
-              delete ids[id];
-            }
-          });
-          $('.arrow').each(function () {
-            let id = $(this).attr('id').match(/\d+/)[0];
-            if (!ids[id]) { //Добавить новое
-              ids[id] = 1; //team 1
-              let name = $(".cat_tooltip a[href='/cat" + id + "']").html();
-              $("#fightColors").append(`<tr id=team_member_${id}><td class="tf-color">${name}</td>
+                $("#refresh-team").on("click", function () { //Кнопка "Обновить"
+                    $('#fightColors > tr').each(function () { //Удалить старое
+                        let id = $(this).attr('id').match(/\d+/)[0];
+                        if (!$("#arrow" + id).length) { //если не существует кота из списка в боережиме
+                            $("#team_member_" + id).remove();
+                            delete ids[id];
+                        }
+                    });
+                    $('.arrow').each(function () {
+                        let id = $(this).attr('id').match(/\d+/)[0];
+                        if (!ids[id]) { //Добавить новое
+                            ids[id] = 1; //team 1
+                            let name = $(".cat_tooltip a[href='/cat" + id + "']").html();
+                            $("#fightColors").append(`<tr id=team_member_${id}><td class="tf-color">${name}</td>
                             <td class=lbl><input type="radio" class="cws-team-chk" name="chk${id}" checked value="1" id="chk${id}-team-1"><label class="cws-team team-1" for="chk${id}-team-1">*</label></td>
                             <td class=lbl><input type="radio" class="cws-team-chk" name="chk${id}" value="2" id="chk${id}-team-2"><label class="cws-team team-2" for="chk${id}-team-2">*</label></td>
                             <td class=lbl><input type="radio" class="cws-team-chk" name="chk${id}" value="3" id="chk${id}-team-3"><label class="cws-team team-3" for="chk${id}-team-3">*</label></td>
                             <td class=lbl><input type="radio" class="cws-team-chk" name="chk${id}" value="4" id="chk${id}-team-4"><label class="cws-team team-4" for="chk${id}-team-4">*</label></td>
                             </tr>`);
-            }
-          });
-        });
-        $(document).on('change', '.cws-team-chk', function () { //Изменение команды при клике
-          let id = $(this).attr('id').match(/\d+/)[0];
-          ids[id] = parseInt($(this).val());
-          let style = '\n'; //Формирование нового стиля
-          $.each(ids, function (id, team) {
-            style += `#arrow${id} .arrow_green {background: var(--team${team}g);}\n#arrow${id} .arrow_red {background: var(--team${team}r);}\n`;
-          });
-          $('#cws_team_fights').html(style);
-        });
-      });
-    }
-    if (globals.on_cleanerHistory) {
-      let titles = {};
-      let statuses = {};
-      const convert = {
-        "Котёнок": "котёнка",
-        "Оруженосец": "оруженосца",
-        "Ученица целителя": "ученицу целителя",
-        "Ученик целителя": "ученика целителя",
-        "Целительница": "целительницу",
-        "Целитель": "целителя",
-        "Воительница": "воительницу",
-        "Воитель": "воителя",
-        "Старшая воительница": "старшую воительницу",
-        "Старший воитель": "старшего воителя",
-        "Старейшина": "старейшину",
-        "Глашатая": "глашатую",
-        "Глашатай": "глашатая",
-        "Предводительница": "предводительницу",
-        "Предводитель": "предводителя",
-        "Будущая стражница": "будущую стражницу",
-        "Будущий страж": "будущего стража",
-        "Будущая охотница": "будущую охотницу",
-        "Будущий охотник": "будущего охотника",
-        "Стражница": "стражницу",
-        "Страж": "стража",
-        "Охотница": "охотницу",
-        "Охотник": "охотника",
-        "Врачеватель": "врачевателя",
-        "Ученица врачевателя": "ученицу врачевателя",
-        "Ученик врачевателя": "ученика врачевателя",
-        "Ученица": "ученицу",
-        "Ученик": "ученика",
-        "Молодой воин": "молодого воина",
-        "Воин": "воина",
-        "Старший воин": "старшего воина",
-        "Учитель": "учителя",
-        "Воин света": "воина света",
-        "Слышащая": "слышащую",
-        "Слышащий": "слышащего",
-        "Ученица слышащего": "ученицу слышащего",
-        "Ученик слышащего": "ученика слышащего",
-        "Доверенная": "доверенную",
-        "Доверенный": "доверенного",
-        "Наследница": "наследницу",
-        "Наследник": "наследника",
-        "Хранитель моря": "хранителя моря",
-        "Верховная хранительница покоя": "верховную хранительницу покоя",
-        "Верховный хранитель покоя": "верховного хранителя покоя",
-        "Верховная добытчица": "верховную добытчицу",
-        "Верховный добытчик": "верховного добытчика",
-        "Верховная жрица": "верховную жрицу",
-        "Верховный жрец": "верховного жреца",
-        "Глава Верховного Совета": "главу Верховного Совета",
-        "Советница верховного жреца": "советницу верховного жреца",
-        "Советник верховного жреца": "советника верховного жреца",
-        "Советница верховного хранителя покоя": "советницу верховного хранителя покоя",
-        "Советник верховного хранителя покоя": "советника верховного хранителя покоя",
-        "Советница верховного добытчика": "советницу верховного добытчика",
-        "Советник верховного добытчика": "советника верховного добытчика",
-        "Лунная жрица": "лунную жрицу",
-        "Лунный жрец": "лунного жреца",
-        "Добытчица": "добытчицу",
-        "Добытчик": "добытчика",
-        "Хранительница покоя": "хранительницу покоя",
-        "Хранитель покоя": "хранителя покоя",
-        "Ученица хранителей покоя": "ученицу хранителей покоя",
-        "Ученик хранителей покоя": "ученика хранителей покоя",
-        "Ученица добытчиков": "ученицу добытчиков",
-        "Ученик добытчиков": "ученика добытчиков",
-        "Старец": "старца",
-        "Королева": "королеву",
-        "Наследник хранителя": "наследника хранителя",
-        "Хранительница солнца": "хранительницу солнца",
-        "Хранитель солнца": "хранителя солнца",
-        "Заместительница глашатая": "заместительницу глашатая",
-        "Заместитель глашатая": "заместителя глашатая",
-        "Восходящая": "восходящую",
-        "Восходящий": "восходящего",
-        "Командор серых стражей": "командора серых стражей",
-        "Ведущая": "ведущую",
-        "Ведущий": "ведущего",
-        "Ученица Луны": "ученицу Луны",
-        "Ученик Луны": "ученика Луны",
-        "Королева": "королеву",
-        "Заботливый отец": "заботливого отца",
-        "Ведущая воительница": "ведущую воительницу",
-        "Ведущий воитель": "ведущего воителя",
-        "Молодая воительница": "молодую воительницу",
-        "Молодой воин": "молодого воина",
-        "Помощница ученика врачевателя": "помощницу ученика врачевателя",
-        "Помощник ученика врачевателя": "помощника ученика врачевателя",
-        "Старший оруженосец": "старшего оруженосца",
-        "Переходящая": "переходящую",
-        "Переходящий": "переходящего",
-        "Советница": "советницу",
-        "Советник": "советника",
-        "Воспитанник": "воспитанника",
-        "Воспитанница": "воспитанницу",
-        "Старший воспитанник": "старшего воспитанника",
-        "Старший воспитанница": "старшую воспитанницу",
-        "Вождь": "вождя",
-        "Мудрец": "мудреца",
-        "Искусник": "искусника",
-        "Наместник": "наместника",
-        "Пилигрим": "пилигрима",
-        "Ловец": "ловца",
-        "Шаман": "шамана",
-        "Кормилица": "кормилицу",
-        "Воевода": "воеводу"
-      };
+                        }
+                    });
+                });
+                $(document).on('change', '.cws-team-chk', function () { //Изменение команды при клике
+                    let id = $(this).attr('id').match(/\d+/)[0];
+                    ids[id] = parseInt($(this).val());
+                    let style = '\n'; //Формирование нового стиля
+                    $.each(ids, function (id, team) {
+                        style += `#arrow${id} .arrow_green {background: var(--team${team}g);}\n#arrow${id} .arrow_red {background: var(--team${team}r);}\n`;
+                    });
+                    $('#cws_team_fights').html(style);
+                });
+            });
+        }
+        if (globals.on_treeTechies) {
+            if (globals.tt_notif_refresh) {
+                let last_note;
+                let note_first = true;
 
-      function title_convert(title) {
-        return convert[title] || title;
-      }
-      if (globals.clean_title || globals.clean_status) {
-        $(document).ready(function () {
-          $("#cages").on('DOMNodeRemoved', '.catWithArrow', function () {
-            let href = $(this).find('.cat_tooltip > u > a').attr('href');
-            if (href !== undefined) {
-            let cat_id = href.replace(/\D/g, '');
-              if (titles[cat_id] === undefined) {
-                let titleElem = $(this).html().match(/<div><small><i>([^<]+)<\/i><\/small><\/div>/ui);
-                if (titleElem !== null && titleElem[1]) {
-                    titles[cat_id] = titleElem[1];
-                }
-              }
-              let status = $(this).find('.online').text(); // [ На удалении ]
-              let is_punished = $(this).find('div[style*="costume/295."]').length; // Подстилки?
-              if (is_punished) {
-                status = "[ В подстилках ]";
-              }
-              statuses[cat_id] = status;
-              }
-          });
-        });
-      }
-      let first_load = true;
-      let cl_history = (window.localStorage.getItem('cws_cleaner_history_log') !== null) ? window.localStorage.getItem('cws_cleaner_history_log') : 'История очищена.';
-      cl_history = ((globals.clean_underscore) ? cl_history.replace(/ (Подняла?|Опустила?) /ig, ' <u>$1</u> ') : cl_history.replace(/ <u>(Подняла?|Опустила?)<\/u> /ig, ' $1 '));
-      $("#ist").ready(function () {
-        // ДОБАВЛЕНИЕ ЛОГА ЧИСТИЛЬЩИКОВ
-        $('<hr><h2><a href=\"#\" id=cleaner class=toggle>Деятельность в чистильщиках:</a></h2><span id=cleaner_block>' + cl_history + '</span><br><a id=erase_cleaner href=#>Очистить историю чистки</a>').insertAfter("#history_clean");
-        let prev_ist, prev_prev_ist;
-        $("#history_block").on('DOMSubtreeModified', '#ist', function () {
-          if (first_load) {
-            first_load = false;
-          }
-          else {
-            let last_ist = $("#ist").html().split('.'); // to array
-            last_ist = last_ist[last_ist.length - 2]; //последняя запись ( -1 тк длина с 1, а массив с 0; -1 тк последняя запись нулевая из-за точки в конце истории)
-            if (last_ist !== undefined) {
-              let clean_id = last_ist.match(/cat(\d+)/);
-              if (clean_id) {
-                clean_id = clean_id[1];
-              }
-              last_ist = last_ist.trim().replace(/(<([^>]+)>)/ig, ''); // последняя запись
-              if (((last_ist.indexOf("Поднял") !== -1) || (last_ist.indexOf("Опустил") !== -1)) && ((last_ist.indexOf("кота") !== -1) || (last_ist.indexOf("кошку") !== -1))) { //Если есть "поднял(а)/опустил(а) кота/кошку"
-                let hist_str = ' ' + ((globals.clean_underscore) ? last_ist.replace(/(Подняла*|Опустила*)/, '<u>$1</u>') : last_ist);
-                if (globals.clean_id) {
-                  hist_str += ' (' + clean_id + ')';
-                } //Записать ID
-                if (globals.clean_status && (last_ist.indexOf("Поднял") !== -1) && statuses[clean_id] !== undefined) {
-                  hist_str += ' ' + statuses[clean_id];
-                }
-                if (globals.clean_location) {
-                  hist_str += ' в локации «' + $("#location").html() + '»';
-                } //Записать локацию
-                hist_str += '.';
-                if ((globals.clean_action) &&
-                  (last_ist.indexOf("Поднял") !== -1) &&
-                  (prev_prev_ist !== undefined) &&
-                  (prev_ist.indexOf("Отменил") !== -1) && //Отменил действие
-                  (prev_prev_ist.indexOf("по имени") !== -1) && //Перед этим взаимодействуя с кем-то
-                  (prev_prev_ist.indexOf("Поднял") === -1) && //Не поднял и не опустил
-                  (prev_prev_ist.indexOf("Опустил") === -1)) {
-                  let clean_curr_name = last_ist.match(/ по имени ([А-Яа-яЁё ]+)/u) || ['', ''];
-                  let clean_check_name = prev_prev_ist.match(/ по имени ([А-Яа-яЁё ]+)/u) || ['', ''];
-                  if (clean_check_name[1] !== '' && clean_check_name[1] == clean_curr_name[1]) { //Имя проверенного и имя поднятого одинаковые
-                    let their_pol = (last_ist.indexOf("кошку") !== -1) ? 'кошку' : 'кота'; //Вообще-то пронаунс это ОЧЕНЬ важно
-                    let ur_pol = (last_ist.indexOf("Подняла") !== -1) ? 'Проверила' : 'Проверил'; //хаххаахаххахаха
-                    hist_str = ' ' + ur_pol + ' ' + their_pol + ' по имени ' + clean_check_name[1] + '.' + hist_str;
-                  }
-                }
-                if (globals.clean_title && titles[clean_id] !== undefined && titles[clean_id]) {
-                  hist_str = hist_str.replace(/(кота|кошку)/g, title_convert(titles[clean_id]));
-                } //Поменять на должность
-                if ($("#location").html() != '[ Загружается… ]' && hist_str !== undefined) { //ок?
-                  $('#cleaner_block').append(hist_str);
-                  window.localStorage.setItem('cws_cleaner_history_log', $('#cleaner_block').html());
-                }
-              }
-              prev_prev_ist = prev_ist;
-              prev_ist = last_ist;
+                waitForElement('#ist', (target) => {
+                    const observer = new MutationObserver(() => {
+                        const html = target.innerHTML;
+                        const parts = html.split('.');
+                        last_note = parts[parts.length - 2]; // Предпоследняя запись
+
+                        if (last_note !== undefined) {
+                            if (/Услышала? оглушительн/.test(last_note) && !note_first) {
+                                playAudio(sounds.tt_refresh, globals.sound_ttRefresh);
+                            }
+                            note_first = false;
+                        }
+                    });
+
+                    observer.observe(target, {
+                        childList: true,
+                        characterData: true,
+                        subtree: true
+                    });
+                });
             }
-          }
-        });
-        $('#erase_cleaner').on('click', function () {
-          $('#cleaner_block').html("История очищена.");
-          window.localStorage.setItem('cws_cleaner_history_log', 'История очищена.');
-        });
-      });
-    }
-    if (globals.on_treeTechies) {
-      if (globals.tt_notif_refresh) {
-        let last_note, note_first = true;
-        $("#history_block").on('DOMSubtreeModified', '#ist', function () {
-          last_note = $($("#ist").html().split('.')).get(-2); //Последняя запись в истории
-          if (last_note !== undefined) {
-            if (/Услышала? оглушительн/.test(last_note) && !note_first) {
-              playAudio(sounds.tt_refresh, globals.sound_ttRefresh);
-            }
-            note_first = false; //История была уже прочитана 1 раз, и страница не только что загрузилась
-          }
-        });
-      }
-      $('#app').ready(function () {
-        $('head').append(`<style>
+            $('#app').ready(function () {
+                $('head').append(`<style>
 #cws_treeTechies.hidden{display:none;}
 #cws_treeTechiesHandle, #cws_treeTechiesFold {
   display: inline-block;}
@@ -1463,17 +2035,17 @@ height: 25px;
   color: white;
 }
 .cws-tt-page-hidden {display:none;}</style>`);
-        if (globals.tt_dark_theme) {
-          $('head').append(`<style>#cws_treeTechiesFold {border-left: 1px solid #505457;}
+                if (globals.tt_dark_theme) {
+                    $('head').append(`<style>#cws_treeTechiesFold {border-left: 1px solid #505457;}
 #cws_treeTechies {background-color: #505457; color:#ebeef0;}
 #cws_treeTechiesHandleWrap {background-color: #ccc;color: #27292b;}
 .cws-tt-table .cws-tt-safe {background-color: rgba(255,255,255,.2);}
 .cws-tt-table .cws-tt-unsafe {background-color: rgba(0,0,0,.2);}
 .cws-tt-table .cws-tt-move {background-color: rgba(255, 255, 255, .4);}
 .cws-tt-page:checked + .cws-tt-page-lbl, .cws-tt-folder:checked + .cws-tt-folder-lbl {background-color:#6f7577;}</style>`);
-        }
-        if (globals.tt_show_volume) {
-          $('head').append(`<style>.vlm0 > .nick[style*="italic"]:after {content:" [0]";}
+                }
+                if (globals.tt_show_volume) {
+                    $('head').append(`<style>.vlm0 > .nick[style*="italic"]:after {content:" [0]";}
 .vlm1 > .nick[style*="italic"]:after {content:" [1]";}
 .vlm2 > .nick[style*="italic"]:after {content:" [2]";}
 .vlm3 > .nick[style*="italic"]:after {content:" [3]";}
@@ -1484,19 +2056,19 @@ height: 25px;
 .vlm8 > .nick[style*="italic"]:after {content:" [8]";}
 .vlm9 > .nick[style*="italic"]:after {content:" [9]";}
 .vlm10 > .nick[style*="italic"]:after {content:" [10]";}</style>`);
-        }
-        const tt_field_def = `<tbody><tr><td class="cws-tt-safe"></td><td class="cws-tt-safe"></td><td class="cws-tt-safe"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                }
+                const tt_field_def = `<tbody><tr><td class="cws-tt-safe"></td><td class="cws-tt-safe"></td><td class="cws-tt-safe"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
 <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
 <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
 <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
 <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
 <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody>`;
-        let tt_fields = getSettings('tt_fields') === null ? [tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def,
-          tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def,
-          tt_field_def, tt_field_def, tt_field_def, tt_field_def
-        ] : JSON.parse(getSettings('tt_fields'));
-        let mines_html = `<div id="cws_treeTechies"${globals.tt_folded?' class="folded"':''}>
-<div id="cws_treeTechiesHandleWrap"><div id="cws_treeTechiesHandle"><span>Минное поле</span></div><div id=cws_treeTechiesFold><img class="cws-tt-fold-minus${globals.tt_folded?' cws-tt-fold-hidden':''}" src="https://abstract-class-shed.github.io/cwshed/minus.png"><img class="cws-tt-fold-plus${globals.tt_folded?'':' cws-tt-fold-hidden'}" src="https://abstract-class-shed.github.io/cwshed/plus.png"></div></div>
+                let tt_fields = getSettings('tt_fields') === null ? [tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def,
+                                                                     tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def, tt_field_def,
+                                                                     tt_field_def, tt_field_def, tt_field_def, tt_field_def
+                                                                    ] : JSON.parse(getSettings('tt_fields'));
+                let mines_html = `<div id="cws_treeTechies"${globals.tt_folded?' class="folded"':''}>
+<div id="cws_treeTechiesHandleWrap"><div id="cws_treeTechiesHandle"><span>Минное поле</span></div><div id=cws_treeTechiesFold><img class="cws-tt-fold-minus${globals.tt_folded?' cws-tt-fold-hidden':''}" src="https://raw.githubusercontent.com/polexka/abstract-class-shed.github.io/refs/heads/main/cwshed/minus.png"><img class="cws-tt-fold-plus${globals.tt_folded?'':' cws-tt-fold-hidden'}" src="https://raw.githubusercontent.com/polexka/abstract-class-shed.github.io/refs/heads/main/cwshed/plus.png"></div></div>
 <div id="cws_tt_choose">
 <div>
   <input type="radio" checked name="cws_tt_cell" class="cws-tt-cell" id="cws_tt_cell0" value="0" mark="cws-tt-safe">
@@ -1552,82 +2124,82 @@ height: 25px;
   <label class="cws-tt-cell-lbl" for="cws_tt_show">Переносить на Игровую</label>
 </div>
 <hr style="margin: 4px 0 2px 0;">`;
-        for (let i = 0; i <= 3; i++) {
-          if (globals.tt_foldersenabledArray[i] || !i) {
-            mines_html += `<input type="radio" name="cws_tt_folder" class="cws-tt-folder" value="${i}" id="cws_tt_folder${i}">
+                for (let i = 0; i <= 3; i++) {
+                    if (globals.tt_foldersenabledArray[i] || !i) {
+                        mines_html += `<input type="radio" name="cws_tt_folder" class="cws-tt-folder" value="${i}" id="cws_tt_folder${i}">
     <label class="cws-tt-folder-lbl" for="cws_tt_folder${i}">${globals.tt_foldersnamesArray[i]}</label>`;
-          }
-        }
-        mines_html += `<hr style="margin: 4px 0 2px 0;"><div>`;
-        for (let i = 0; i <= 5; i++) {
-          if (globals.tt_pageenabledArray[i] || !i) {
-            mines_html += `<input type="radio" name="cws_tt_page" class="cws-tt-page" value="${i}" id="cws_tt_page${i}">
+                    }
+                }
+                mines_html += `<hr style="margin: 4px 0 2px 0;"><div>`;
+                for (let i = 0; i <= 5; i++) {
+                    if (globals.tt_pageenabledArray[i] || !i) {
+                        mines_html += `<input type="radio" name="cws_tt_page" class="cws-tt-page" value="${i}" id="cws_tt_page${i}">
     <label class="cws-tt-page-lbl" folder="0" for="cws_tt_page${i}">${globals.tt_pagenamesArray[i]}</label>`;
-          }
-        }
-        for (let i = 6; i <= 23; i++) {
-          let k = parseInt(i / 6.0);
-          if (globals.tt_pageenabledArray[i] && globals.tt_foldersenabledArray[k]) {
-            mines_html += `<input type="radio" name="cws_tt_page" class="cws-tt-page" value="${i}" id="cws_tt_page${i}">
+                    }
+                }
+                for (let i = 6; i <= 23; i++) {
+                    let k = parseInt(i / 6.0);
+                    if (globals.tt_pageenabledArray[i] && globals.tt_foldersenabledArray[k]) {
+                        mines_html += `<input type="radio" name="cws_tt_page" class="cws-tt-page" value="${i}" id="cws_tt_page${i}">
     <label class="cws-tt-page-lbl" style="display:none;" folder="${k}" for="cws_tt_page${i}">${globals.tt_pagenamesArray[i]}</label>`;
-          }
-        }
-        mines_html += `</div></div><table class="cws-tt-table" page="0">${tt_fields[0]}</table>`;
-        for (let i = 1; i <= 23; i++) {
-          if (globals.tt_pageenabledArray[i]) {
-            mines_html += `<table class="cws-tt-table" style="display:none;" page="${i}">${tt_fields[i]}</table>`;
-          }
-        }
-        mines_html += `<button id="cws_tt_clear_btn">Очистить всё поле</button></div>`;
-        $('#app').append(mines_html);
-        let proj = false; //свитч переноса
-        let page = 0; //страница
-        let text = '0';
-        let mark = 'cws-tt-safe';
-        $("#cws_treeTechies").draggable({
-          containment: "document",
-          handle: "#cws_treeTechiesHandle",
-          drag: function () {
-            let offset = $(this).offset();
-            let xPos = offset.left;
-            let yPos = offset.top;
-            setSettings('tt_window_left', offset.left);
-            setSettings('tt_window_top', offset.top);
-          }
+                    }
+                }
+                mines_html += `</div></div><table class="cws-tt-table" page="0">${tt_fields[0]}</table>`;
+                for (let i = 1; i <= 23; i++) {
+                    if (globals.tt_pageenabledArray[i]) {
+                        mines_html += `<table class="cws-tt-table" style="display:none;" page="${i}">${tt_fields[i]}</table>`;
+                    }
+                }
+                mines_html += `<button id="cws_tt_clear_btn">Очистить всё поле</button></div>`;
+                $('#app').append(mines_html);
+                let proj = false; //свитч переноса
+                let page = 0; //страница
+                let text = '0';
+                let mark = 'cws-tt-safe';
+                $("#cws_treeTechies").draggable({
+                    containment: "document",
+                    handle: "#cws_treeTechiesHandle",
+                    drag: function () {
+                        let offset = $(this).offset();
+                        let xPos = offset.left;
+                        let yPos = offset.top;
+                        setSettings('tt_window_left', offset.left);
+                        setSettings('tt_window_top', offset.top);
+                    }
 
-        });
+                });
 
-        let selFolder = getSettings('tt_selected_folder');
-        if (selFolder !== null) {
-          if (!$('#cws_tt_folder' + selFolder).length) {
-            selFolder = '0';
-          }
-          $('#cws_tt_folder' + selFolder).click();
-          $('.cws-tt-page-lbl').hide();
-          $('.cws-tt-page-lbl[folder=' + selFolder + ']').show();
-          $('.cws-tt-page-lbl[folder=' + selFolder + ']')[0].click();
-          let pageid = $('.cws-tt-page-lbl[folder=' + selFolder + ']').attr('for');
-          let $pageinp = $('#' + pageid + '');
-          $('.cws-tt-table[page=' + page + ']').hide();
-          page = $pageinp.val();
-          $('.cws-tt-table[page=' + page + ']').show();
-        }
+                let selFolder = getSettings('tt_selected_folder');
+                if (selFolder !== null) {
+                    if (!$('#cws_tt_folder' + selFolder).length) {
+                        selFolder = '0';
+                    }
+                    $('#cws_tt_folder' + selFolder).click();
+                    $('.cws-tt-page-lbl').hide();
+                    $('.cws-tt-page-lbl[folder=' + selFolder + ']').show();
+                    $('.cws-tt-page-lbl[folder=' + selFolder + ']')[0].click();
+                    let pageid = $('.cws-tt-page-lbl[folder=' + selFolder + ']').attr('for');
+                    let $pageinp = $('#' + pageid + '');
+                    $('.cws-tt-table[page=' + page + ']').hide();
+                    page = $pageinp.val();
+                    $('.cws-tt-table[page=' + page + ']').show();
+                }
 
-        function tt_setStyle($elem, style) {
-          $elem.removeClass('cws-tt-safe cws-tt-unsafe cws-tt-move').addClass(style);
-          if (proj) {
-            let col = $elem.index();
-            let row = $elem.parent().index();
-            $('#cages > tbody > tr').eq(row).children().eq(col).removeClass('cws-tt-safe cws-tt-unsafe cws-tt-move').addClass(style);
-          }
-        }
+                function tt_setStyle($elem, style) {
+                    $elem.removeClass('cws-tt-safe cws-tt-unsafe cws-tt-move').addClass(style);
+                    if (proj) {
+                        let col = $elem.index();
+                        let row = $elem.parent().index();
+                        $('#cages > tbody > tr').eq(row).children().eq(col).removeClass('cws-tt-safe cws-tt-unsafe cws-tt-move').addClass(style);
+                    }
+                }
 
-        function tt_draw() {
-          $('.cws-tt-table[page=' + page + '] td.cws-tt-safe, .cws-tt-table[page=' + page + '] td.cws-tt-unsafe, .cws-tt-table[page=' + page + '] td.cws-tt-move').each(function () {
-            let col = $(this).index();
-            let row = $(this).parent().index();
-            $('#cages > tbody > tr').eq(row).children().eq(col).addClass($(this)[0].classList.value);
-            /*if ($(this).hasClass('cws-tt-safe') || $(this).hasClass('cws-tt-safe-def')) {
+                function tt_draw() {
+                    $('.cws-tt-table[page=' + page + '] td.cws-tt-safe, .cws-tt-table[page=' + page + '] td.cws-tt-unsafe, .cws-tt-table[page=' + page + '] td.cws-tt-move').each(function () {
+                        let col = $(this).index();
+                        let row = $(this).parent().index();
+                        $('#cages > tbody > tr').eq(row).children().eq(col).addClass($(this)[0].classList.value);
+                        /*if ($(this).hasClass('cws-tt-safe') || $(this).hasClass('cws-tt-safe-def')) {
               $('#cages > tbody > tr').eq(row).children().eq(col).addClass('cws-tt-safe');
             }
             else if ($(this).hasClass('cws-tt-unsafe')) {
@@ -1636,188 +2208,188 @@ height: 25px;
             else if ($(this).hasClass('cws-tt-move')) {
               $('#cages > tbody > tr').eq(row).children().eq(col).addClass('cws-tt-move');
             }*/
-          })
-        }
-        $('body').on('change', 'input[name="cws_tt_page"]', function () {
-          $('.cws-tt-table[page=' + page + ']').hide();
-          page = $(this).val();
-          $('.cws-tt-table[page=' + page + ']').show();
-          if (proj) {
-            $('#cages > tbody > tr > td.cws-tt-safe').each(function () {
-              $(this).removeClass('cws-tt-safe')
+                    })
+                }
+                $('body').on('change', 'input[name="cws_tt_page"]', function () {
+                    $('.cws-tt-table[page=' + page + ']').hide();
+                    page = $(this).val();
+                    $('.cws-tt-table[page=' + page + ']').show();
+                    if (proj) {
+                        $('#cages > tbody > tr > td.cws-tt-safe').each(function () {
+                            $(this).removeClass('cws-tt-safe')
+                        });
+                        $('#cages > tbody > tr > td.cws-tt-unsafe').each(function () {
+                            $(this).removeClass('cws-tt-unsafe')
+                        });
+                        $('#cages > tbody > tr > td.cws-tt-move').each(function () {
+                            $(this).removeClass('cws-tt-move')
+                        });
+                        tt_draw();
+                    }
+                });
+                $('body').on('change', 'input[name="cws_tt_folder"]', function () {
+                    let folder = $(this).val();
+                    setSettings('tt_selected_folder', folder);
+                    $('.cws-tt-page-lbl').hide();
+                    $('.cws-tt-page-lbl[folder=' + folder + ']').show();
+                    $('.cws-tt-page-lbl[folder=' + folder + ']')[0].click();
+                });
+                $('body').on('change', 'input[name="cws_tt_cell"]', function () {
+                    text = $(this).val();
+                    mark = $(this).attr('mark');
+                });
+                $('body').on('click', '.cws-tt-table td', function () {
+                    $(this).html(text).removeClass('cws-tt-safe cws-tt-unsafe cws-tt-move').addClass(mark);
+                    if (proj) {
+                        let col = $(this).index();
+                        let row = $(this).parent().index();
+                        $('#cages > tbody > tr').eq(row).children().eq(col).removeClass('cws-tt-safe cws-tt-unsafe cws-tt-move').addClass(mark);
+                    }
+                    tt_fields[page] = $('.cws-tt-table[page=' + page + ']').html();
+                    setSettings('tt_fields', JSON.stringify(tt_fields));
+                });
+                $('body').on('click', '#cws_tt_clear_btn', function () {
+                    let ok = true;
+                    if (globals.tt_clean_confirm) {
+                        ok = confirm('Очистить поле?');
+                    }
+                    if (ok) {
+                        $('.cws-tt-table .cws-tt-safe-def').removeClass('cws-tt-safe-def'); // remove later
+                        $('.cws-tt-table[page=' + page + '] td:not(.cws-tt-move)').each(function () {
+                            $(this).html('');
+                            tt_setStyle($(this), '');
+                        });
+                        tt_fields[page] = $('.cws-tt-table[page=' + page + ']').html();
+                        setSettings('tt_fields', JSON.stringify(tt_fields));
+                    }
+                });
+                $('body').on('click', '#cws_treeTechiesFold', function () {
+                    $('#cws_treeTechies').toggleClass('folded');
+                    $('.cws-tt-fold-minus').toggleClass('cws-tt-fold-hidden');
+                    $('.cws-tt-fold-plus').toggleClass('cws-tt-fold-hidden');
+                });
+                $('body').on('change', '#cws_tt_show', function () {
+                    if ($(this).prop('checked')) {
+                        proj = true; //вкл свитч переноса
+                        tt_draw();
+                    }
+                    else {
+                        proj = false;
+                        $('#cages > tbody > tr > td.cws-tt-safe').removeClass('cws-tt-safe');
+                        $('#cages > tbody > tr > td.cws-tt-unsafe').removeClass('cws-tt-unsafe');
+                        $('#cages > tbody > tr > td.cws-tt-move').removeClass('cws-tt-move');
+                    }
+                });
             });
-            $('#cages > tbody > tr > td.cws-tt-unsafe').each(function () {
-              $(this).removeClass('cws-tt-unsafe')
+        }
+        if (globals.on_paramInfo) {
+            function timeConv(sec) {
+                let str = "";
+                let hr = parseInt(sec / 3600);
+                let mi = parseInt((sec - hr * 3600) / 60);
+                let se = parseInt(sec - (hr * 3600 + mi * 60));
+                str += ((hr) ? hr + " ч " : "");
+                str += ((mi) ? mi + " мин " : "");
+                str += ((se) ? se + " с" : "");
+                return str.trim();
+            }
+            $('body').on('click', '#dream_table .symbole', function () {
+                let green = $('#dream td:first-child').attr('style').replace(/[^\d\.]/g, '');
+                let moving = ($('#dream td:first-child').attr('style').indexOf('overflow') !== -1);
+                if (!moving) {
+                    let perc = Math.round(green / 150 * 10000) / 100;
+                    error(`Сонливость: ${perc}% (${green}px).${(green<150)?` Спать${(green != '0')?` примерно ${timeConv((150-green)*20)}`:` 50 мин или более`}.`:''}`);
+                }
             });
-            $('#cages > tbody > tr > td.cws-tt-move').each(function () {
-              $(this).removeClass('cws-tt-move')
+            $('body').on('click', '#hunger_table .symbole', function () {
+                let green = $('#hunger td:first-child').attr('style').replace(/[^\d\.]/g, '');
+                let moving = ($('#hunger td:first-child').attr('style').indexOf('overflow') !== -1);
+                if (!moving) {
+                    let perc = Math.round(green / 150 * 10000) / 100;
+                    error("Голод: " + perc + "% (" + green + "px).");
+                }
             });
-            tt_draw();
-          }
-        });
-        $('body').on('change', 'input[name="cws_tt_folder"]', function () {
-          let folder = $(this).val();
-          setSettings('tt_selected_folder', folder);
-          $('.cws-tt-page-lbl').hide();
-          $('.cws-tt-page-lbl[folder=' + folder + ']').show();
-          $('.cws-tt-page-lbl[folder=' + folder + ']')[0].click();
-        });
-        $('body').on('change', 'input[name="cws_tt_cell"]', function () {
-          text = $(this).val();
-          mark = $(this).attr('mark');
-        });
-        $('body').on('click', '.cws-tt-table td', function () {
-          $(this).html(text).removeClass('cws-tt-safe cws-tt-unsafe cws-tt-move').addClass(mark);
-          if (proj) {
-            let col = $(this).index();
-            let row = $(this).parent().index();
-            $('#cages > tbody > tr').eq(row).children().eq(col).removeClass('cws-tt-safe cws-tt-unsafe cws-tt-move').addClass(mark);
-          }
-          tt_fields[page] = $('.cws-tt-table[page=' + page + ']').html();
-          setSettings('tt_fields', JSON.stringify(tt_fields));
-        });
-        $('body').on('click', '#cws_tt_clear_btn', function () {
-          let ok = true;
-          if (globals.tt_clean_confirm) {
-            ok = confirm('Очистить поле?');
-          }
-          if (ok) {
-            $('.cws-tt-table .cws-tt-safe-def').removeClass('cws-tt-safe-def'); // remove later
-            $('.cws-tt-table[page=' + page + '] td:not(.cws-tt-move)').each(function () {
-              $(this).html('');
-              tt_setStyle($(this), '');
+            $('body').on('click', '#thirst_table .symbole', function () {
+                let green = $('#thirst td:first-child').attr('style').replace(/[^\d\.]/g, '');
+                let moving = ($('#thirst td:first-child').attr('style').indexOf('overflow') !== -1);
+                if (!moving) {
+                    let perc = Math.round(green / 150 * 10000) / 100;
+                    error(`Жажда: ${perc}% (${green}px).${(green<150)?` Пить примерно ${timeConv((150-green)*60)}.`:''}`);
+                }
             });
-            tt_fields[page] = $('.cws-tt-table[page=' + page + ']').html();
-            setSettings('tt_fields', JSON.stringify(tt_fields));
-          }
-        });
-        $('body').on('click', '#cws_treeTechiesFold', function () {
-          $('#cws_treeTechies').toggleClass('folded');
-          $('.cws-tt-fold-minus').toggleClass('cws-tt-fold-hidden');
-          $('.cws-tt-fold-plus').toggleClass('cws-tt-fold-hidden');
-        });
-        $('body').on('change', '#cws_tt_show', function () {
-          if ($(this).prop('checked')) {
-            proj = true; //вкл свитч переноса
-            tt_draw();
-          }
-          else {
-            proj = false;
-            $('#cages > tbody > tr > td.cws-tt-safe').removeClass('cws-tt-safe');
-            $('#cages > tbody > tr > td.cws-tt-unsafe').removeClass('cws-tt-unsafe');
-            $('#cages > tbody > tr > td.cws-tt-move').removeClass('cws-tt-move');
-          }
-        });
-      });
-    }
-    if (globals.on_paramInfo) {
-      function timeConv(sec) {
-        let str = "";
-        let hr = parseInt(sec / 3600);
-        let mi = parseInt((sec - hr * 3600) / 60);
-        let se = parseInt(sec - (hr * 3600 + mi * 60));
-        str += ((hr) ? hr + " ч " : "");
-        str += ((mi) ? mi + " мин " : "");
-        str += ((se) ? se + " с" : "");
-        return str.trim();
-      }
-      $('body').on('click', '#dream_table .symbole', function () {
-        let green = $('#dream td:first-child').attr('style').replace(/[^\d\.]/g, '');
-        let moving = ($('#dream td:first-child').attr('style').indexOf('overflow') !== -1);
-        if (!moving) {
-          let perc = Math.round(green / 150 * 10000) / 100;
-          error(`Сонливость: ${perc}% (${green}px).${(green<150)?` Спать${(green != '0')?` примерно ${timeConv((150-green)*20)}`:` 50 мин или более`}.`:''}`);
+            $('body').on('click', '#need_table .symbole', function () {
+                let green = $('#need td:first-child').attr('style').replace(/[^\d\.]/g, '');
+                let moving = ($('#need td:first-child').attr('style').indexOf('overflow') !== -1);
+                if (!moving) {
+                    let min = (150 - green) / 2;
+                    let perc = Math.round(green / 150 * 10000) / 100;
+                    error(`Нужда: ${perc}% (${green}px).${(green<150)?` Справлять нужду${(green != '0')?` примерно ${timeConv(Math.trunc(min)*60)}${(Number.isInteger(min))?'':' 30 с'}`:` 1 ч 15 мин или более`}.`:''}`);
+                }
+            });
+            $('body').on('click', '#clean_table .symbole', function () {
+                let green = $('#clean td:first-child').attr('style').replace(/[^\d\.]/g, '');
+                let moving = ($('#clean td:first-child').attr('style').indexOf('overflow') !== -1);
+                if (!moving) {
+                    let fleas = (green < 75) ? true : false;
+                    let perc = Math.round(green / 150 * 10000) / 100;
+                    let red = 150 - green;
+                    red = (red % 3) ? red : red - 0.5;
+                    let time = (red - 1) / 1.5 * 100 + 100;
+                    error(`Чистота: ${perc}% (${green}px).${(green<150)?` Вылизываться ${(fleas)?'уже поздно':timeConv(time)}.`:''}`);
+                }
+            });
         }
-      });
-      $('body').on('click', '#hunger_table .symbole', function () {
-        let green = $('#hunger td:first-child').attr('style').replace(/[^\d\.]/g, '');
-        let moving = ($('#hunger td:first-child').attr('style').indexOf('overflow') !== -1);
-        if (!moving) {
-          let perc = Math.round(green / 150 * 10000) / 100;
-          error("Голод: " + perc + "% (" + green + "px).");
+        for (let i = 0; i < globals.css_itemHighlightArray.length; i++) {
+            globals.css_itemHighlightArray[i] = globals.css_itemHighlightArray[i].trim();
         }
-      });
-      $('body').on('click', '#thirst_table .symbole', function () {
-        let green = $('#thirst td:first-child').attr('style').replace(/[^\d\.]/g, '');
-        let moving = ($('#thirst td:first-child').attr('style').indexOf('overflow') !== -1);
-        if (!moving) {
-          let perc = Math.round(green / 150 * 10000) / 100;
-          error(`Жажда: ${perc}% (${green}px).${(green<150)?` Пить примерно ${timeConv((150-green)*60)}.`:''}`);
-        }
-      });
-      $('body').on('click', '#need_table .symbole', function () {
-        let green = $('#need td:first-child').attr('style').replace(/[^\d\.]/g, '');
-        let moving = ($('#need td:first-child').attr('style').indexOf('overflow') !== -1);
-        if (!moving) {
-          let min = (150 - green) / 2;
-          let perc = Math.round(green / 150 * 10000) / 100;
-          error(`Нужда: ${perc}% (${green}px).${(green<150)?` Справлять нужду${(green != '0')?` примерно ${timeConv(Math.trunc(min)*60)}${(Number.isInteger(min))?'':' 30 с'}`:` 1 ч 15 мин или более`}.`:''}`);
-        }
-      });
-      $('body').on('click', '#clean_table .symbole', function () {
-        let green = $('#clean td:first-child').attr('style').replace(/[^\d\.]/g, '');
-        let moving = ($('#clean td:first-child').attr('style').indexOf('overflow') !== -1);
-        if (!moving) {
-          let fleas = (green < 75) ? true : false;
-          let perc = Math.round(green / 150 * 10000) / 100;
-          let red = 150 - green;
-          red = (red % 3) ? red : red - 0.5;
-          let time = (red - 1) / 1.5 * 100 + 100;
-          error(`Чистота: ${perc}% (${green}px).${(green<150)?` Вылизываться ${(fleas)?'уже поздно':timeConv(time)}.`:''}`);
-        }
-      });
-    }
-    for (let i = 0; i < globals.css_itemHighlightArray.length; i++) {
-        globals.css_itemHighlightArray[i] = globals.css_itemHighlightArray[i].trim();
-    }
-    var checkItemHighlightCage = function(style_value) {
-        let style = (style_value || '').split(';');
-        const styleBody = `content: '';position: absolute;width: 100%;height: 100%;-webkit-filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});
+        var checkItemHighlightCage = function(style_value) {
+            let style = (style_value || '').split(';');
+            const styleBody = `content: '';position: absolute;width: 100%;height: 100%;-webkit-filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});
             -moz-filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});-ms-filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});
             -o-filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});filter: drop-shadow(3px 3px 0px ${globals.css_itemHighlightColor});`;
-        for (let i = 0; i < style.length; i++) {
-            let now = style[i].split(':');
-            if (now.length == 2 && now[0] == 'background') {
-                let nowItems = now[1].split(',');
-                let nowItemsGenerated = [];
-                let nowUniqueKey = 'cws_itemHighlight';
-                for (let j = 0; j < nowItems.length; j++) {
-                    let nowItem = nowItems[j];
-                    let nowItemType = ((nowItem.match(/things\/(\d+)\.png/u) || ['', 0])[1]) + '';
-                    nowUniqueKey += '_' + nowItemType;
-                    if (globals.css_itemHighlightArray.includes(nowItemType)) {
-                        nowItemsGenerated.push(nowItem);
-                    }
-                }
-                if (nowItemsGenerated.length) {
-                    if (!$('#' + nowUniqueKey).length) {
-                        if (globals.on_css_itemHighlight_data == undefined) {
-                            globals.on_css_itemHighlight_data = '';
+            for (let i = 0; i < style.length; i++) {
+                let now = style[i].split(':');
+                if (now.length == 2 && now[0] == 'background') {
+                    let nowItems = now[1].split(',');
+                    let nowItemsGenerated = [];
+                    let nowUniqueKey = 'cws_itemHighlight';
+                    for (let j = 0; j < nowItems.length; j++) {
+                        let nowItem = nowItems[j];
+                        let nowItemType = ((nowItem.match(/things\/(\d+)\.png/u) || ['', 0])[1]) + '';
+                        nowUniqueKey += '_' + nowItemType;
+                        if (globals.css_itemHighlightArray.includes(nowItemType)) {
+                            nowItemsGenerated.push(nowItem);
                         }
-                        const data = `<style id=${nowUniqueKey} class="on_css_itemHighlight">.cage_items[style*='${style[i]}']:before {
+                    }
+                    if (nowItemsGenerated.length) {
+                        if (!$('#' + nowUniqueKey).length) {
+                            if (globals.on_css_itemHighlight_data == undefined) {
+                                globals.on_css_itemHighlight_data = '';
+                            }
+                            const data = `<style id=${nowUniqueKey} class="on_css_itemHighlight">.cage_items[style*='${style[i]}']:before {
                             ${styleBody}background: ${nowItemsGenerated.join(', ')};}</style>`;
-                        globals.on_css_itemHighlight_data += data;
-                        $('head').append(data);
+                            globals.on_css_itemHighlight_data += data;
+                            $('head').append(data);
+                        }
                     }
                 }
             }
         }
-    }
-    var itemHighlightObserver = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutationRecord) {
-            checkItemHighlightCage(mutationRecord.target.attributes.style.value);
+        var itemHighlightObserver = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutationRecord) {
+                checkItemHighlightCage(mutationRecord.target.attributes.style.value);
+            });
         });
-    });
-    if (globals.on_css_itemHighlight) {
-        for (let target of document.getElementsByClassName('cage_items')) {
-            itemHighlightObserver.observe(target, { attributes : true, attributeFilter : ['style'] });
+        if (globals.on_css_itemHighlight) {
+            for (let target of document.getElementsByClassName('cage_items')) {
+                itemHighlightObserver.observe(target, { attributes : true, attributeFilter : ['style'] });
+            }
         }
-    }
-    const css_texts = {
-      'on_csslocation': `<style id="cwsstyle_on_csslocation">div[style*="spacoj"] {background-image: url("${globals.css_locURL}") !important;}</style>`,
-      'on_css_cellshade': `<style id="cwsstyle_on_css_cellshade">.cage {box-shadow: inset 0px ${globals.css_cellshadeOpacity}px 0px ${globals.css_cellshadeOpacity}px ${globals.css_cellshadeColor};}</style>`,
-      'on_css_removesky': `<style id="cwsstyle_on_css_removesky">#sky {display:none;}</style>`,
-      'on_css_oldicons': `<style id="cwsstyle_on_css_oldicons">[data-id='1']>img {content:url(http://d.zaix.ru/b6pm.png);}
+        const css_texts = {
+            'on_csslocation': `<style id="cwsstyle_on_csslocation">div[style*="spacoj"] {background-image: url("${globals.css_locURL}") !important;}</style>`,
+            'on_css_cellshade': `<style id="cwsstyle_on_css_cellshade">.cage {box-shadow: inset 0px ${globals.css_cellshadeOpacity}px 0px ${globals.css_cellshadeOpacity}px ${globals.css_cellshadeColor};}</style>`,
+            'on_css_removesky': `<style id="cwsstyle_on_css_removesky">#sky {display:none;}</style>`,
+            'on_css_oldicons': `<style id="cwsstyle_on_css_oldicons">[data-id='1']>img {content:url(http://d.zaix.ru/b6pm.png);}
 [data-id='3']>img {content:url(http://d.zaix.ru/b6pp.png);}
 [data-id='4']>img {content:url(http://d.zaix.ru/b6pC.png);}
 [data-id='5']>img {content:url(http://d.zaix.ru/b6pD.png);}
@@ -1841,7 +2413,7 @@ height: 25px;
 [data-id='exchange']>img {content:url(http://d.zaix.ru/aRJm.png);}
 [data-id='flowers']>img {content: url(http://d.zaix.ru/aRIh.png);}
 #dialog>img {content: url(http://d.zaix.ru/fpvK.png);}</style>`,
-      'on_css_coloredparam': `<style id="cwsstyle_on_css_coloredparam">
+            'on_css_coloredparam': `<style id="cwsstyle_on_css_coloredparam">
 #dream .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
 #dream .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[2]}, ${globals.css_cp_colors[3]});}
 #hunger .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[4]}, ${globals.css_cp_colors[5]});}
@@ -1856,37 +2428,37 @@ height: 25px;
 #clean .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[22]}, ${globals.css_cp_colors[23]});}
 .bar .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[24]}, ${globals.css_cp_colors[25]});}
 .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[26]}, ${globals.css_cp_colors[27]});}</style>`,
-      'on_css_highlightmove': `<style id="cwsstyle_on_css_highlightmove">.move_parent:hover {
+            'on_css_highlightmove': `<style id="cwsstyle_on_css_highlightmove">.move_parent:hover {
 filter: drop-shadow(0px 0px 6px #ffffffcf);
 transition: 0.2s;-webkit-transition: 0.2s;-o-transition: 0.2s;-moz-transition: 0.2s;
 }.move_parent {transition: 0.3s;}</style>`,
-      'on_css_maxopacity': `<style id="cwsstyle_on_css_maxopacity">.cat > div {opacity:1 !important;}</style>`,
-      'on_css_hideTooltip': `<style id="cwsstyle_on_css_hideTooltip">.cat:hover .cat_tooltip {display:none;}</style>`,
-      'on_css_daylight': `<style id="cwsstyle_on_css_daylight">#cages_div {opacity: 1 !important;}</style>`,
-      'on_css_defects': `<style id="cwsstyle_on_css_defects">div[style*="/defects/disease/"] {background-color: #eeff4640 !important;padding-top: 16px;}
+            'on_css_maxopacity': `<style id="cwsstyle_on_css_maxopacity">.cat > div {opacity:1 !important;}</style>`,
+            'on_css_hideTooltip': `<style id="cwsstyle_on_css_hideTooltip">.cat:hover .cat_tooltip {display:none;}</style>`,
+            'on_css_daylight': `<style id="cwsstyle_on_css_daylight">#cages_div {opacity: 1 !important;}</style>`,
+            'on_css_defects': `<style id="cwsstyle_on_css_defects">div[style*="/defects/disease/"] {background-color: #eeff4640 !important;padding-top: 16px;}
 div[style*="/defects/trauma/"] {background-color: #46ffef40 !important;padding-top: 16px;}
 div[style*="/defects/drown/"] {background-color: #68ff4640 !important;padding-top: 16px;}
 div[style*="/defects/wound/"] {background-color: #4646ff40 !important;padding-top: 16px;}
 div[style*="/defects/poisoning/"] {background-color: #ff464640 !important;padding-top: 16px;}</style>`,
-      'on_css_defects_dirt': `<style id="cwsstyle_on_css_defects_dirt">
+            'on_css_defects_dirt': `<style id="cwsstyle_on_css_defects_dirt">
 div[style*="/defects/dirt/3.png"], div[style*="/defects/dirt/base/1/3.png"],
 div[style*="/defects/dirt/base/2/3.png"], div[style*="/defects/dirt/4.png"],
 div[style*="/defects/dirt/base/1/4.png"], div[style*="/defects/dirt/base/2/4.png"] {background-color: #9446ff40 !important;padding-top: 16px;}</style>`,
-        'on_css_hideChat': `<style id="cwsstyle_on_css_hideChat">#tr_chat {display: none;}</style>`,
-        'on_css_itemHighlight' : `<style id="cwsstyle_on_css_itemHighlight">.cage_items {position: relative;}</style>`,
-    };
-    $.each(css_texts, function (index, value) {
-      if (globals[index]) {
-        $('head').append(css_texts[index]);
-        if (globals[index + '_data']) {
-          $('head').append(globals[index + '_data']);
-        }
-      }
-    });
+            'on_css_hideChat': `<style id="cwsstyle_on_css_hideChat">#tr_chat {display: none;}</style>`,
+            'on_css_itemHighlight' : `<style id="cwsstyle_on_css_itemHighlight">.cage_items {position: relative;}</style>`,
+        };
+        $.each(css_texts, function (index, value) {
+            if (globals[index]) {
+                $('head').append(css_texts[index]);
+                if (globals[index + '_data']) {
+                    $('head').append(globals[index + '_data']);
+                }
+            }
+        });
 
-    if (globals.on_css_quicksettings) {
-      addCSS(`#cws_quick_settings_block {user-select:none;}`);
-      $('#family').append(`<h2><a href="#" id="cws_quick_settings" class="toggle">Настройки CW:S</a></h2>
+        if (globals.on_css_quicksettings) {
+            addCSS(`#cws_quick_settings_block {user-select:none;}`);
+            $('#family').append(`<h2><a href="#" id="cws_quick_settings" class="toggle">Настройки CW:S</a></h2>
 <div id="cws_quick_settings_block">
 ${globals.on_treeTechies?`<div><input id="on_treeTechies" type="checkbox" checked><label for="on_treeTechies">Показывать окно минного поля</label></div>`:''}
 <div><input class="cwa-chk" id="on_css_cellshade" type="checkbox"${globals.on_css_cellshade?' checked':''}><label for="on_css_cellshade">Сетка ячеек локации</label></div>
@@ -1901,158 +2473,167 @@ ${globals.on_treeTechies?`<div><input id="on_treeTechies" type="checkbox" checke
 <div><input class="cwa-chk" id="on_css_itemHighlight" type="checkbox"${globals.on_css_itemHighlight?' checked':''}><label for="on_css_itemHighlight">Подсветка предметов на поле Игровой</label></div>
 
 </div>`);
-      $('body').on('change', '#on_treeTechies', function () {
-        $('#cws_treeTechies').toggleClass('hidden');
-      });
-      $('body').on('change', '.cwa-chk', function () {
-          let id = $(this).attr('id');
-          let ischkd = $(this).prop('checked');
-          if (ischkd) {
-              $('head').append(css_texts[id]);
-              if (globals[id + '_data']) {
-                  $('head').append(globals[id + '_data']);
-              }
-              if (id == 'on_css_itemHighlight') {
-                  itemHighlightObserver.disconnect();
-                  for (let target of document.getElementsByClassName('cage_items')) {
-                      itemHighlightObserver.observe(target, { attributes : true, attributeFilter : ['style'] });
-                  }
-                  $('.cage_items').each(function() {
-                      checkItemHighlightCage($(this).attr('style'));
-                  });
-              }
-          } else {
-              $('#cwsstyle_' + id + ', .' + id).remove();
-              if (id == 'on_css_itemHighlight') {
-                  itemHighlightObserver.disconnect();
-              }
-          }
-          setSettings(id, ischkd);
-      });
-    }
-  }
-
-  function myCat() {
-      $(document).ready(function () {
-          let id = $('#pr table tr:first-child td:last-child a').attr('href').replace('cat', '');
-          setSettings('thine', id);
-      });
-      if (globals.on_deletionWarning) {
-          const id = +($('#id_icon').parent().parent().children().last().text());
-          const moons = +($('#age_icon').parent().parent().children().last().text().replace(/[^\d\.]/ig, ''));
-          const age = Math.floor(moons * 4 * 86400 * 1000);
-          let date = new Date();
-          date.setTime(date.getTime() + (date.getTimezoneOffset() + 180) * 60 * 1000 - age - 86400 * 1000);
-          // Текущая дата по московскому времени минус возраст и минус дополнительные сутки из-за того, что регистрация в ночное время
-          // может калькулировать возраст по лунам на день позже
-          const dateNow = new Date();
-          dateNow.setTime(dateNow.getTime() + (dateNow.getTimezoneOffset() + 180) * 60 * 1000);
-          const obj = {};
-          setSettings(`reg_${id}`, JSON.stringify({
-              regTime: Math.floor(date.getTime() / 1000),
-              lastOnline: Math.floor(dateNow.getTime() / 1000)
-          }));
-      }
-    if (!globals.charListArray || !globals.charListArray.length) { //Если массив ни разу не заполнялся
-      $(document).ready(function () {
-        let autoCCArr = [];
-        $('a[href*="/login2?"]').each(function () {
-          let id = $(this).attr('href').split('=')[1];
-          let name = $(this).html();
-          if (id && name) {
-            autoCCArr.push({
-              'id': id,
-              'name': name
+            $('body').on('change', '#on_treeTechies', function () {
+                $('#cws_treeTechies').toggleClass('hidden');
             });
-          }
-        });
-        let id = $('#pr a[href*="cat"] > b').html();
-        let name = $('#pr > big').html();
-        if (id && name) {
-          autoCCArr.push({
-            'id': id,
-            'name': name
-          });
+            $('body').on('change', '.cwa-chk', function () {
+                let id = $(this).attr('id');
+                let ischkd = $(this).prop('checked');
+                if (ischkd) {
+                    $('head').append(css_texts[id]);
+                    if (globals[id + '_data']) {
+                        $('head').append(globals[id + '_data']);
+                    }
+                    if (id == 'on_css_itemHighlight') {
+                        itemHighlightObserver.disconnect();
+                        for (let target of document.getElementsByClassName('cage_items')) {
+                            itemHighlightObserver.observe(target, { attributes : true, attributeFilter : ['style'] });
+                        }
+                        $('.cage_items').each(function() {
+                            checkItemHighlightCage($(this).attr('style'));
+                        });
+                    }
+                } else {
+                    $('#cwsstyle_' + id + ', .' + id).remove();
+                    if (id == 'on_css_itemHighlight') {
+                        itemHighlightObserver.disconnect();
+                    }
+                }
+                setSettings(id, ischkd);
+            });
         }
-        window.localStorage.setItem('cws_sett_charListArray', JSON.stringify(autoCCArr));
-      });
     }
-  }
 
-  function profile() {
-    $.getJSON("https://abstract-class-shed.github.io/cwshed/river_achievements.json?" + Date.now(), function (data) {
-      const achievements = data,
-        elem = `<div id="cws_achievement" style="display: none; margin: 5px; padding: 5px; border-radius: 10px; width: 270px; background: rgba(255, 255, 255, 0.4); color: black;"></div>`,
-        inner = `Ачивка <b>"{name}"</b>
+    function myCat() {
+        $(document).ready(function () {
+            let id = $('#pr table tr:first-child td:last-child a').attr('href').replace('cat', '');
+            setSettings('thine', id);
+        });
+        if (globals.on_deletionWarning) {
+            const id = +($('#id_icon').parent().parent().children().last().text());
+            const moons = +($('#age_icon').parent().parent().children().last().text().replace(/[^\d\.]/ig, ''));
+            const age = Math.floor(moons * 4 * 86400 * 1000);
+            let date = new Date();
+            date.setTime(date.getTime() + (date.getTimezoneOffset() + 180) * 60 * 1000 - age - 86400 * 1000);
+            // Текущая дата по московскому времени минус возраст и минус дополнительные сутки из-за того, что регистрация в ночное время
+            // может калькулировать возраст по лунам на день позже
+            const dateNow = new Date();
+            dateNow.setTime(dateNow.getTime() + (dateNow.getTimezoneOffset() + 180) * 60 * 1000);
+            const obj = {};
+            setSettings(`reg_${id}`, JSON.stringify({
+                regTime: Math.floor(date.getTime() / 1000),
+                lastOnline: Math.floor(dateNow.getTime() / 1000)
+            }));
+        }
+        if (!globals.charListArray || !globals.charListArray.length) { //Если массив ни разу не заполнялся
+            $(document).ready(function () {
+                let autoCCArr = [];
+                $('a[href*="/login2?"]').each(function () {
+                    let id = $(this).attr('href').split('=')[1];
+                    let name = $(this).html();
+                    if (id && name) {
+                        autoCCArr.push({
+                            'id': id,
+                            'name': name
+                        });
+                    }
+                });
+                let id = $('#pr a[href*="cat"] > b').html();
+                let name = $('#pr > big').html();
+                if (id && name) {
+                    autoCCArr.push({
+                        'id': id,
+                        'name': name
+                    });
+                }
+                window.localStorage.setItem('cws_sett_charListArray', JSON.stringify(autoCCArr));
+            });
+        }
+    }
+
+    function profile() {
+        $.getJSON("https://raw.githubusercontent.com/polexka/abstract-class-shed.github.io/refs/heads/main/cwshed/river_achievements.json?" + Date.now(), function (data) {
+            const achievements = data,
+                  elem = `<div id="cws_achievement" style="display: none; margin: 5px; padding: 5px; border-radius: 10px; width: 270px; background: rgba(255, 255, 255, 0.4); color: black;"></div>`,
+                  inner = `Ачивка <b>"{name}"</b>
 <span style="font-size: 0.9em"><br>Тип: <i>{type}</i><br>
 <span style="white-space:pre-wrap">{condition}</span>`;
-        const top_el_id = isDesktop ? '#branch' : '#site_table';
-      let $achievement = $(`${top_el_id} > .parsed:first tbody > tr img[src*="images.vfl.ru"], `
+            const top_el_id = isDesktop ? '#branch' : '#site_table';
+            let $achievement = $(`${top_el_id} > .parsed:first tbody > tr img[src*="images.vfl.ru"], `
                            + `${top_el_id} > .parsed:first > img[src*="images.vfl.ru"], `
                           + `${top_el_id} > .parsed:first tbody > tr img[src*="i.ibb.co"], `
                            + `${top_el_id} > .parsed:first > img[src*="i.ibb.co"]`),
-        $body = $('body'),
-        old_code = "";
-        const linkRegex = /(images\.vfl\.ru\/ii\/(\d+\/[\d\w]+\/\d+_?m?)\.png|i\.ibb\.co\/([\d\w]+\/[\d\w_-]+)\.png)/;
-      $(document).ready(function () {
-        $achievement.last().after(elem);
-        $achievement.each(function (index) { // Добавить титул к каждой ачивке
-          let code = $(this).attr('src').match(linkRegex);
-          if (code !== null) {
-            code = code[2] || code[3];
-            let name = (achievements[code] === undefined) ? "" : achievements[code].name;
-            $(this).prop('title', name);
-          }
+                $body = $('body'),
+                old_code = "";
+            const linkRegex = /(images\.vfl\.ru\/ii\/(\d+\/[\d\w]+\/\d+_?m?)\.png|i\.ibb\.co\/([\d\w]+\/[\d\w_-]+)\.png)/;
+            $(document).ready(function () {
+                $achievement.last().after(elem);
+                $achievement.each(function (index) { // Добавить титул к каждой ачивке
+                    let code = $(this).attr('src').match(linkRegex);
+                    if (code !== null) {
+                        code = code[2] || code[3];
+                        let name = (achievements[code] === undefined) ? "" : achievements[code].name;
+                        $(this).prop('title', name);
+                    }
+                });
+                $achievement.on('click', function () { // инфоблок
+                    let code = $(this).attr('src').match(linkRegex);
+                    if (code !== null) {
+                        code = code[2] || code[3];
+                        if (code == old_code && $('#cws_achievement').css('display') != 'none') {
+                            $('#cws_achievement').hide(200);
+                        }
+                        else if (achievements[code] !== undefined) {
+                            let this_achievement = achievements[code];
+                            let info = inner
+                            .replace("{name}", this_achievement.name)
+                            .replace("{type}", this_achievement.type)
+                            .replace("{condition}", this_achievement.condition);
+                            $('#cws_achievement').html(info).show(200);
+                            old_code = code;
+                        }
+                    }
+                });
+            });
         });
-        $achievement.on('click', function () { // инфоблок
-          let code = $(this).attr('src').match(linkRegex);
-          if (code !== null) {
-            code = code[2] || code[3];
-            if (code == old_code && $('#cws_achievement').css('display') != 'none') {
-              $('#cws_achievement').hide(200);
-            }
-            else if (achievements[code] !== undefined) {
-              let this_achievement = achievements[code];
-              let info = inner
-                .replace("{name}", this_achievement.name)
-                .replace("{type}", this_achievement.type)
-                .replace("{condition}", this_achievement.condition);
-              $('#cws_achievement').html(info).show(200);
-              old_code = code;
-            }
-          }
-        });
-      });
-    });
-  }
-
-  function dm() { //ЛС игрока
-    if (globals.on_idDM) {
-      function add_id() {
-        let id = $('#msg_login').attr('href');
-        if (id !== undefined) {
-          id = id.replace(/\D/ig, '');
-          $('<i id=cws_msg_id> [' + id + ']</i>').insertAfter($('#msg_login'));
-        }
-      }
-      $(document).ready(function () {
-        add_id(); // on load
-        $('#main').bind("DOMSubtreeModified", function () {
-          if (!$('#cws_msg_id').length) {
-            add_id(); // on click
-          }
-        });
-      });
     }
-  }
 
-  function hunt() {
-      if (globals.on_css_bghuntpic) {
-              $('head').append(`<style id="cwsstyle_on_css_bghuntpic">html { background: url('${globals.css_huntbgpicURL}') !important; }</style>`);
-          }
-    if (!isDesktop) {
-      if (globals.on_huntMobileBtns) {
-        addCSS(`#select_type:after {
+    function dm() { //ЛС игрока
+        if (globals.on_idDM) {
+            function add_id() {
+                let id = $('#msg_login').attr('href');
+                if (id !== undefined) {
+                    id = id.replace(/\D/ig, '');
+                    $('<i id=cws_msg_id> [' + id + ']</i>').insertAfter($('#msg_login'));
+                }
+            }
+            document.addEventListener('DOMContentLoaded', function () {
+                add_id(); // on load
+
+                const target = document.querySelector('#main');
+                if (target) {
+                    const observer = new MutationObserver(() => {
+                        if (!document.querySelector('#cws_msg_id')) {
+                            add_id(); // on DOM change
+                        }
+                    });
+
+                    observer.observe(target, {
+                        childList: true,
+                        subtree: true
+                    });
+                }
+            });
+        }
+    }
+
+    function hunt() {
+        if (globals.on_css_bghuntpic) {
+            $('head').append(`<style id="cwsstyle_on_css_bghuntpic">html { background: url('${globals.css_huntbgpicURL}') !important; }</style>`);
+        }
+        if (!isDesktop) {
+            if (globals.on_huntMobileBtns) {
+                addCSS(`#select_type:after {
   content: " (переверните телефон на бок)";
   font-style: italic;
 }
@@ -2132,8 +2713,8 @@ input {
 }
 #q_btn, #e_btn, #x_btn, #z_btn {transform: rotate(45deg);}
 #oben, #links, #rechts, #unten {display: none;}`);
-        $("#main").ready(function () {
-          $("#main").append(`<div id="cws_buttons"><button class="mod_btn" data-code="81" id="q_btn"></button>
+                $("#main").ready(function () {
+                    $("#main").append(`<div id="cws_buttons"><button class="mod_btn" data-code="81" id="q_btn"></button>
                                  <button class="mod_btn" data-code="87" id="w_btn"></button>
                                  <button class="mod_btn" data-code="69" id="e_btn"></button>
                                  <button class="mod_btn" data-code="65" id="a_btn"></button>
@@ -2141,30 +2722,30 @@ input {
                                  <button class="mod_btn" data-code="68" id="d_btn"></button>
                                  <button class="mod_btn" data-code="90" id="z_btn"></button>
                                  <button class="mod_btn" data-code="88" id="x_btn"></button></div>`);
-          $('.mod_btn').on("mousedown touchstart", function (e) {
-            e.preventDefault();
-            let code = $(this).data('code');
-            $('#main').trigger(
-              jQuery.Event('keydown', {
-                keyCode: code,
-                which: code
-              })
-            );
-          });
-          $('.mod_btn').on("mouseup touchend", function (e) {
-            e.preventDefault();
-            let code = $(this).data('code');
-            $('#main').trigger(
-              jQuery.Event('keyup', {
-                keyCode: code,
-                which: code
-              })
-            );
-          });
-        });
-      }
-      if (globals.on_huntMobileFix) {
-        addCSS(`body {
+                    $('.mod_btn').on("mousedown touchstart", function (e) {
+                        e.preventDefault();
+                        let code = $(this).data('code');
+                        $('#main').trigger(
+                            jQuery.Event('keydown', {
+                                keyCode: code,
+                                which: code
+                            })
+                        );
+                    });
+                    $('.mod_btn').on("mouseup touchend", function (e) {
+                        e.preventDefault();
+                        let code = $(this).data('code');
+                        $('#main').trigger(
+                            jQuery.Event('keyup', {
+                                keyCode: code,
+                                which: code
+                            })
+                        );
+                    });
+                });
+            }
+            if (globals.on_huntMobileFix) {
+                addCSS(`body {
   position: fixed;
   height: 100%;
   width: 100%;
@@ -2185,11 +2766,11 @@ html {
     left: -12.5%;
     transform: scale(.9);
 }`);
-      }
-    }
+            }
+        }
 
-    if (globals.on_huntText) {
-      addCSS(`#smell {
+        if (globals.on_huntText) {
+            addCSS(`#smell {
                      text-align: center;
                      display:flex;
                      flex-direction: column;
@@ -2202,52 +2783,52 @@ height: 2.3em;
                  }
 #cws_timer, #cws_hunt_txt {width: 100%;}`);
 
-      let color_old = -1;
-      setInterval(function () {
-        if ($('#smell').attr('style')) {
-          if (!$('#cws_hunt_txt').length) {
-            $('#smell').append('<div id=cws_timer data-sec=0 style="background-color: #ffffff;">00:00</div><div id=cws_hunt_txt></div>')
-          }
-          let color_new = parseInt($('#smell').css('background-color').split('(').pop().split(',')[0]);
-          let a = color_new - color_old
-          if (color_old != -1) {
-            let text = (a < 0) ? "Дальше" : "Ближе";
-            if (color_new === 0) text = "Слишком далеко";
-            if ((a !== 0) || (color_new === 0 && !$('#cws_hunt_txt').html())) $('#cws_hunt_txt').html(text);
-          }
-          color_old = color_new;
+            let color_old = -1;
+            setInterval(function () {
+                if ($('#smell').attr('style')) {
+                    if (!$('#cws_hunt_txt').length) {
+                        $('#smell').append('<div id=cws_timer data-sec=0 style="background-color: #ffffff;">00:00</div><div id=cws_hunt_txt></div>')
+                    }
+                    let color_new = parseInt($('#smell').css('background-color').split('(').pop().split(',')[0]);
+                    let a = color_new - color_old
+                    if (color_old != -1) {
+                        let text = (a < 0) ? "Дальше" : "Ближе";
+                        if (color_new === 0) text = "Слишком далеко";
+                        if ((a !== 0) || (color_new === 0 && !$('#cws_hunt_txt').html())) $('#cws_hunt_txt').html(text);
+                    }
+                    color_old = color_new;
+                }
+            }, 100);
+            setInterval(function () {
+                if ($('#cws_timer').length) {
+                    let sec = parseInt($('#cws_timer').data('sec')),
+                        min;
+                    $('#cws_timer').data('sec', ++sec);
+                    min = parseInt(sec / 60);
+                    sec = sec - min * 60;
+                    $('#cws_timer').text(leadZero(min) + ':' + leadZero(sec));
+                }
+            }, 1000);
         }
-      }, 100);
-      setInterval(function () {
-        if ($('#cws_timer').length) {
-          let sec = parseInt($('#cws_timer').data('sec')),
-            min;
-          $('#cws_timer').data('sec', ++sec);
-          min = parseInt(sec / 60);
-          sec = sec - min * 60;
-          $('#cws_timer').text(leadZero(min) + ':' + leadZero(sec));
-        }
-      }, 1000);
     }
-  }
 
-  function blog() {
-    if (globals.on_reports) {
-      $(document).ready(function () {
-        addCSS(`.inp-button {background-color: #333;color: #fff;border: 1px solid #000;font-family: Verdana;font-size: .9em;}`);
-        const blogID = +(pageurl.replace(/\D/g, ''));
-        let date;
-        date = new Date();
-        date.setTime(date.getTime() + (date.getTimezoneOffset() + 180) * 60 * 1000);
-        const date_str = date.getFullYear() + '-' + leadZero(date.getMonth() + 1) + '-' + leadZero(date.getDate());
-        let my_id_div = `<div>Ваш ID:&nbsp;<input type="text" class="cws-input" pattern="[0-9]+" style="width: 145px;" id="cws_blog_myid" required="true" placeholder="123456" value="${globals.my_id ? globals.my_id : ''}"> <input type="checkbox" checked id="remember_id"><label for="remember_id">Запомнить</label></div>`;
+    function blog() {
+        if (globals.on_reports) {
+            $(document).ready(function () {
+                addCSS(`.inp-button {background-color: #333;color: #fff;border: 1px solid #000;font-family: Verdana;font-size: .9em;}`);
+                const blogID = +(pageurl.replace(/\D/g, ''));
+                let date;
+                date = new Date();
+                date.setTime(date.getTime() + (date.getTimezoneOffset() + 180) * 60 * 1000);
+                const date_str = date.getFullYear() + '-' + leadZero(date.getMonth() + 1) + '-' + leadZero(date.getDate());
+                let my_id_div = `<div>Ваш ID:&nbsp;<input type="text" class="cws-input" pattern="[0-9]+" style="width: 145px;" id="cws_blog_myid" required="true" placeholder="123456" value="${globals.my_id ? globals.my_id : ''}"> <input type="checkbox" checked id="remember_id"><label for="remember_id">Запомнить</label></div>`;
 
-        function rememberMyID(my_id) {
-          if ($('#remember_id').prop('checked') && !isNaN(my_id) && my_id) { // запомнить
-            setSettings('my_id', my_id);
-          }
-        }
-        addCSS(`/*.cws_tabs_content { display: none; } .cws_tabs_content.active { display: block; }*/
+                function rememberMyID(my_id) {
+                    if ($('#remember_id').prop('checked') && !isNaN(my_id) && my_id) { // запомнить
+                        setSettings('my_id', my_id);
+                    }
+                }
+                addCSS(`/*.cws_tabs_content { display: none; } .cws_tabs_content.active { display: block; }*/
 .cws_tabs_caption {
   display: -webkit-flex;
   display: -ms-flexbox;
@@ -2282,31 +2863,31 @@ height: 2.3em;
   color: #fff;
   border-color: #666;
 }`);
-        /*РЕКА*/
-        if (blogID == 13664) { // Охрана границ
-          let patr_time = 21,
-            doz_time = leadZero(date.getHours()),
-            patr_date = new Date(date),
-            doz_date = new Date(date);
-          let hour = date.getHours(),
-            minute = date.getMinutes();
-          if (hour < 12) {
-            patr_date.setDate(patr_date.getDate() - 1);
-          } // yesterday
-          if (hour >= 12) {
-            patr_time = 12;
-          }
-          if (hour >= 15) {
-            patr_time = 15;
-          }
-          if (hour >= 18) {
-            patr_time = 18;
-          }
-          if (hour >= 21) {
-            patr_time = 21;
-          }
-          const patr_date_str = patr_date.getFullYear() + '-' + leadZero(patr_date.getMonth() + 1) + '-' + leadZero(patr_date.getDate());
-          $('#send_comment').append(`
+                /*РЕКА*/
+                if (blogID == 13664) { // Охрана границ
+                    let patr_time = 21,
+                        doz_time = leadZero(date.getHours()),
+                        patr_date = new Date(date),
+                        doz_date = new Date(date);
+                    let hour = date.getHours(),
+                        minute = date.getMinutes();
+                    if (hour < 12) {
+                        patr_date.setDate(patr_date.getDate() - 1);
+                    } // yesterday
+                    if (hour >= 12) {
+                        patr_time = 12;
+                    }
+                    if (hour >= 15) {
+                        patr_time = 15;
+                    }
+                    if (hour >= 18) {
+                        patr_time = 18;
+                    }
+                    if (hour >= 21) {
+                        patr_time = 21;
+                    }
+                    const patr_date_str = patr_date.getFullYear() + '-' + leadZero(patr_date.getMonth() + 1) + '-' + leadZero(patr_date.getDate());
+                    $('#send_comment').append(`
 <hr>
 <h3>Автоматическое заполнение отчётов</h3>
 <hr>
@@ -2425,195 +3006,195 @@ ${my_id_div}
     <button class="inp-button" id="r03_patr">Заполнить отчет</button>
   </div>
 </div>`);
-          $('#r03_patr').on('click', function (e) {
-            let myid = parseInt($('#cws_blog_myid').val()); // id пишущего отчет
-            rememberMyID(myid);
-            myid = (isNaN(myid)) ? 'Некорректный ID ведущего' : masking(myid, '[cat%ID%] [%ID%]');
-            let mar = $('.cws-input[name=r03_patr_mar]:checked').val();
-            if (mar === undefined) {
-              mar = 'Не выбран маршрут';
-            }
-            let arr_members = strToArr($('#cws_patr_members').val());
-            let id_arr = [];
-            let name_error = false; // ошибка в имени участника
-            arr_members.forEach((element) => {
-              let name = element.trim();
-              let tmp = nameToID(name);
-              if (parseInt(tmp)) {
-                id_arr.push(name + ' [' + tmp + ']');
-              }
-              else {
-                name_error = true;
-              }
-            })
-            let date = splitDateStr($("#r03_patr_date").val()); // дата
-            let hr = parseInt($("#r03_patr_time").val().split(":")[0]);
-            let txt = `[u][b]Патруль[/b][/u]
+                    $('#r03_patr').on('click', function (e) {
+                        let myid = parseInt($('#cws_blog_myid').val()); // id пишущего отчет
+                        rememberMyID(myid);
+                        myid = (isNaN(myid)) ? 'Некорректный ID ведущего' : masking(myid, '[cat%ID%] [%ID%]');
+                        let mar = $('.cws-input[name=r03_patr_mar]:checked').val();
+                        if (mar === undefined) {
+                            mar = 'Не выбран маршрут';
+                        }
+                        let arr_members = strToArr($('#cws_patr_members').val());
+                        let id_arr = [];
+                        let name_error = false; // ошибка в имени участника
+                        arr_members.forEach((element) => {
+                            let name = element.trim();
+                            let tmp = nameToID(name);
+                            if (parseInt(tmp)) {
+                                id_arr.push(name + ' [' + tmp + ']');
+                            }
+                            else {
+                                name_error = true;
+                            }
+                        })
+                        let date = splitDateStr($("#r03_patr_date").val()); // дата
+                        let hr = parseInt($("#r03_patr_time").val().split(":")[0]);
+                        let txt = `[u][b]Патруль[/b][/u]
 [b]Дата и время:[/b] ${date.day}.${date.month}, ${leadZero(hr)}:00;
 [b]Маршрут:[/b] ${mar};
 [b]Ведущий:[/b] ${myid};
 [b]Участники:[/b] ${id_arr.join(', ')};`;
-            if (name_error) {
-              txt += `\n! ! ! В отчёте какая-то ошибка с именем (минимум одно из имён не было найдено). Проверьте его перед тем, как отправить.`
+                        if (name_error) {
+                            txt += `\n! ! ! В отчёте какая-то ошибка с именем (минимум одно из имён не было найдено). Проверьте его перед тем, как отправить.`
             }
-            let val = $('#comment').val();
-            if (val) {
-              val += "\n\n";
-            }
-            $('#comment').val(val + txt).scrollintoview();
-          });
-          $('#r03_doz').on('click', function (e) {
-            let date = splitDateStr($("#r03_doz_date").val()),
-              txt = '[u][b]Дозор[/b][/u]\n[b]Дата:[/b] ' + date.day + '.' + date.month + ';\n[b]Время:[/b] ',
-              my_id = parseInt($('#cws_blog_myid').val()),
-              som_text = $('#r03_doz_text').val().trim(),
-              name_error = false,
-              locations = [],
-              time,
-              nextTime,
-              sign,
-              found,
-              pattern,
-              places = {
-                "КЗ": "Камышовые заросли",
-                "ТБ": "Травянистый берег",
-                "РЛ": "Редколесье",
-                "РО": "Разрушенная ограда",
-                "РД": "Расколотое дерево",
-                "ЛР": "Лесной ручеёк",
-                "ВЛ": "Валежник",
-                "ИТ": "Илистая тропа",
-                "ОС": "Одинокий склон",
-                "НК": "Нагретые камни",
-                "ДБ": "Дубрава",
-                "МЗ": "Мшистые земли",
-                "ГТ": "Главный туннель",
-                "01": "Активный 1",
-                "02": "Активный 2",
-                "03": "Активный 3",
-                "04": "Активный 4"
-              };
-            rememberMyID(my_id);
-            time = som_text.match(/^(\d{2}) *([\+-])/i);
-            if (time === null) {
-              let val = $('#comment').val();
-              if (val) {
-                val += "\n\n";
-              }
-              $('#comment').val(val + '! ! ! Отчёт обязательно должен начинаться с двух цифр (час сбора) и знака (+ или -).');
-              return;
-            }
-            sign = time[2];
-            time = parseInt(time[1]);
-            nextTime = (time == 23) ? 0 : time + 1;
-            txt += leadZero(time) + ':00-' + leadZero(nextTime) + ':00;\n';
-            my_id = (isNaN(my_id)) ? 'Некорректный ID собирающего' : masking(my_id, '[cat%ID%] [%ID%]');
-            txt += '[b]Собирающий:[/b] ' + my_id + '.\n[b][u]Участники[/u][/b]\n';
-            if (sign == '+') {
-              som_text = som_text.replace(/^(\d{2}) *([\+-])[^\n]*\n|\. *$|; *$|, *$/ig, '');
-              som_text = som_text.replace(/\. *\n|, *\n|; *\n/ig, '\n');
-              som_text = som_text.replace(/\n(\d):/ig, '\n0$1:');
-              som_text = som_text.replace(/^(\d):/ig, '0$1:');
-              $.each(places, function (short_name, full_name) {
-                pattern = new RegExp('\n*' + short_name + ': *([^\n]+)', "i");
-                if (found = som_text.match(pattern)) {
-                  let name_arr = found[1].split(','),
-                    id_arr = [],
-                    tmp_arr = [];
-                  $.each(name_arr, function (index, name) {
-                    let tmp = nameToID(name.trim());
-                    if (parseInt(tmp)) {
-                      //id_arr.push(masking(tmp, '[cat%ID%] [%ID%]'));
-                      id_arr.push(name + ' [' + tmp + ']');
+                    let val = $('#comment').val();
+                    if (val) {
+                        val += "\n\n";
                     }
-                    else {
-                      id_arr.push(name_arr[index] + ' [?]');
-                      name_error = true;
-                    }
-                  });
-                  locations.push('[b]' + full_name + ':[/b] ' + id_arr.join(', '));
-                }
-              });
-              txt += locations.join(';\n') + '.';
+                    $('#comment').val(val + txt).scrollintoview();
+                });
+                    $('#r03_doz').on('click', function (e) {
+                        let date = splitDateStr($("#r03_doz_date").val()),
+                            txt = '[u][b]Дозор[/b][/u]\n[b]Дата:[/b] ' + date.day + '.' + date.month + ';\n[b]Время:[/b] ',
+                            my_id = parseInt($('#cws_blog_myid').val()),
+                            som_text = $('#r03_doz_text').val().trim(),
+                            name_error = false,
+                            locations = [],
+                            time,
+                            nextTime,
+                            sign,
+                            found,
+                            pattern,
+                            places = {
+                                "КЗ": "Камышовые заросли",
+                                "ТБ": "Травянистый берег",
+                                "РЛ": "Редколесье",
+                                "РО": "Разрушенная ограда",
+                                "РД": "Расколотое дерево",
+                                "ЛР": "Лесной ручеёк",
+                                "ВЛ": "Валежник",
+                                "ИТ": "Илистая тропа",
+                                "ОС": "Одинокий склон",
+                                "НК": "Нагретые камни",
+                                "ДБ": "Дубрава",
+                                "МЗ": "Мшистые земли",
+                                "ГТ": "Главный туннель",
+                                "01": "Активный 1",
+                                "02": "Активный 2",
+                                "03": "Активный 3",
+                                "04": "Активный 4"
+                            };
+                        rememberMyID(my_id);
+                        time = som_text.match(/^(\d{2}) *([\+-])/i);
+                        if (time === null) {
+                            let val = $('#comment').val();
+                            if (val) {
+                                val += "\n\n";
+                            }
+                            $('#comment').val(val + '! ! ! Отчёт обязательно должен начинаться с двух цифр (час сбора) и знака (+ или -).');
+                            return;
+                        }
+                        sign = time[2];
+                        time = parseInt(time[1]);
+                        nextTime = (time == 23) ? 0 : time + 1;
+                        txt += leadZero(time) + ':00-' + leadZero(nextTime) + ':00;\n';
+                        my_id = (isNaN(my_id)) ? 'Некорректный ID собирающего' : masking(my_id, '[cat%ID%] [%ID%]');
+                        txt += '[b]Собирающий:[/b] ' + my_id + '.\n[b][u]Участники[/u][/b]\n';
+                        if (sign == '+') {
+                            som_text = som_text.replace(/^(\d{2}) *([\+-])[^\n]*\n|\. *$|; *$|, *$/ig, '');
+                            som_text = som_text.replace(/\. *\n|, *\n|; *\n/ig, '\n');
+                            som_text = som_text.replace(/\n(\d):/ig, '\n0$1:');
+                            som_text = som_text.replace(/^(\d):/ig, '0$1:');
+                            $.each(places, function (short_name, full_name) {
+                                pattern = new RegExp('\n*' + short_name + ': *([^\n]+)', "i");
+                                if (found = som_text.match(pattern)) {
+                                    let name_arr = found[1].split(','),
+                                        id_arr = [],
+                                        tmp_arr = [];
+                                    $.each(name_arr, function (index, name) {
+                                        let tmp = nameToID(name.trim());
+                                        if (parseInt(tmp)) {
+                                            //id_arr.push(masking(tmp, '[cat%ID%] [%ID%]'));
+                                            id_arr.push(name + ' [' + tmp + ']');
+                                        }
+                                        else {
+                                            id_arr.push(name_arr[index] + ' [?]');
+                                            name_error = true;
+                                        }
+                                    });
+                                    locations.push('[b]' + full_name + ':[/b] ' + id_arr.join(', '));
+                                }
+                            });
+                            txt += locations.join(';\n') + '.';
+                        }
+                        else {
+                            txt += 'Нет.'
+                        }
+                        if (name_error) {
+                            txt += `\n! ! ! В отчёте какая-то ошибка с именем (одно из имён не было найдено). Проверьте его перед тем, как отправить.`
             }
-            else {
-              txt += 'Нет.'
-            }
-            if (name_error) {
-              txt += `\n! ! ! В отчёте какая-то ошибка с именем (одно из имён не было найдено). Проверьте его перед тем, как отправить.`
-            }
-            let val = $('#comment').val();
-            if (val) {
-              val += "\n\n";
-            }
-            $('#comment').val(val + txt).scrollintoview();
-          });
-          $('#r03_doz_nar').on('click', function (e) {
-            let date = splitDateStr($("#r03_doz_nar_date").val()),
-              hr = parseInt($("#r03_doz_nar_time").val().split(":")[0]),
-              next_hr = (hr == 23) ? 0 : hr + 1,
-              txt = '[u][b]Дозор[/b][/u]\n[b]Дата:[/b] ' + date.day + '.' + date.month + ';\n[b]Время:[/b] ' + leadZero(hr) + ':00-' + leadZero(next_hr) + ':00';
-            let free_arr = [],
-              nar_arr = [];
-            $('.r03-doz-nar-free-wrap').each(function () {
-              let free = $(this).find($('input.r03-doz-nar-free')).val();
-              if (free) {
-                if (isNaN(parseInt(free))) {
-                  free = nameToID(free.trim());
-                }
-                free = masking(free, '[cat%ID%] [%ID%]');
-                free_arr.push(free);
-              }
-            });
-            $('.r03-doz-nar-wrap').each(function () {
-              let name = $(this).find($('input.r03-doz-nar-narname')).val(),
-                reason = $(this).find($('select.r03-doz-nar-narreas')).val();
-              if (name) {
-                if (isNaN(parseInt(name))) {
-                  name = nameToID(name.trim());
-                }
-                name = masking(name, '[cat%ID%] [%ID%]');
-                nar_arr.push(name + ' (' + reason + ')');
-              }
-            });
-            if (free_arr.length) {
-              txt += ';\n[b]Освобождены:[/b] ' + free_arr.join(', ');
-            }
-            if (nar_arr.length) {
-              txt += ';\n[b]Нарушения:[/b] ' + nar_arr.join(', ');
-            }
-            txt += '.';
-            let val = $('#comment').val();
-            if (val) {
-              val += "\n\n";
-            }
-            $('#comment').val(val + txt).scrollintoview();
-            // $("#comment").scrollintoview();
-          });
-          $('#r03_doz_nar_block').on('click', '.add-field', function (e) {
-            let max_children = 5;
-            let data_id = $(this).data('id'),
-              template = $('#' + data_id)[0];
-            let $fields = $('.' + data_id);
-            let last_e = $fields[$fields.length - 1];
-            if ($fields.length < max_children) {
-              let clone = document.importNode(template.content, true);
-              let add = $(clone).insertAfter(last_e);
-              $(last_e).find($('.add-field')).css('display', 'none');
-            }
-          });
-          $('#r03_doz_nar_block').on('click', '.del-field', function (e) {
-            let data_id = $(this).data('id');
-            $(this).closest($('.' + data_id)).remove();
+                        let val = $('#comment').val();
+                        if (val) {
+                            val += "\n\n";
+                        }
+                        $('#comment').val(val + txt).scrollintoview();
+                    });
+                    $('#r03_doz_nar').on('click', function (e) {
+                        let date = splitDateStr($("#r03_doz_nar_date").val()),
+                            hr = parseInt($("#r03_doz_nar_time").val().split(":")[0]),
+                            next_hr = (hr == 23) ? 0 : hr + 1,
+                            txt = '[u][b]Дозор[/b][/u]\n[b]Дата:[/b] ' + date.day + '.' + date.month + ';\n[b]Время:[/b] ' + leadZero(hr) + ':00-' + leadZero(next_hr) + ':00';
+                        let free_arr = [],
+                            nar_arr = [];
+                        $('.r03-doz-nar-free-wrap').each(function () {
+                            let free = $(this).find($('input.r03-doz-nar-free')).val();
+                            if (free) {
+                                if (isNaN(parseInt(free))) {
+                                    free = nameToID(free.trim());
+                                }
+                                free = masking(free, '[cat%ID%] [%ID%]');
+                                free_arr.push(free);
+                            }
+                        });
+                        $('.r03-doz-nar-wrap').each(function () {
+                            let name = $(this).find($('input.r03-doz-nar-narname')).val(),
+                                reason = $(this).find($('select.r03-doz-nar-narreas')).val();
+                            if (name) {
+                                if (isNaN(parseInt(name))) {
+                                    name = nameToID(name.trim());
+                                }
+                                name = masking(name, '[cat%ID%] [%ID%]');
+                                nar_arr.push(name + ' (' + reason + ')');
+                            }
+                        });
+                        if (free_arr.length) {
+                            txt += ';\n[b]Освобождены:[/b] ' + free_arr.join(', ');
+                        }
+                        if (nar_arr.length) {
+                            txt += ';\n[b]Нарушения:[/b] ' + nar_arr.join(', ');
+                        }
+                        txt += '.';
+                        let val = $('#comment').val();
+                        if (val) {
+                            val += "\n\n";
+                        }
+                        $('#comment').val(val + txt).scrollintoview();
+                        // $("#comment").scrollintoview();
+                    });
+                    $('#r03_doz_nar_block').on('click', '.add-field', function (e) {
+                        let max_children = 5;
+                        let data_id = $(this).data('id'),
+                            template = $('#' + data_id)[0];
+                        let $fields = $('.' + data_id);
+                        let last_e = $fields[$fields.length - 1];
+                        if ($fields.length < max_children) {
+                            let clone = document.importNode(template.content, true);
+                            let add = $(clone).insertAfter(last_e);
+                            $(last_e).find($('.add-field')).css('display', 'none');
+                        }
+                    });
+                    $('#r03_doz_nar_block').on('click', '.del-field', function (e) {
+                        let data_id = $(this).data('id');
+                        $(this).closest($('.' + data_id)).remove();
 
-            let $fields = $('.' + data_id);
-            let last_e = $fields[$fields.length - 1];
-            $(last_e).find($('.add-field')).css('display', 'inline-block');
-          });
-        }
+                        let $fields = $('.' + data_id);
+                        let last_e = $fields[$fields.length - 1];
+                        $(last_e).find($('.add-field')).css('display', 'inline-block');
+                    });
+                }
 
-        if (blogID == 13219) { // чистильщики
-          $('#send_comment').append(`
+                if (blogID == 13219) { // чистильщики
+                    $('#send_comment').append(`
 <hr>
 <h3>Автоматическое заполнение отчётов</h3>
 <hr>
@@ -2643,198 +3224,198 @@ ${my_id_div}
 </div>
 <button class="inp-button" id="r03_clean1">Заполнить отчет</button>
 `);
-          $('#r03_clean1').on('click', function () {
-            let expr_pickup = new RegExp('(Подняла? ([А-яЁё ]+) по имени [А-яЁё ]+ \\((\\d+)\\) (\\[[А-яЁё ]+\\]) в локации «([А-яЁё ]+)»\\.|Опустила? на землю ([А-яЁё ]+) по имени [А-яЁё ]+ \\((\\d+)\\) в локации «([А-яЁё ]+)»\\.)', "ig");
-            let text = $('#r03_clean_text').val();
-            let group = $('#cws_clean_grp').val();
-            let match_pickup = Array.from(text.matchAll(expr_pickup));
-            let good_cats = {};
-            let current_cats = [];
-            const titles = {
-              "котёнка": "Котята",
-              "оруженосца": "ОВ",
-              "воителя": "ОВ",
-              "воительницу": "ОВ",
-              "королеву": "ОВ",
-              "старшего воителя": "ОВ",
-              "старшую воительницу": "ОВ",
-            };
-            const places_from = {
-              "Камышовая поляна": "Лагерь",
-              "Мшистая полянка": "Лагерь",
-              "Поляна для сна": "Лагерь",
+                    $('#r03_clean1').on('click', function () {
+                        let expr_pickup = new RegExp('(Подняла? ([А-яЁё ]+) по имени [А-яЁё ]+ \\((\\d+)\\) (\\[[А-яЁё ]+\\]) в локации «([А-яЁё ]+)»\\.|Опустила? на землю ([А-яЁё ]+) по имени [А-яЁё ]+ \\((\\d+)\\) в локации «([А-яЁё ]+)»\\.)', "ig");
+                        let text = $('#r03_clean_text').val();
+                        let group = $('#cws_clean_grp').val();
+                        let match_pickup = Array.from(text.matchAll(expr_pickup));
+                        let good_cats = {};
+                        let current_cats = [];
+                        const titles = {
+                            "котёнка": "Котята",
+                            "оруженосца": "ОВ",
+                            "воителя": "ОВ",
+                            "воительницу": "ОВ",
+                            "королеву": "ОВ",
+                            "старшего воителя": "ОВ",
+                            "старшую воительницу": "ОВ",
+                        };
+                        const places_from = {
+                            "Камышовая поляна": "Лагерь",
+                            "Мшистая полянка": "Лагерь",
+                            "Поляна для сна": "Лагерь",
 
-              "Тенистая поляна": "Подлагерь",
-              "Дальний уголок": "Подлагерь",
-              "Грязное место": "Подлагерь",
-              "Куча с добычей": "Подлагерь",
-              "Старый вяз": "Подлагерь",
-              "Полянка для игр": "Подлагерь",
-              "Лужайка для игр": "Подлагерь",
-              "Окутанный тайнами лужок": "Подлагерь",
+                            "Тенистая поляна": "Подлагерь",
+                            "Дальний уголок": "Подлагерь",
+                            "Грязное место": "Подлагерь",
+                            "Куча с добычей": "Подлагерь",
+                            "Старый вяз": "Подлагерь",
+                            "Полянка для игр": "Подлагерь",
+                            "Лужайка для игр": "Подлагерь",
+                            "Окутанный тайнами лужок": "Подлагерь",
 
-              "Неглубокий ручей": "Номерные",
-              "Детская": "Номерные",
-              "Палатка оруженосцев": "Номерные",
-              "Палатка воителей": "Номерные",
+                            "Неглубокий ручей": "Номерные",
+                            "Детская": "Номерные",
+                            "Палатка оруженосцев": "Номерные",
+                            "Палатка воителей": "Номерные",
 
-              "Поляна для тренировок": "Поляна для Тренировок [ПДТ]",
-              "Юркая ложбинка": "Поляна для Тренировок [ПДТ]",
-              "Лужайка, скрытая листвой": "Поляна для Тренировок [ПДТ]",
-              "Боевая поляна": "Поляна для Тренировок [ПДТ]",
-              "Местечко для тренировок": "Поляна для Тренировок [ПДТ]",
-              "Пещера острых клыков": "Поляна для Тренировок [ПДТ]",
-              "Пещера танцующих когтей": "Поляна для Тренировок [ПДТ]",
-              "Расцарапанные камушки": "Поляна для Тренировок [ПДТ]",
-              "Покинутая вороном лужайка": "Поляна для Тренировок [ПДТ]",
-              "Просторное местечко": "Поляна для Тренировок [ПДТ]",
-              "Тренировочный овраг": "Поляна для Тренировок [ПДТ]",
+                            "Поляна для тренировок": "Поляна для Тренировок [ПДТ]",
+                            "Юркая ложбинка": "Поляна для Тренировок [ПДТ]",
+                            "Лужайка, скрытая листвой": "Поляна для Тренировок [ПДТ]",
+                            "Боевая поляна": "Поляна для Тренировок [ПДТ]",
+                            "Местечко для тренировок": "Поляна для Тренировок [ПДТ]",
+                            "Пещера острых клыков": "Поляна для Тренировок [ПДТ]",
+                            "Пещера танцующих когтей": "Поляна для Тренировок [ПДТ]",
+                            "Расцарапанные камушки": "Поляна для Тренировок [ПДТ]",
+                            "Покинутая вороном лужайка": "Поляна для Тренировок [ПДТ]",
+                            "Просторное местечко": "Поляна для Тренировок [ПДТ]",
+                            "Тренировочный овраг": "Поляна для Тренировок [ПДТ]",
 
-              "Камышовые заросли": "КЗ",
+                            "Камышовые заросли": "КЗ",
 
-              "Галечный берег": "Лес",
-              "Плакучая ива": "Лес",
-              "Шелестящий тростник": "Лес",
-              "Торфяник": "Лес",
-              "Междуречье": "Лес",
-              "Скользкие камни": "Лес",
-              "Травянистый берег": "Лес",
-              "Грохочущая тропа Двуногих": "Лес",
-              "Редколесье": "Лес",
-              "Илистая тропа": "Лес",
-              "Разрушенная ограда": "Лес",
-              "Лесной ручеёк": "Лес",
-              "Расколотое дерево": "Лес",
-              "Граница между Ветром и Рекой": "Лес",
-              "Граница между Тенями и Рекой": "Лес",
-              "Пруд ужей": "Лес",
-              "Нагретые камни": "Лес",
-              "Одинокий склон": "Лес",
-              "Дубрава": "Лес",
+                            "Галечный берег": "Лес",
+                            "Плакучая ива": "Лес",
+                            "Шелестящий тростник": "Лес",
+                            "Торфяник": "Лес",
+                            "Междуречье": "Лес",
+                            "Скользкие камни": "Лес",
+                            "Травянистый берег": "Лес",
+                            "Грохочущая тропа Двуногих": "Лес",
+                            "Редколесье": "Лес",
+                            "Илистая тропа": "Лес",
+                            "Разрушенная ограда": "Лес",
+                            "Лесной ручеёк": "Лес",
+                            "Расколотое дерево": "Лес",
+                            "Граница между Ветром и Рекой": "Лес",
+                            "Граница между Тенями и Рекой": "Лес",
+                            "Пруд ужей": "Лес",
+                            "Нагретые камни": "Лес",
+                            "Одинокий склон": "Лес",
+                            "Дубрава": "Лес",
 
-              "Лягушатник": "Лес",
-              "Мелководье": "Лес",
-              "Тёплый ручеёк": "Лес",
-              "Приток": "Лес",
-              "Тихие воды": "Лес",
-              "Плоские валуны": "Лес",
-              "Воды у корней старой ивы": "Лес",
-              "Глубокие воды": "Лес",
-              "Ледяная вода": "Лес",
-              "Течение": "Лес",
-              "Устье реки": "Лес",
-              "Спокойный поток": "Лес",
-              "Каменная гряда": "Лес",
+                            "Лягушатник": "Лес",
+                            "Мелководье": "Лес",
+                            "Тёплый ручеёк": "Лес",
+                            "Приток": "Лес",
+                            "Тихие воды": "Лес",
+                            "Плоские валуны": "Лес",
+                            "Воды у корней старой ивы": "Лес",
+                            "Глубокие воды": "Лес",
+                            "Ледяная вода": "Лес",
+                            "Течение": "Лес",
+                            "Устье реки": "Лес",
+                            "Спокойный поток": "Лес",
+                            "Каменная гряда": "Лес",
 
-              "Тихий берег": "Нейтралки",
-              "Заросший берег": "Нейтралки",
-              "Пологий берег": "Нейтралки",
-              "Каменистый берег": "Нейтралки",
-              "Поваленное дерево": "Нейтралки",
-              "Остров Советов": "Нейтралки",
-              "Скалистые холмы": "Нейтралки",
-              "Лунный ручей": "Нейтралки",
-              "Лунный камень": "Нейтралки",
-              "Предгорья": "Нейтралки",
-              "Горы": "Нейтралки",
-              "Туннели": "Нейтралки",
-              "Ярусы сомнения": "Нейтралки",
-              "Воющие коридоры": "Нейтралки",
-            };
-            const bad_statuses = ["[ На удалении ]", "[ Заблокирован ]", "[ В подстилках ]"];
-            const good_statuses = ["[ В игре ]", "[ Недавно ушёл ]", "[ Недавно ушла ]"];
-            $.each(match_pickup, function (index, value) {
-              if (value[2] !== undefined) { // Поднятие: 2 должность, 3 статус, 4 айди, 5 локация
-                let id = value[3],
-                  title_grp = titles[value[2]],
-                  place = value[5];
-                if (bad_statuses.includes(value[4])
-                    || group == "II группа" && ["Плакучая ива", "Галечный берег"].includes(place)) {
-                  title_grp = "Заблокированные";
-                }
-                place = (places_from[place]) ? places_from[place] : place;
-                if (place !== undefined && (value[4] == "[ Спит ]" || title_grp == "Заблокированные")) {
-                  current_cats[id] = {
-                    "title_grp": title_grp,
-                    "place": place
-                  };
-                }
-              } else { // Опускание: 6 должность, 7 айди, 8 локация
-                let id = value[7];
-                if (current_cats[id] !== undefined) {
-			let title_grp = current_cats[id].title_grp,
-				place = current_cats[id].place;
-			if (good_cats[place] === undefined) {
-				good_cats[place] = {};
-				good_cats[place]["ОВ"] = [];
-				good_cats[place]["Котята"] = [];
-				good_cats[place]["Заблокированные"] = [];
-			}
-			if (good_cats[place][title_grp]) {
-				good_cats[place][title_grp].push(id);
-			}
-			current_cats[id] = undefined;
-                }
-              }
-            });
-            let my_id = parseInt($('#cws_blog_myid').val());
-            let my_id_mask = (isNaN(my_id)) ? 'Некорректный ID' : masking(my_id, '[cat%ID%] [%ID%]');
-            let report = `1. ${my_id_mask}.\n2. ${group}.\n`;
-            if (group == "III группа") {
-                report += `3. [b]Л:[/b]  — предупрежден(-ы)\n[b]КЗ:[/b]  — предупрежден(-ы)`;
-            } else {
-                report += `3. `;
-                $.each(good_cats, function (place, groups) {
-                    if (group == "II группа") {
-                        report += `[b]${place}:[/b] `;
-                        let list = [];
-                        let list_blocked = [];
-                        $.each(groups, function (victim_group, arr) {
-                            if (victim_group == "Заблокированные") {
-                                list_blocked = list_blocked.concat(arr);
-                            } else {
-                                list = list.concat(arr);
-                            }
-                        });
-                        report += `${list.join(' ')}\n`;
-                        if (list_blocked.length) {
-                            report += `[u]${list_blocked.join(' ')}[/u]\n`;
-                        }
-                    } else {
-                        report += `[b]${place}:[/b]\n`;
-                        $.each(groups, function (victim_group, arr) {
-                            if (arr.length) {
-                                if (victim_group == "Заблокированные") {
-                                    report += `[u]${arr.join(' ')}[/u]\n`;
-                                } else {
-                                    report += `${victim_group}: ${arr.join(' ')}\n`;
+                            "Тихий берег": "Нейтралки",
+                            "Заросший берег": "Нейтралки",
+                            "Пологий берег": "Нейтралки",
+                            "Каменистый берег": "Нейтралки",
+                            "Поваленное дерево": "Нейтралки",
+                            "Остров Советов": "Нейтралки",
+                            "Скалистые холмы": "Нейтралки",
+                            "Лунный ручей": "Нейтралки",
+                            "Лунный камень": "Нейтралки",
+                            "Предгорья": "Нейтралки",
+                            "Горы": "Нейтралки",
+                            "Туннели": "Нейтралки",
+                            "Ярусы сомнения": "Нейтралки",
+                            "Воющие коридоры": "Нейтралки",
+                        };
+                        const bad_statuses = ["[ На удалении ]", "[ Заблокирован ]", "[ В подстилках ]"];
+                        const good_statuses = ["[ В игре ]", "[ Недавно ушёл ]", "[ Недавно ушла ]"];
+                        $.each(match_pickup, function (index, value) {
+                            if (value[2] !== undefined) { // Поднятие: 2 должность, 3 статус, 4 айди, 5 локация
+                                let id = value[3],
+                                    title_grp = titles[value[2]],
+                                    place = value[5];
+                                if (bad_statuses.includes(value[4])
+                                    || group == "II группа" && ["Плакучая ива", "Галечный берег"].includes(place)) {
+                                    title_grp = "Заблокированные";
+                                }
+                                place = (places_from[place]) ? places_from[place] : place;
+                                if (place !== undefined && (value[4] == "[ Спит ]" || title_grp == "Заблокированные")) {
+                                    current_cats[id] = {
+                                        "title_grp": title_grp,
+                                        "place": place
+                                    };
+                                }
+                            } else { // Опускание: 6 должность, 7 айди, 8 локация
+                                let id = value[7];
+                                if (current_cats[id] !== undefined) {
+                                    let title_grp = current_cats[id].title_grp,
+                                        place = current_cats[id].place;
+                                    if (good_cats[place] === undefined) {
+                                        good_cats[place] = {};
+                                        good_cats[place]["ОВ"] = [];
+                                        good_cats[place]["Котята"] = [];
+                                        good_cats[place]["Заблокированные"] = [];
+                                    }
+                                    if (good_cats[place][title_grp]) {
+                                        good_cats[place][title_grp].push(id);
+                                    }
+                                    current_cats[id] = undefined;
                                 }
                             }
                         });
+                        let my_id = parseInt($('#cws_blog_myid').val());
+                        let my_id_mask = (isNaN(my_id)) ? 'Некорректный ID' : masking(my_id, '[cat%ID%] [%ID%]');
+                        let report = `1. ${my_id_mask}.\n2. ${group}.\n`;
+                        if (group == "III группа") {
+                            report += `3. [b]Л:[/b]  — предупрежден(-ы)\n[b]КЗ:[/b]  — предупрежден(-ы)`;
+                        } else {
+                            report += `3. `;
+                            $.each(good_cats, function (place, groups) {
+                                if (group == "II группа") {
+                                    report += `[b]${place}:[/b] `;
+                                    let list = [];
+                                    let list_blocked = [];
+                                    $.each(groups, function (victim_group, arr) {
+                                        if (victim_group == "Заблокированные") {
+                                            list_blocked = list_blocked.concat(arr);
+                                        } else {
+                                            list = list.concat(arr);
+                                        }
+                                    });
+                                    report += `${list.join(' ')}\n`;
+                                    if (list_blocked.length) {
+                                        report += `[u]${list_blocked.join(' ')}[/u]\n`;
+                                    }
+                                } else {
+                                    report += `[b]${place}:[/b]\n`;
+                                    $.each(groups, function (victim_group, arr) {
+                                        if (arr.length) {
+                                            if (victim_group == "Заблокированные") {
+                                                report += `[u]${arr.join(' ')}[/u]\n`;
+                                            } else {
+                                                report += `${victim_group}: ${arr.join(' ')}\n`;
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        if (group == "I группа" || group == "II группа") {
+                            report += `4. [header=${my_id}]История[/header][block=${my_id}]${text}[/block]`;
+                        }
+                        $('#comment').val(report).scrollintoview();
+                    });
+                } else if (blogID == 24395) { // хранители трав
+                    let patr_date = new Date(date),
+                        hour = date.getHours();
+                    if (hour < 12) {
+                        patr_date.setDate(patr_date.getDate() - 1);
                     }
-                });
-            }
-            if (group == "I группа" || group == "II группа") {
-                report += `4. [header=${my_id}]История[/header][block=${my_id}]${text}[/block]`;
-            }
-            $('#comment').val(report).scrollintoview();
-          });
-        } else if (blogID == 24395) { // хранители трав
-          let patr_date = new Date(date),
-            hour = date.getHours();
-          if (hour < 12) {
-            patr_date.setDate(patr_date.getDate() - 1);
-          }
-          let type = "веточник";
-          if (hour < 12 || hour >= 17) {
-            type = "мховник";
-          } else if (hour == 16) {
-            type = "травник";
-          }
-          const patr_date_str = patr_date.getFullYear() + '-' + leadZero(patr_date.getMonth() + 1) + '-' + leadZero(patr_date.getDate());
-            my_id_div= `<div>Ваш ID (+кол-во трав):&nbsp;<input type="text" class="cws-input" pattern="[0-9]+ \(?[0-9]+\)?" style="width: 145px;" id="cws_blog_myid" required="true" placeholder="123456 15" value="${globals.my_id ? globals.my_id + " 0" : ''}"> <input type="checkbox" checked id="remember_id"><label for="remember_id">Запомнить</label></div>`;
+                    let type = "веточник";
+                    if (hour < 12 || hour >= 17) {
+                        type = "мховник";
+                    } else if (hour == 16) {
+                        type = "травник";
+                    }
+                    const patr_date_str = patr_date.getFullYear() + '-' + leadZero(patr_date.getMonth() + 1) + '-' + leadZero(patr_date.getDate());
+                    my_id_div= `<div>Ваш ID (+кол-во трав):&nbsp;<input type="text" class="cws-input" pattern="[0-9]+ \(?[0-9]+\)?" style="width: 145px;" id="cws_blog_myid" required="true" placeholder="123456 15" value="${globals.my_id ? globals.my_id + " 0" : ''}"> <input type="checkbox" checked id="remember_id"><label for="remember_id">Запомнить</label></div>`;
 
-          $('#send_comment').append(`
+                    $('#send_comment').append(`
 <hr>
 <h3>Автоматическое заполнение отчётов</h3>
 <hr>
@@ -2854,58 +3435,58 @@ ${my_id_div}
 </div>
 <button class="inp-button" id="r03_herb">Заполнить отчет</button>
 `);
-          $('#r03_herb').on('click', function (e) {
-            let lead = $('#cws_blog_myid').val().split(' ');
-            let myid = parseInt(lead[0]);
-            let leadherb = +(lead[1].replace(/\D+/ig, ''));
-            rememberMyID(myid);
-            myid = (isNaN(myid)) ? 'Некорректный ID ведущего' : masking(myid, `[cat%ID%] [%ID%] (${leadherb})`);
-            let mar = $('.cws-input[name=r03_patr_mar]:checked').val();
-            mar = mar || 'Не выбран вид';
-            let arr_members = strToArr($('#cws_patr_members').val());
-            let id_arr = [];
-            let not_found = [];
-            let name_error = false;
-            arr_members.forEach((element) => {
-              let entry = element.trim().match(/([А-яЁё ]+) \(?(\d+)\)?/i);
-              let name = entry[1];
-              let herb = entry[2];
-              let tmp = nameToID(name);
-              if (parseInt(tmp)) {
-                id_arr.push(`${name} [${tmp}] (${herb})`);
-              } else {
-                name_error = true;
-                not_found.push(name);
-              }
-            })
-            let date = splitDateStr($("#r03_patr_date").val());
-            date.year = date.year.slice(2, 4);
-            let txt = `[b]Дата:[/b] ${date.day}.${date.month}.${date.year};
+              $('#r03_herb').on('click', function (e) {
+                  let lead = $('#cws_blog_myid').val().split(' ');
+                  let myid = parseInt(lead[0]);
+                  let leadherb = +(lead[1].replace(/\D+/ig, ''));
+                  rememberMyID(myid);
+                  myid = (isNaN(myid)) ? 'Некорректный ID ведущего' : masking(myid, `[cat%ID%] [%ID%] (${leadherb})`);
+                  let mar = $('.cws-input[name=r03_patr_mar]:checked').val();
+                  mar = mar || 'Не выбран вид';
+                  let arr_members = strToArr($('#cws_patr_members').val());
+                  let id_arr = [];
+                  let not_found = [];
+                  let name_error = false;
+                  arr_members.forEach((element) => {
+                      let entry = element.trim().match(/([А-яЁё ]+) \(?(\d+)\)?/i);
+                      let name = entry[1];
+                      let herb = entry[2];
+                      let tmp = nameToID(name);
+                      if (parseInt(tmp)) {
+                          id_arr.push(`${name} [${tmp}] (${herb})`);
+                      } else {
+                          name_error = true;
+                          not_found.push(name);
+                      }
+                  })
+                  let date = splitDateStr($("#r03_patr_date").val());
+                  date.year = date.year.slice(2, 4);
+                  let txt = `[b]Дата:[/b] ${date.day}.${date.month}.${date.year};
 [b]Тип травника:[/b] ${mar};
 [b]Ведущий:[/b] ${myid};
 [b]Участники:[/b] ${id_arr.length ? id_arr.join(', ') : "-"}.`;
-            if (name_error) {
-              txt += `\n! ! ! В отчёте ошибка со следующими именами (не были найдены или не соответствуют формату): ${not_found.join(', ')}. Проверьте его перед тем, как отправить.`
+                  if (name_error) {
+                      txt += `\n! ! ! В отчёте ошибка со следующими именами (не были найдены или не соответствуют формату): ${not_found.join(', ')}. Проверьте его перед тем, как отправить.`
             }
-            let val = $('#comment').val();
-            if (val) {
-              val += "\n\n";
-            }
-            $('#comment').val(val + txt).scrollintoview();
-          });
+                  let val = $('#comment').val();
+                  if (val) {
+                      val += "\n\n";
+                  }
+                  $('#comment').val(val + txt).scrollintoview();
+              });
 
-        } else if (blogID == 51844) { // охотники
-          let patr_date = new Date(date),
-            hour = date.getHours();
-          if (hour < 13) {
-            patr_date.setDate(patr_date.getDate() - 1);
-          }
-          let type = "вечерняя";
-          if (hour >= 13 && hour < 19) {
-            type = "утренняя";
-          }
-          const patr_date_str = patr_date.getFullYear() + '-' + leadZero(patr_date.getMonth() + 1) + '-' + leadZero(patr_date.getDate());
-          $('#send_comment').append(`<hr>
+          } else if (blogID == 51844) { // охотники
+              let patr_date = new Date(date),
+                  hour = date.getHours();
+              if (hour < 13) {
+                  patr_date.setDate(patr_date.getDate() - 1);
+              }
+              let type = "вечерняя";
+              if (hour >= 13 && hour < 19) {
+                  type = "утренняя";
+              }
+              const patr_date_str = patr_date.getFullYear() + '-' + leadZero(patr_date.getMonth() + 1) + '-' + leadZero(patr_date.getDate());
+              $('#send_comment').append(`<hr>
 <h3>Автоматическое заполнение отчётов</h3>
 <hr>
 ${my_id_div}
@@ -2937,99 +3518,99 @@ ${my_id_div}
 <button class="inp-button" id="r03_hunt">Заполнить отчет</button>
 `);
 
-          $('#r03_hunt').on('click', function (e) {
-            let lead = $('#cws_blog_myid').val();
-            let myid = parseInt(lead);
-            rememberMyID(myid);
-            myid = (isNaN(myid)) ? 'Некорректный ID ведущего' : masking(myid, '[cat%ID%] [%ID%]');
-            let mar = $('.cws-input[name=r03_patr_mar]:checked').val();
-            mar = mar || 'Не выбран вид';
-            let loc = $('.cws-input[name=r03_patr_loc]:checked').val();
-            loc = loc || 'Не выбрана локация';
-            let str_hunters = strToArr($('#cws_patr_hunters').val()),
-                str_carriers = strToArr($('#cws_patr_carriers').val()),
-                id_hunters = [],
-                id_carriers = [],
-                not_found = [],
-                not_clan = [];
-            let name_error = false, clan_error = false;
-            str_hunters.forEach((element) => {
-              let entry = element.trim().match(/([А-яЁё ]+) ?\(?(\d+)?\)?/i),
-                  name = entry[1],
-                  hunt = entry[2] || 5,
-                  tmp = nameToIDFiltered(name, "Речное племя");
-              if (parseInt(tmp)) {
-                  if (tmp != -1) {
-                      id_hunters.push(`${name} [${tmp}] (${hunt})`);
-                  } else {
-                      clan_error = true;
-                      not_clan.push(name);
-                  }
-              } else {
-                name_error = true;
-                not_found.push(name);
-              }
-            });
-            str_carriers.forEach((element) => {
-              let name = element.trim(),
-                  tmp = nameToIDFiltered(name, "Речное племя");
-              if (parseInt(tmp)) {
-                  if (tmp != -1) {
-                      id_carriers.push(`${name} [${tmp}]`);
-                  } else {
-                      clan_error = true;
-                      not_clan.push(name);
-                  }
-              } else {
-                name_error = true;
-                not_found.push(name);
-              }
-            });
-            let date = splitDateStr($("#r03_patr_date").val());
-            date.year = date.year.slice(2, 4);
-            let txt = `[b][u]Дата[/u]:[/b] ${date.day}.${date.month}.${date.year};
+            $('#r03_hunt').on('click', function (e) {
+                let lead = $('#cws_blog_myid').val();
+                let myid = parseInt(lead);
+                rememberMyID(myid);
+                myid = (isNaN(myid)) ? 'Некорректный ID ведущего' : masking(myid, '[cat%ID%] [%ID%]');
+                let mar = $('.cws-input[name=r03_patr_mar]:checked').val();
+                mar = mar || 'Не выбран вид';
+                let loc = $('.cws-input[name=r03_patr_loc]:checked').val();
+                loc = loc || 'Не выбрана локация';
+                let str_hunters = strToArr($('#cws_patr_hunters').val()),
+                    str_carriers = strToArr($('#cws_patr_carriers').val()),
+                    id_hunters = [],
+                    id_carriers = [],
+                    not_found = [],
+                    not_clan = [];
+                let name_error = false, clan_error = false;
+                str_hunters.forEach((element) => {
+                    let entry = element.trim().match(/([А-яЁё ]+) ?\(?(\d+)?\)?/i),
+                        name = entry[1],
+                        hunt = entry[2] || 5,
+                        tmp = nameToIDFiltered(name, "Речное племя");
+                    if (parseInt(tmp)) {
+                        if (tmp != -1) {
+                            id_hunters.push(`${name} [${tmp}] (${hunt})`);
+                        } else {
+                            clan_error = true;
+                            not_clan.push(name);
+                        }
+                    } else {
+                        name_error = true;
+                        not_found.push(name);
+                    }
+                });
+                str_carriers.forEach((element) => {
+                    let name = element.trim(),
+                        tmp = nameToIDFiltered(name, "Речное племя");
+                    if (parseInt(tmp)) {
+                        if (tmp != -1) {
+                            id_carriers.push(`${name} [${tmp}]`);
+                        } else {
+                            clan_error = true;
+                            not_clan.push(name);
+                        }
+                    } else {
+                        name_error = true;
+                        not_found.push(name);
+                    }
+                });
+                let date = splitDateStr($("#r03_patr_date").val());
+                date.year = date.year.slice(2, 4);
+                let txt = `[b][u]Дата[/u]:[/b] ${date.day}.${date.month}.${date.year};
 [b]Вид:[/b] ${mar};
 [b]Место охоты:[/b] ${loc};
 [b]Ведущий:[/b] ${myid} (5);
 [b]Участники:[/b] ${id_hunters.length ? id_hunters.join(', ') : "-"};
 [b]Таскающие:[/b] ${id_carriers.length ? id_carriers.join(', ') : "-"};`;
-            if (name_error) {
-              txt += `\n! ! ! В отчёте ошибка со следующими именами (не были найдены или не соответствуют формату): ${not_found.join(', ')}. Проверьте его перед тем, как отправить.`
+                if (name_error) {
+                    txt += `\n! ! ! В отчёте ошибка со следующими именами (не были найдены или не соответствуют формату): ${not_found.join(', ')}. Проверьте его перед тем, как отправить.`
             }
-            if (clan_error) {
-              txt += `\n! ! ! В отчёте ошибка со следующими котиками (они не находятся в вашем племени, зачем вы их сюда пишете?): ${not_clan.join(', ')}. Проверьте его перед тем, как отправить.`
+                if (clan_error) {
+                    txt += `\n! ! ! В отчёте ошибка со следующими котиками (они не находятся в вашем племени, зачем вы их сюда пишете?): ${not_clan.join(', ')}. Проверьте его перед тем, как отправить.`
             }
-            let val = $('#comment').val();
-            if (val) {
-              val += "\n\n";
-            }
-            $('#comment').val(val + txt).scrollintoview();
-          });
+                let val = $('#comment').val();
+                if (val) {
+                    val += "\n\n";
+                }
+                $('#comment').val(val + txt).scrollintoview();
+            });
         }
-        $('ul.cws_tabs_caption').on('click', 'li:not(.active)', function () {
-          $(this)
-            .addClass('active').siblings().removeClass('active')
-            .closest('div.cws_tabs').find('div.cws_tabs_content').removeClass('active').slideUp(200)
-            .eq($(this).index()).addClass('active').slideDown(200);
-        });
-      });
+                $('ul.cws_tabs_caption').on('click', 'li:not(.active)', function () {
+                    $(this)
+                        .addClass('active').siblings().removeClass('active')
+                        .closest('div.cws_tabs').find('div.cws_tabs_content').removeClass('active').slideUp(200)
+                        .eq($(this).index()).addClass('active').slideDown(200);
+                });
+            });
+        }
     }
-  }
 
-  function cumoves() {
-    const notes = getSettings('cuMovesNote') || '';
-    const p = `<p>Заметки:<br><textarea id="cws_moves_note" placeholder="Заметки о добавленных переходах" style="width: 95%; max-width: 830px; height: 100px; margin: 0px;"></textarea></p>`;
-    $('#branch').append(p); //text
-    $('#cws_moves_note').val(notes);
-    $('#cws_moves_note').on('input', function () {
-      setSettings('cuMovesNote', $(this).val());
-    });
-  }
+    function cumoves() {
+        const notes = getSettings('cuMovesNote') || '';
+        const p = `<p>Заметки:<br><textarea id="cws_moves_note" placeholder="Заметки о добавленных переходах" style="width: 95%; max-width: 830px; height: 100px; margin: 0px;"></textarea></p>`;
+        $('#branch').append(p); //text
+        $('#cws_moves_note').val(notes);
+        $('#cws_moves_note').on('input', function () {
+            setSettings('cuMovesNote', $(this).val());
+        });
+    }
 
-  function sett() {
-    $('head').append(`<style id="css_cellshade_example">#cages td {box-shadow: inset 0px ${globals.css_cellshadeOpacity}px 0px ${globals.css_cellshadeOpacity}px ${globals.css_cellshadeColor};}</style>`);
-    const pattern = globals.css_cp_pattern ? 'url(https://i.imgur.com/V4TX5Cv.png), ' : '';
-    let css_coloredparam_example = `#dream .bar-fill {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
+    function sett() {
+        $('head').append(`<style id="css_cellshade_example">#cages td {box-shadow: inset 0px ${globals.css_cellshadeOpacity}px 0px ${globals.css_cellshadeOpacity}px ${globals.css_cellshadeColor};}</style>`);
+        const pattern = globals.css_cp_pattern ? 'url(https://i.imgur.com/V4TX5Cv.png), ' : '';
+        let css_coloredparam_example = `#dream .bar-fill {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
 #dream .bar {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[2]}, ${globals.css_cp_colors[3]});}
 #hunger .bar-fill {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[4]}, ${globals.css_cp_colors[5]});}
 #hunger .bar {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[6]}, ${globals.css_cp_colors[7]});}
@@ -3043,25 +3624,25 @@ ${my_id_div}
 #clean .bar {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[22]}, ${globals.css_cp_colors[23]});}
 .bar .bar-fill {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[24]}, ${globals.css_cp_colors[25]});}
 .bar {background:${pattern}linear-gradient(0.25turn, ${globals.css_cp_colors[26]}, ${globals.css_cp_colors[27]});}`;
-    $('head').append(`<style id="css_coloredparam_example">${css_coloredparam_example}</style>`);
-    let action_group_dis = (globals.on_actNotif) ? '' : ' disabled',
-      tf_group_dis = (globals.on_teamFights) ? '' : ' disabled',
-      clean_group_dis = (globals.on_cleanerHistory) ? '' : ' disabled',
-      tt_dis = (globals.on_treeTechies) ? '' : ' disabled',
-      chatment_group_dis = (globals.on_chatMention) ? '' : ' disabled',
-      nick_group_dis = (globals.on_nickHighlight) ? '' : ' disabled',
-      css_cp_group_dis = (globals.on_css_coloredparam) ? '' : ' disabled',
-      chat_group_dis = (globals.on_customChat) ? '' : ' disabled',
-      CCArray = '';
-    let nickArray = '';
-    $.each(globals.nickListArray, function (index, obj) {
-      if (obj) {
-        nickArray += `<tr><td><input class="nick-name" maxlength="30" minlength="2" group="nick-highlight" placeholder="имя" type="text" value="${obj}" ${nick_group_dis}></td>
+        $('head').append(`<style id="css_coloredparam_example">${css_coloredparam_example}</style>`);
+        let action_group_dis = (globals.on_actNotif) ? '' : ' disabled',
+            tf_group_dis = (globals.on_teamFights) ? '' : ' disabled',
+            clean_group_dis = (globals.on_cleanerHistory) ? '' : ' disabled',
+            tt_dis = (globals.on_treeTechies) ? '' : ' disabled',
+            chatment_group_dis = (globals.on_chatMention) ? '' : ' disabled',
+            nick_group_dis = (globals.on_nickHighlight) ? '' : ' disabled',
+            css_cp_group_dis = (globals.on_css_coloredparam) ? '' : ' disabled',
+            chat_group_dis = (globals.on_customChat) ? '' : ' disabled',
+            CCArray = '';
+        let nickArray = '';
+        $.each(globals.nickListArray, function (index, obj) {
+            if (obj) {
+                nickArray += `<tr><td><input class="nick-name" maxlength="30" minlength="2" group="nick-highlight" placeholder="имя" type="text" value="${obj}" ${nick_group_dis}></td>
                         <td><span class="cc-delete">×</span></td></tr>`;
-      }
+        }
     });
     if (!nickArray.length) {
-      nickArray = `<tr><td><input class="nick-name" maxlength="30" minlength="2" group="nick-highlight" type="text"${nick_group_dis}></td>
+        nickArray = `<tr><td><input class="nick-name" maxlength="30" minlength="2" group="nick-highlight" type="text"${nick_group_dis}></td>
                    <td><span class="cc-delete">×</span></td></tr>`;
     }
     let $body = $('body');
@@ -3861,16 +4442,16 @@ Y: <input type=number id="tt_window_top" class="cws-number" min=0 max=9999 value
     let audio = new Audio();
     $(isDesktop ? '#branch' : '#site_table').append(html);
     $body.on('click', '#css_cp_import_btn', function () {
-      let val = $('#css_cp_import').val();
-      let match = val.match(/\["#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}"\]/);
-      if (match) {
-        globals.css_cp_colors = JSON.parse(val);
-        setSettings('css_cp_colors', val);
-        $('#css_cp_export').val(val);
-        for (let i = 0; i < 28; i++) {
-          $('.cp-color-pick[data-id=' + i + ']').val(globals.css_cp_colors[i]);
-        }
-        css_coloredparam_example = `#dream .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
+        let val = $('#css_cp_import').val();
+        let match = val.match(/\["#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}", *"#[0-9a-fA-F]{6}"\]/);
+        if (match) {
+            globals.css_cp_colors = JSON.parse(val);
+            setSettings('css_cp_colors', val);
+            $('#css_cp_export').val(val);
+            for (let i = 0; i < 28; i++) {
+                $('.cp-color-pick[data-id=' + i + ']').val(globals.css_cp_colors[i]);
+            }
+            css_coloredparam_example = `#dream .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
 #dream .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[2]}, ${globals.css_cp_colors[3]});}
 #hunger .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[4]}, ${globals.css_cp_colors[5]});}
 #hunger .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[6]}, ${globals.css_cp_colors[7]});}
@@ -3882,157 +4463,157 @@ Y: <input type=number id="tt_window_top" class="cws-number" min=0 max=9999 value
 #health .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[18]}, ${globals.css_cp_colors[19]});}
 #clean .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[20]}, ${globals.css_cp_colors[21]});}
 #clean .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[22]}, ${globals.css_cp_colors[23]});}
-.bar .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[24]}, ${globals.css_cp_colors[25]});}
-.bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[26]}, ${globals.css_cp_colors[27]});}`;
-        $('#css_coloredparam_example').html(css_coloredparam_example);
-      }
-      else {
-        alert('Неверный формат импорта');
-      }
+    .bar .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[24]}, ${globals.css_cp_colors[25]});}
+        .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[26]}, ${globals.css_cp_colors[27]});}`;
+            $('#css_coloredparam_example').html(css_coloredparam_example);
+        }
+        else {
+            alert('Неверный формат импорта');
+        }
     })
     $body.on('change', '.cp-color-pick', function () {
-      let id = $(this).data('id');
-      let val = $(this).val();
-      globals.css_cp_colors[id] = val;
-      setSettings('css_cp_colors', JSON.stringify(globals.css_cp_colors));
-      $('#css_cp_export').val(JSON.stringify(globals.css_cp_colors));
-      css_coloredparam_example = `#dream .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
-#dream .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[2]}, ${globals.css_cp_colors[3]});}
-#hunger .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[4]}, ${globals.css_cp_colors[5]});}
-#hunger .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[6]}, ${globals.css_cp_colors[7]});}
-#thirst .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[8]}, ${globals.css_cp_colors[9]});}
-#thirst .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[10]}, ${globals.css_cp_colors[11]});}
-#need .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[12]}, ${globals.css_cp_colors[13]});}
-#need .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[14]}, ${globals.css_cp_colors[15]});}
-#health .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[16]}, ${globals.css_cp_colors[17]});}
-#health .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[18]}, ${globals.css_cp_colors[19]});}
-#clean .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[20]}, ${globals.css_cp_colors[21]});}
-#clean .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[22]}, ${globals.css_cp_colors[23]});}
-.bar .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[24]}, ${globals.css_cp_colors[25]});}
-.bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[26]}, ${globals.css_cp_colors[27]});}`;
-      $('#css_coloredparam_example').html(css_coloredparam_example);
+        let id = $(this).data('id');
+        let val = $(this).val();
+        globals.css_cp_colors[id] = val;
+        setSettings('css_cp_colors', JSON.stringify(globals.css_cp_colors));
+        $('#css_cp_export').val(JSON.stringify(globals.css_cp_colors));
+        css_coloredparam_example = `#dream .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[0]}, ${globals.css_cp_colors[1]});}
+      #dream .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[2]}, ${globals.css_cp_colors[3]});}
+      #hunger .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[4]}, ${globals.css_cp_colors[5]});}
+      #hunger .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[6]}, ${globals.css_cp_colors[7]});}
+      #thirst .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[8]}, ${globals.css_cp_colors[9]});}
+      #thirst .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[10]}, ${globals.css_cp_colors[11]});}
+      #need .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[12]}, ${globals.css_cp_colors[13]});}
+      #need .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[14]}, ${globals.css_cp_colors[15]});}
+      #health .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[16]}, ${globals.css_cp_colors[17]});}
+      #health .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[18]}, ${globals.css_cp_colors[19]});}
+      #clean .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[20]}, ${globals.css_cp_colors[21]});}
+      #clean .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[22]}, ${globals.css_cp_colors[23]});}
+          .bar .bar-fill {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[24]}, ${globals.css_cp_colors[25]});}
+              .bar {background:${globals.css_cp_pattern?'url(https://i.imgur.com/V4TX5Cv.png), ':''}linear-gradient(0.25turn, ${globals.css_cp_colors[26]}, ${globals.css_cp_colors[27]});}`;
+        $('#css_coloredparam_example').html(css_coloredparam_example);
     });
     $body.on('change', '.tt-folders-enabled', function () {
-      let ischkd = $(this).prop('checked');
-      let folder_num = parseInt($(this).data('id'));
-      globals.tt_foldersenabledArray[folder_num] = ischkd;
-      setSettings('tt_foldersenabledArray', JSON.stringify(globals.tt_foldersenabledArray));
+        let ischkd = $(this).prop('checked');
+        let folder_num = parseInt($(this).data('id'));
+        globals.tt_foldersenabledArray[folder_num] = ischkd;
+        setSettings('tt_foldersenabledArray', JSON.stringify(globals.tt_foldersenabledArray));
     });
     $body.on('change paste focusout keyup', '.tt-page-name', function () {
-      let val = $(this).val();
-      let page_num = parseInt($(this).data('id'));
-      if (val) {
-        globals.tt_pagenamesArray[page_num] = val;
-        setSettings('tt_pagenamesArray', JSON.stringify(globals.tt_pagenamesArray));
-      }
+        let val = $(this).val();
+        let page_num = parseInt($(this).data('id'));
+        if (val) {
+            globals.tt_pagenamesArray[page_num] = val;
+            setSettings('tt_pagenamesArray', JSON.stringify(globals.tt_pagenamesArray));
+        }
     });
     $body.on('change paste focusout keyup', '.tt-folders-names', function () {
-      let val = $(this).val();
-      let folder_num = parseInt($(this).data('id'));
-      if (val) {
-        globals.tt_foldersnamesArray[folder_num] = val;
-        setSettings('tt_foldersnamesArray', JSON.stringify(globals.tt_foldersnamesArray));
-      }
+        let val = $(this).val();
+        let folder_num = parseInt($(this).data('id'));
+        if (val) {
+            globals.tt_foldersnamesArray[folder_num] = val;
+            setSettings('tt_foldersnamesArray', JSON.stringify(globals.tt_foldersnamesArray));
+        }
     });
     $body.on('change', '.cwa-chk-tt-page', function () {
-      let id = $(this).attr('id'),
-        page_num = parseInt($(this).data('id')),
-        ischkd = $(this).prop('checked');
-      globals.tt_pageenabledArray[page_num] = ischkd;
-      setSettings('tt_pageenabledArray', JSON.stringify(globals.tt_pageenabledArray));
+        let id = $(this).attr('id'),
+            page_num = parseInt($(this).data('id')),
+            ischkd = $(this).prop('checked');
+        globals.tt_pageenabledArray[page_num] = ischkd;
+        setSettings('tt_pageenabledArray', JSON.stringify(globals.tt_pageenabledArray));
     });
     $body.on('change', '#css_cp_pattern', function () {
-      let ischkd = $(this).prop('checked');
-      let style = $('#css_coloredparam_example').html();
-      if (ischkd) {
-        style = style.replace(/background:/g, 'background:url(https://i.imgur.com/V4TX5Cv.png), ');
-      }
-      else {
-        style = style.replace(/url\([^\)]+\), /g, '');
-      }
-      $('#css_coloredparam_example').html(style);
+        let ischkd = $(this).prop('checked');
+        let style = $('#css_coloredparam_example').html();
+        if (ischkd) {
+            style = style.replace(/background:/g, 'background:url(https://i.imgur.com/V4TX5Cv.png), ');
+        }
+        else {
+            style = style.replace(/url\([^\)]+\), /g, '');
+        }
+        $('#css_coloredparam_example').html(style);
     });
     $body.on('submit', '#nickForm', function (e) {
-      e.preventDefault();
-      let nickArr = [];
-      $('#nickList > tr').each(function () {
-        let name = $(this).find('.nick-name').val();
-        if (name) {
-          nickArr.push(name);
-        }
-      });
-      setSettings('nickListArray', JSON.stringify(nickArr));
+        e.preventDefault();
+        let nickArr = [];
+        $('#nickList > tr').each(function () {
+            let name = $(this).find('.nick-name').val();
+            if (name) {
+                nickArr.push(name);
+            }
+        });
+        setSettings('nickListArray', JSON.stringify(nickArr));
     });
     $body.on('submit', '#CCForm', function (e) {
-      e.preventDefault();
-      let CCArr = [];
-      $('#CCList > tr').each(function () {
-        let id = $(this).find('.cc-id').val();
-        let name = $(this).find('.cc-name').val();
-        if (id && name) {
-          CCArr.push({
-            'id': id,
-            'name': name
-          });
-        }
-      });
-      setSettings('charListArray', JSON.stringify(CCArr));
+        e.preventDefault();
+        let CCArr = [];
+        $('#CCList > tr').each(function () {
+            let id = $(this).find('.cc-id').val();
+            let name = $(this).find('.cc-name').val();
+            if (id && name) {
+                CCArr.push({
+                    'id': id,
+                    'name': name
+                });
+            }
+        });
+        setSettings('charListArray', JSON.stringify(CCArr));
     });
     $body.on('submit', '#form_cm_blocked', function (e) {
-      e.preventDefault();
-      let arr = $('#cm_blocked').val().split(' ');
-      $.each(arr, function (index, value) {
-        arr[index] = parseInt(value.trim());
-      });
-      arr = jQuery.grep(arr, function (a) {
-        return a; //Оставить только числа и не 0
-      });
-      setSettings('cm_blocked', JSON.stringify(arr));
+        e.preventDefault();
+        let arr = $('#cm_blocked').val().split(' ');
+        $.each(arr, function (index, value) {
+            arr[index] = parseInt(value.trim());
+        });
+        arr = jQuery.grep(arr, function (a) {
+            return a; //Оставить только числа и не 0
+        });
+        setSettings('cm_blocked', JSON.stringify(arr));
     });
     $body.on('click', '#CCAdd', function () {
-      if ($('.cc-id').length < 10) {
-        $('#CCList').append(`<tr><td><input class="cc-id" min=0 pattern="[0-9]{1,7}" type="number"></td><td><input class="cc-name" maxlength="30" type="text"></td><td><span class="cc-delete">×</span></td></tr>`);
-      }
+        if ($('.cc-id').length < 10) {
+            $('#CCList').append(`<tr><td><input class="cc-id" min=0 pattern="[0-9]{1,7}" type="number"></td><td><input class="cc-name" maxlength="30" type="text"></td><td><span class="cc-delete">×</span></td></tr>`);
+        }
     });
     $body.on('click', '#nickAdd', function () {
-      if ($('.nick-name').length < 3) {
-        $('#nickList').append(`<tr><td><input class="nick-name" maxlength="30" minlength="2" group="char-change" type="text"></td><td><span class="cc-delete">×</span></td></tr>`);
-      }
+        if ($('.nick-name').length < 3) {
+            $('#nickList').append(`<tr><td><input class="nick-name" maxlength="30" minlength="2" group="char-change" type="text"></td><td><span class="cc-delete">×</span></td></tr>`);
+        }
     });
     $body.on('click', '#tt_window_pos_def', function () {
-      $('#tt_window_left,#tt_window_top').val(20);
-      setSettings('tt_window_left', 20);
-      setSettings('tt_window_top', 20);
+        $('#tt_window_left,#tt_window_top').val(20);
+        setSettings('tt_window_left', 20);
+        setSettings('tt_window_top', 20);
     });
     $body.on('click', '.cc-delete', function () {
-      if ($(this).closest('tbody').find('tr').length != 1) {
-        $(this).closest('tr').remove();
-      }
+        if ($(this).closest('tbody').find('tr').length != 1) {
+            $(this).closest('tr').remove();
+        }
     });
     $body.on('click', '.sound-test', function () {
-      audio.pause();
-      audio.currentTime = 0;
-      audio.src = $(this).attr('sound-src');
-      audio.volume = $('.custom-range[data-bind=' + $(this).attr('data-bind') + ']').val();
-      audio.play();
+        audio.pause();
+        audio.currentTime = 0;
+        audio.src = $(this).attr('sound-src');
+        audio.volume = $('.custom-range[data-bind=' + $(this).attr('data-bind') + ']').val();
+        audio.play();
     });
     $body.on('change', '.custom-range', function () {
-      let volume = $(this).val();
-      let id = $(this).attr('id');
-      window.localStorage.setItem('cws_sett_' + id, volume);
-      globals[id] = volume;
+        let volume = $(this).val();
+        let id = $(this).attr('id');
+        window.localStorage.setItem('cws_sett_' + id, volume);
+        globals[id] = volume;
     });
     $body.on('change', '.cwa-chk', function () {
-      const id = $(this).attr('id');
-      const nodeName = $(this).prop('nodeName');
-      let ischkd = $(this).prop('checked');
-      if (nodeName == 'SELECT') {
-          ischkd = $(this).val();
-      }
-      setSettings(id, ischkd);
-      globals[id] = ischkd;
+        const id = $(this).attr('id');
+        const nodeName = $(this).prop('nodeName');
+        let ischkd = $(this).prop('checked');
+        if (nodeName == 'SELECT') {
+            ischkd = $(this).val();
+        }
+        setSettings(id, ischkd);
+        globals[id] = ischkd;
     });
-      $('body').on('click', '.cwa-apply', function() {
+    $('body').on('click', '.cwa-apply', function() {
         let id = $(this).data('id');
         let value = $('#' + id).val();
         if (Array.isArray(defaults[id])) {
@@ -4048,103 +4629,103 @@ Y: <input type=number id="tt_window_top" class="cws-number" min=0 max=9999 value
             setSettings(id, value);
             globals[id] = value;
         }
-      });
+    });
     $body.on('change paste focusout keyup', '.cws-number', function () {
-      let val = parseInt($(this).val());
-      if (val >= $(this).attr('min') && val <= $(this).attr('max')) {
-        setSettings($(this).attr('id'), val);
-      }
+        let val = parseInt($(this).val());
+        if (val >= $(this).attr('min') && val <= $(this).attr('max')) {
+            setSettings($(this).attr('id'), val);
+        }
     });
     $body.on('change', '.group-switch', function () {
-      let group = $(this).attr('group-header');
-      let ischkd = $(this).prop('checked');
-      $(':input[group=' + group + '], button[group=' + group + ']').prop('disabled', !ischkd);
+        let group = $(this).attr('group-header');
+        let ischkd = $(this).prop('checked');
+        $(':input[group=' + group + '], button[group=' + group + ']').prop('disabled', !ischkd);
     });
     $body.on('change', '.team-color-pick', function () {
-      let val = $(this).val();
-      $('.arrow-color[data-bind=' + $(this).data('bind') + ']').css('background', val);
+        let val = $(this).val();
+        $('.arrow-color[data-bind=' + $(this).data('bind') + ']').css('background', val);
     });
     $body.on('change', '.color-pick', function () {
-      let val = $(this).val();
-      setSettings($(this).attr('id'), val);
+        let val = $(this).val();
+        setSettings($(this).attr('id'), val);
     });
     $body.on('click', '.css-pic-url-apply', function () {
-      let pic_id = $(this).data("id");
-      let val = $('#' + pic_id).val();
-      setSettings(pic_id, val);
-      $('.css-pic-url-example[data-id=' + pic_id + ']').css("background-image", "url('" + val + "')");
+        let pic_id = $(this).data("id");
+        let val = $('#' + pic_id).val();
+        setSettings(pic_id, val);
+        $('.css-pic-url-example[data-id=' + pic_id + ']').css("background-image", "url('" + val + "')");
     });
     $body.on('click', '.css-pic-url-reset', function () {
-      let pic_id = $(this).data("id");
-      let def = $('#' + pic_id).attr('default');
-      removeSettings(pic_id);
-      $('#' + pic_id).val(def);
-      $('.css-pic-url-example[data-id=' + pic_id + ']').css("background-image", "url('" + def + "')");
+        let pic_id = $(this).data("id");
+        let def = $('#' + pic_id).attr('default');
+        removeSettings(pic_id);
+        $('#' + pic_id).val(def);
+        $('.css-pic-url-example[data-id=' + pic_id + ']').css("background-image", "url('" + def + "')");
     });
     $body.on('change', '#css_cellshadeColor', function () {
-      let val = $(this).val();
-      let html = $('#css_cellshade_example').html().replace(/ #[\dA-Fa-f]{6}/, ' ' + val);
-      $('#css_cellshade_example').html(html);
+        let val = $(this).val();
+        let html = $('#css_cellshade_example').html().replace(/ #[\dA-Fa-f]{6}/, ' ' + val);
+        $('#css_cellshade_example').html(html);
     });
     $body.on('change', '#css_cellshadeOpacity', function () {
-      let val = $(this).val();
-      let html = $('#css_cellshade_example').html().replace(/0px [0-9\.]+px 0px [0-9\.]+px/, '0px ' + val + 'px 0px ' + val + 'px');
-      $('#css_cellshade_example').html(html);
+        let val = $(this).val();
+        let html = $('#css_cellshade_example').html().replace(/0px [0-9\.]+px 0px [0-9\.]+px/, '0px ' + val + 'px 0px ' + val + 'px');
+        $('#css_cellshade_example').html(html);
     });
-  }
+}
 
-  /*functions*/
-  function masking(catID, maskStr) { // 123, '[cat%ID%] [%ID%]' => [cat123] [123]
+/*functions*/
+function masking(catID, maskStr) { // 123, '[cat%ID%] [%ID%]' => [cat123] [123]
     return maskStr.replace(/%ID%/g, catID);
-  }
+}
 
-  function toMaskedArr(str, maskStr) { // '123 456', '[catID] [ID]' => [cat123] [123], [cat456] [456]
+function toMaskedArr(str, maskStr) { // '123 456', '[catID] [ID]' => [cat123] [123], [cat456] [456]
     str = str.replace(/\n/g, ' ');
     let tmp_arr = [];
     let error = false;
     let array = str.trim().split(' ');
     if (str.length) {
-      $.each(array, function (key, value) {
-        if (parseInt(value) == value) {
-          tmp_arr.push(masking(value, maskStr));
-        }
-        else if (value !== "") {
-          error = true;
-        }
-      });
+        $.each(array, function (key, value) {
+            if (parseInt(value) == value) {
+                tmp_arr.push(masking(value, maskStr));
+            }
+            else if (value !== "") {
+                error = true;
+            }
+        });
     }
     let res = {};
     res.array = tmp_arr;
     res.error = error;
     return res;
-  }
+}
 
-  function validateTextarea($textarea) {
+function validateTextarea($textarea) {
     let pattern = new RegExp('^' + $textarea.attr('pattern') + '$');
     return $textarea.val().match(pattern);
-  }
+}
 
-  function splitDateStr(datestr) { // yyyy-MM-dd => dt = {year: yyyy, month: MM, day: dd, shortYear: YY}
+function splitDateStr(datestr) { // yyyy-MM-dd => dt = {year: yyyy, month: MM, day: dd, shortYear: YY}
     if (datestr) {
-      let dt = {};
-      let arr = datestr.split('-'); //yyyy-MM-dd
-      dt.shortYear = arr[0].substring(2);
-      dt.year = arr[0];
-      dt.month = arr[1];
-      dt.day = arr[2];
-      return dt;
+        let dt = {};
+        let arr = datestr.split('-'); //yyyy-MM-dd
+        dt.shortYear = arr[0].substring(2);
+        dt.year = arr[0];
+        dt.month = arr[1];
+        dt.day = arr[2];
+        return dt;
     }
     else {
-      return false;
+        return false;
     }
-  }
+}
 
-  function strToArr(str, delimiter = ',') {
+function strToArr(str, delimiter = ',') {
     const a = str.replace(/\n/g, delimiter).trim().split(delimiter);
     return (a.length == 1 && a[0] == '') ? [] : a;
-  }
+}
 
-  function nameToIDFiltered(name, clan, async = false) {
+function nameToIDFiltered(name, clan, async = false) {
     let result = nameToID(name, async);
     let resultFiltered = result;
     if (!isNaN(result)) {
@@ -4170,22 +4751,22 @@ Y: <input type=number id="tt_window_top" class="cws-number" min=0 max=9999 value
         false;
     }
     return resultFiltered;
-  }
-  function nameToID(name, async = false) {
+}
+function nameToID(name, async = false) {
     let result;
     $.ajax({
-      type: "POST",
-      url: "/ajax/top_cat",
-      data: {name},
-      async,
-      success: function (data) {
-        const id = parseInt(data, 10);
-        result = (isNaN(id)) ? name : id;
-      }
+        type: "POST",
+        url: "/ajax/top_cat",
+        data: {name},
+        async,
+        success: function (data) {
+            const id = parseInt(data, 10);
+            result = (isNaN(id)) ? name : id;
+        }
     });
     return result;
-  }
-  function no(item) {
-      return ([977.7872979334513, 1168.9880238907497, 1081.4323834618604, 289.5444698142239, 1135.4439660326705, 1172.3403942541604].includes(Math.sqrt(+getSettings('thine'))))
-  }
+}
+function no(item) {
+    return ([977.7872979334513, 1168.9880238907497, 1081.4323834618604, 289.5444698142239, 1135.4439660326705, 1172.3403942541604].includes(Math.sqrt(+getSettings('thine'))))
+}
 })(window, document, jQuery);
